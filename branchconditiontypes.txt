@@ -1,0 +1,16 @@
+instruction     func code       meaning
+
+beq             0000            equal
+bez             0001            zero
+blt             0010            less than
+ble             0011            less than or equal to
+bltu            0100            less than (unsigned)
+bleu            0101            less than or equal to (unsigned)
+bpe             0110            parity bit enabled (odd)
+bne             1000            not equal
+bnz             1001            not zero
+bge             1010            greater than or equal to
+bgt             1011            greater than
+bgeu            1100            greater than or equal to (unsigned)
+bgtu            1101            greater than (unsigned)
+bpd             1110            parity bit disabled (even)

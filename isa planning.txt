@@ -1,4 +1,4 @@
-APH3 | APHELION VERSION 3.0
+APHELION VERSION 0.1
 
 64-bit registers
 32-bit address space
@@ -71,19 +71,18 @@ instructions
     pop     rd                  |   pop to register
 
     jal     r1, imm16           |   pc = r1 + (imm16*4) (sign ext), push return location to stack
-    jalr    r1, imm16, r2       |   pc = r1 + (imm16*4) (sign ext), send return location to r2
+    jalr    r1, imm16, rd       |   pc = r1 + (imm16*4) (sign ext), send return location to rd
     ret                         |   pc = [val popped of stack]
     retr    rd                  |   pc = rd
     
-    brnc    imm16, r1           |   pc += (imm16*4) (sign ext), send return location to r1      * work this out
-    brnc    imm16               |   pc += (imm16*4) (sign ext), push return location to stack   * work this out
+    bcc     imm20               |   pc += (imm20*4) (sign ext) if condition is met
 
     enter   enter stack frame
     leave   leave stack frame
 
     int     trigger interrupt
     virt    enter virtual mode
-    call    trigger interrupt from kernel-defined interrupt set (enters user mode)
+    ucall   trigger interrupt from kernel-defined interrupt set (enters user mode)
 
 extension ideas for later
     floating point

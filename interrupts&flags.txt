@@ -30,7 +30,7 @@ error interrupts (available in all modes)
 status register bit flags
 	sign
 	zero
-	parity
+	parity (0 if even, 1 if odd)
 	carry
 	borrow
 	equal
