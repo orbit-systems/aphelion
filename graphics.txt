@@ -1,0 +1,5 @@
+640x480 resolution
+8 bit color [rrrgggbb] (maybe more color modes in the future??)
+vga out
+
+frame buffer pointer - points to the first pixel of a frame buffer (307.2kb in size)

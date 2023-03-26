@@ -1,0 +1,2 @@
+no paging swapping at the moment, mmu can allocate memory in pages of 1024 bytes
+2^32 addresses / 2^10 page size = 2^22 or 4194304 pages

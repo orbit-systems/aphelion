@@ -1,0 +1,41 @@
+real mode interrupts
+	trigger interval timer
+	interval timer signal
+	input detected
+	shutdown
+	hold (endlessly loop)
+	reboot (fully shut down and restart)
+	get uptime (sec component)
+	get uptime (ms component)
+	1 second tick (?)
+	get unix time
+	set unix time
+
+	read sector(s) to permanent storage
+	write sector(s) to permanent storage
+
+	update frame buffer pointer (changes frame buffer pointer to value in register after current frame is done drawing)
+
+error interrupts (available in all modes)
+	segfault - attempt to access unowned memory
+	segfault - unable to allocate memory [out of memory]
+	integer overflow
+	integer underflow
+	divide by zero
+	general error
+	unmapped opcode
+	no priveledge (when running real-only instructions in virtual mode)
+	stack underflow
+
+status register bit flags
+	sign
+	zero
+	parity
+	carry
+	borrow
+	equal
+	greater
+	less
+	greater (unsigned)
+	less (unsigned)
+	mode [real/virtual]

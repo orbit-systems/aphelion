@@ -1,0 +1,6 @@
+finish implementing conditional branches / JALs
+finish documentation
+assign opcodes (and functs if applicable)
+organize bit flags in register st
+rigorously define interrupt tables
+are all those ld instructions really necessary, idfk maybe cut those down a bit
