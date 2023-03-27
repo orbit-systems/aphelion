@@ -14,7 +14,7 @@ real mode interrupts
 	read sector(s) to permanent storage
 	write sector(s) to permanent storage
 
-	update frame buffer pointer (changes frame buffer pointer to value in register after current frame is done drawing)
+	set frame buffer (selects frame buffer to draw from)
 
 error interrupts (available in all modes)
 	segfault - attempt to access unowned memory
@@ -25,7 +25,7 @@ error interrupts (available in all modes)
 	general error
 	unmapped opcode
 	no priveledge (when running real-only instructions in virtual mode)
-	stack underflow
+	stack underflow (raises if sp < fp)
 
 status register bit flags
 	sign

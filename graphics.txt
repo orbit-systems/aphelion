@@ -2,4 +2,5 @@
 8 bit color [rrrgggbb] (maybe more color modes in the future??)
 vga out
 
-frame buffer pointer - points to the first pixel of a frame buffer (307.2kb in size)
+frame buffer bit - switches render pointer between two frame buffers (307.2kb in size, location in memory is tbd)
+    maybe add multiple frame buffers?

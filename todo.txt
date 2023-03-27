@@ -1,6 +1,6 @@
 finish documentation
-assign opcodes (and funcs if applicable)
-organize bit flags in register st
+assign opcodes (use funcs to condense mutliple instructions into a single opcode)
+assign register codes
+organize status register
 rigorously define interrupt tables
-are all those ld instructions really necessary, idfk maybe cut those down a bit
-adding on to this, cut down on unnecessary instruction variations
+cut down on unnecessary instruction variations
