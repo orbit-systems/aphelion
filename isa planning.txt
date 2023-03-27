@@ -56,7 +56,6 @@ instructions
     nor     rd, r1, imm16       |   rd = !(r1 | imm) (zero ext)
     xor     rd, r1, r2          |   rd = r1 ^ r2
     xor     rd, r1, imm16       |   rd = r1 ^ imm16 (zero ext)
-
     shl     rd, r1, r2          |   rd = r1 << r2
     shl     rd, r1, imm16       |   rd = r1 << imm (zero ext)
     asr     rd, r1, r2          |   rd = r1 >> r2
@@ -64,17 +63,16 @@ instructions
     lsr     rd, r1, r2          |   rd = r1 >> r2 (logical)
     lsr     rd, r1, imm16       |   rd = r1 >> imm (logical) (zero ext)
 
-    push    r1                  |   mem[sp] = r1, sp -= 4 (push value in register to stack)
-    push    imm16               |   mem[sp] = imm16(sign ext), sp -= 4  (push immediate to stack)
-    pushz   imm16               |   mem[sp] = imm16(zero ext), sp -= 4  (push immediate to stack)
-    pushq   imm16               |   mem[sp] = r1, sp -= 4 (push immediate qword to stack)
-    pop     rd                  |   rd = mem[sp], sp -= 4 pop to register
+    push    r1                  |   mem[sp] = r1, sp -= 8
+    push    imm16               |   mem[sp] = imm16(sign ext), sp -= 8
+    pushz   imm16               |   mem[sp] = imm16(zero ext), sp -= 8
+    pushq   imm16               |   mem[sp] = imm16, sp -= 2
+    pop     rd                  |   rd = mem[sp], sp += 8
 
-    jal     r1, imm16           |   pc = r1 + (imm16*4) (sign ext), push return location to stack
-    jalr    r1, imm16, rd       |   pc = r1 + (imm16*4) (sign ext), send return location to rd
+    jal     r1, imm16           |   pc = r1 + (imm16*4) (sign ext), push (pc+4)
+    jalr    r1, imm16, rd       |   pc = r1 + (imm16*4) (sign ext), rd = (pc+4)
     ret                         |   pc = mem[sp], sp -= 4
     retr    rd                  |   pc = rd
-    
     bcc     imm20               |   pc += (imm20*4) (sign ext) if condition is met
 
     enter   enter stack frame
@@ -82,7 +80,7 @@ instructions
 
     int     trigger interrupt
     virt    enter virtual mode
-    ucall   trigger interrupt from kernel-defined interrupt set (enters user mode)
+    rcall   trigger interrupt from kernel-defined interrupt set (enters real mode)
 
 extension ideas for later
     floating point
