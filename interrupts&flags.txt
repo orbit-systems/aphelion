@@ -7,9 +7,9 @@ real mode interrupts
 	reboot (fully shut down and restart)
 	get uptime (sec component)
 	get uptime (ms component)
-	1 second tick (?)
-	get unix time
-	set unix time
+	1 second tick
+	get timestamp
+	set timestamp
 
 	read sector(s) to permanent storage
 	write sector(s) to permanent storage

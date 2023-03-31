@@ -13,7 +13,7 @@ lbs     rd, r1, imm16       |   rd = mem[r1 + imm16] (byte)   (se)
 lb      rd, r1, imm16       |   rd[0-7] = mem[r1 + imm16] (byte)
 st      rs, rd, imm16       |   mem[rd + imm16] = rs (word) (l. end)
 stb     r1, rd, imm16       |   mem[rd + imm16] = r1 (byte)
-cpy     rd, r1              |   rd = r1             (encoded as add rd, r1, 0)
+cpy     rd, r1              |   rd = r1                                 (encoded as add rd, r1, 0)
 swp     r1, r2              |   (r1, r2) = (r2, r1)
 
 add     rd, r1, r2          |   rd = r1 + r2
@@ -51,15 +51,14 @@ push    imm16               |   sp -= 8, mem[sp] = imm16(se)  (l. end)
 pushz   imm16               |   sp -= 8, mem[sp] = imm16(ze)  (l. end)
 pushq   imm16               |   sp -= 2, mem[sp] = imm16    (l. end)        * for constructing 64-bit immediate push
 pop     rd                  |   rd = mem[sp], sp += 8
+enter                       |   push fp, fp = sp    (enter stack frame)
+leave                       |   sp = fp, pop fp     (leave stack frame)
 
 jal     r1, imm16           |   pc = r1 + imm16*4 (se), push (pc+4)
 jalr    r1, imm16, rd       |   pc = r1 + imm16*4 (se), rd = (pc+4)
 ret                         |   pc = mem[sp], sp -= 4
 retr    rd                  |   pc = rd
 bcc     imm20               |   pc += imm20*4 (se) if condition is met
-
-enter                       |   push fp, fp = sp    (enter stack frame)
-leave                       |   sp = fp, pop fp     (leave stack frame)
 
 int     imm16               |   trigger interrupt
 virt                        |   enter virtual mode
