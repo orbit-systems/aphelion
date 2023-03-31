@@ -1,5 +1,4 @@
 finish documentation
-assign opcodes (use funcs to condense mutliple instructions into a single opcode)
 assign register codes
 organize status register
 rigorously define interrupt tables

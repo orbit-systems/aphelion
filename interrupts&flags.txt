@@ -1,3 +1,7 @@
+interrupt instructions have imm20 as an argument listed in instructions.txt. 
+this is technically correct because the format B supports a 20-bit immediate value, 
+however only the least significant 8 bits are used by the processor to select an interrupt.
+
 real mode interrupts
 	trigger interval timer
 	interval timer signal
@@ -22,10 +26,10 @@ error interrupts (available in all modes)
 	integer overflow
 	integer underflow
 	divide by zero
-	general error
-	unmapped opcode
-	no priveledge (when running real-only instructions in virtual mode)
+	unmapped opcode (also triggered when running real-only instructions in virtual mode)
+	no permission
 	stack underflow (raises if sp < fp)
+	general error
 
 status register bit flags
 	sign
