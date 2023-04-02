@@ -7,18 +7,18 @@ virt                        10  1       B       enter virtual mode
 call    imm20               10  2       B       trigger interrupt in real-defined interrupt table from virtual mode (enters real mode)
 
 li      rd, imm16           20  0       F       rd[0-15] = imm16
-lis     rd, imm16           20  1       F       rd[0-15] = imm16    (se)
+lis     rd, imm16           20  1       F       rd = imm16          (se)
 lui     rd, imm16           20  2       F       rd[16-31] = imm16
-luis    rd, imm16           20  3       F       rd[16-31] = imm16   (se)
-lni     rd, imm16           20  4       F       rd[32-47] = imm16
-lnis    rd, imm16           20  5       F       rd[32-47] = imm16   (se)
-lnui    rd, imm16           20  6       F       rd[48-63] = imm16
-lnui    rd, imm16           20  7       F       rd[48-63] = imm16   (se)
-lw      rd, r1, imm16       21          I       rd = mem[r1 + imm16] (word)
-lbs     rd, r1, imm16       22          I       rd = mem[r1 + imm16] (byte)   (se)
-lb      rd, r1, imm16       23          I       rd[0-7] = mem[r1 + imm16] (byte)
-st      rs, rd, imm16       24          I       mem[rd + imm16] = rs (word) (l. end)
-stb     r1, rd, imm16       25          I       mem[rd + imm16] = r1 (byte)
+luis    rd, imm16           20  3       F       rd = imm16 << 16    (se)
+lti     rd, imm16           20  4       F       rd[32-47] = imm16
+ltis    rd, imm16           20  5       F       rd = imm16 << 32    (se)
+ltui    rd, imm16           20  6       F       rd[48-63] = imm16
+ltuis   rd, imm16           20  7       F       rd = imm16 << 48    (se)
+lw      rd, [r1+imm16]      21          I       rd = mem[r1 + imm16] (word)
+lbs     rd, [r1+imm16]      22          I       rd = mem[r1 + imm16] (byte)   (se)
+lb      rd, [r1+imm16]      23          I       rd[0-7] = mem[r1 + imm16] (byte)
+st      rs, [r1+imm16]      24          I       mem[rd + imm16] = rs (word) (l. end)
+stb     rs, [r1+imm16]      25          I       mem[rd + imm16] = rs (byte)
 swp     r1, r2              26          I       (r1, r2) = (r2, r1)
 
 add     rd, r1, r2          30          R       rd = r1 + r2
@@ -45,11 +45,11 @@ nor     rd, r1, imm16       45          I       rd = !(r1 | imm16(ze))
 xor     rd, r1, r2          46          R       rd = r1 ^ r2
 xor     rd, r1, imm16       47          I       rd = r1 ^ imm16(ze)
 shl     rd, r1, r2          48          R       rd = r1 << r2
-shl     rd, r1, imm16       49          I       rd = r1 << imm16(unsigned)
+shl     rd, r1, imm16       49          I       rd = r1 << imm16
 asr     rd, r1, r2          4a          R       rd = r1 >> r2
-asr     rd, r1, imm16       4b          I       rd = r1 >> imm16(unsigned)
+asr     rd, r1, imm16       4b          I       rd = r1 >> imm16
 lsr     rd, r1, r2          4c          R       rd = r1 >> r2
-lsr     rd, r1, imm16       4d          I       rd = r1 >> imm16(unsigned)
+lsr     rd, r1, imm16       4d          I       rd = r1 >> imm16
 
 push    r1                  50  0       F       sp -= 8, mem[sp] = r1   (l. end)
 push    imm16               50  1       F       sp -= 8, mem[sp] = imm16(se)  (l. end)
@@ -65,14 +65,11 @@ ret                         62  0       F       pc = mem[sp], sp -= 4
 retr    rd                  62  1       F       pc = rd
 bcc     imm20               63          B       pc += imm20*4 (se) if condition is met
 
-
-
-
 notes
     word -> 64 bit
 
-    (se) -> sign extend (set lower bits to zero)
-    (ze) -> zero extend (set lower bits to zero)
+    (se) -> sign extend
+    (ze) -> zero extend
 
     // -> considering deletion
 

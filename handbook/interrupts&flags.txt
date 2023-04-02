@@ -1,9 +1,9 @@
 interrupt instructions have imm20 as an argument listed in instructions.txt. 
-this is technically correct because the format B supports a 20-bit immediate value, 
-however only the least significant 8 bits are used by the processor to select an interrupt.
+this is technically correct because the format B supports a 20-bit immediate value. 
+however, only the least significant 8 bits are used by the processor to select an interrupt.
 
-real mode interrupts
-	trigger interval timer
+BIOS interrupt table
+	set interval timer channel
 	interval timer signal
 	input detected
 	shutdown
@@ -20,7 +20,7 @@ real mode interrupts
 
 	set frame buffer (selects frame buffer to draw from)
 
-error interrupts (available in all modes)
+exception interrupts (available in all modes)
 	segfault - attempt to access unowned memory
 	segfault - unable to allocate memory [out of memory]
 	integer overflow
@@ -29,7 +29,7 @@ error interrupts (available in all modes)
 	unmapped opcode (also triggered when running real-only instructions in virtual mode)
 	no permission
 	stack underflow (raises if sp < fp)
-	general error
+	general/unknown error
 
 status register bit flags
 	sign
