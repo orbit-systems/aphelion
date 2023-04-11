@@ -1,10 +1,17 @@
-name    desc
+ACCESSABLE REGISTERS:
 
-rz      always 0, writes silently fail
-r[a-k]  general purpose
-pc      program counter
-sp      stack pointer
-fp      frame pointer
-st      status register, contains bit flags and information abt the processor state
+code	name    desc
+
+0       rz      always 0, writes silently fail
+1-B     r[a-k]  general purpose
+C       pc      program counter
+D       sp      stack pointer
+E       fp      frame pointer
+F       st      status register, contains bit flags and information abt the processor state
 
 pc, sp, fp, and st are all read-only unless in real mode. attempting to write to these will trigger a "no permission" error interrupt.
+
+INACCESSABLE REGISTERS: (operation variables)
+
+id  IDT pointer
+sc  syscall handler pointer

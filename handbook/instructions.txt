@@ -3,8 +3,10 @@ name    args                op  func    format  description
 nop                         0f          B       no operation
 
 int     imm20               10  0       B       trigger interrupt
-virt                        10  1       B       enter virtual mode
-call    imm20               10  2       B       trigger interrupt in real-defined interrupt table from virtual mode (enters real mode)
+virt                        10  1       B       enter user mode
+syscall                     10  2       B       jal to system function handler (enter kernel mode) (push return to stack)
+sysret                      10  3       B       return from system function (enter user mode) (pop return from stack)
+sysconf imm16, r1           11          B       set operation variable (imm16) to r1
 
 li      rd, imm16           20  0       F       rd[0-15] = imm16
 lis     rd, imm16           20  1       F       rd = imm16          (se)

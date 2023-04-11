@@ -2,7 +2,7 @@ interrupt instructions have imm20 as an argument listed in instructions.txt.
 this is technically correct because the format B supports a 20-bit immediate value. 
 however, only the least significant 8 bits are used by the processor to select an interrupt.
 
-BIOS interrupt table
+hardware interrupt table
 	set interval timer channel
 	interval timer signal
 	input detected
@@ -26,7 +26,7 @@ exception interrupts (available in all modes)
 	integer overflow
 	integer underflow
 	divide by zero
-	unmapped opcode (also triggered when running real-only instructions in virtual mode)
+	unmapped opcode (also triggered when running kernel-only instructions in user mode)
 	no permission
 	stack underflow (raises if sp < fp)
 	general/unknown error
@@ -42,4 +42,4 @@ status register bit flags
 	less
 	greater (unsigned)
 	less (unsigned)
-	mode [real/virtual]
+	mode [kernel/user]

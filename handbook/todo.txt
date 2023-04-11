@@ -1,5 +1,4 @@
 finish documentation
-assign register codes
 organize status register
 rigorously define interrupt tables
 cut down on unnecessary instruction variations
