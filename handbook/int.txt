@@ -1,30 +1,33 @@
-HARDWARE-TRIGGERED INTERRUPTS:
+HARDWARE-TRIGGERED INTERRUPTS
 
 code    description
 
 00      divide by zero
 01      integer overflow
 02      integer underflow
+01      unsigned integer overflow   (masked by default)
+02      unsigned integer underflow  (masked by default)
 03      unmapped opcode
-04      no permission           (when user programs access kernel-only registers / run kernel-only instructions)
-05      stack underflow         (raises if sp < fp)
+04      no permission               (when user programs access kernel-only registers / run kernel-only instructions)
+05      stack underflow             (raises if sp > fp)
 06      segfault - access denied
-07      segfault - out of memory
+07      segfault - cannot allocate / out of memory
+08      segfault - cannot free
 
 20      pit channel 0 signal
 21      pit channel 1 signal
 22      pit channel 2 signal
 23      pit channel 3 signal
-24      millisecond tick        (masked by default)
-25      second tick             (masked by default)
+24      millisecond tick            (masked by default)
+25      second tick                 (masked by default)
 26      input detected
 
 
-SOFTWARE-TRIGGERED INTERRUPTS:
+SOFTWARE-TRIGGERED INTERRUPTS
 
 code    func    args        description
 
-40      (sel)   r1          set pit channel (sel) interval to r1
+40      (sel)   r1, (r2)    set pit channel (sel) interval to r1, r2 set to amount of times before
 41      (sel)   r1          set pit channel (sel) mode to r1
 42      (sel)               trigger pit channel
 43      (sel)   r1          set operation variable (sel) to r1
@@ -39,4 +42,9 @@ code    func    args        description
 46      2                   unmask all masked ints
 47      0       r1, r2, r3  read r3 number of sectors from permanent storage, read starting from sector r1 and write starting from mem page r2
 47      1       r1, r2, r3  write r3 number of sectors to permanent storage, read starting from mem page r1 and write starting from sector r2
-48      (sel)               set frame buffer - selects frame buffer to draw from
+49      0       r1, r2      allocate page to process r1, set r2 to new page number
+49      1       r1          free page r1
+49      2       r1          set active user mode process to r1
+
+
+note - interrupts always set the processor mode to kernel

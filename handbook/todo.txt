@@ -1,2 +1,1 @@
-figure out where the frame buffers should go in memory
 add more software interrupts that request data about the system and configure the system (memory capabilities, drive capabilities, video mode, etc)

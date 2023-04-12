@@ -1,5 +1,4 @@
-640x480
-8-bit color [rrrgggbb] (maybe more color modes in the future??)
+640x480, 8-bit color [rrrgggbb] (maybe more modes in the future??)
 
-frame buffer bit - switches render pointer between two frame buffers (307.2kb in size, location in memory is tbd)
-    maybe add multiple frame buffers?
+frame buffer 0 starts at 0x10000
+frame buffer 1 starts at 0x4b000

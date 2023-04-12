@@ -3,11 +3,12 @@ name    args                op  func    format  description
 nop                         0f          B       no operation
 
 int     imm8, (imm4, r1-r3) 10          I       trigger interrupt imm8 with args imm4(func), r1, r2, r3 (args only apply to software interrupt requests to the hardware)
-virt                        11  1       B       enter user mode
-syscall                     11  2       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
-sysret                      11  3       B       return from system function (enter user mode) (pop return from stack)
+syscall                     11  1       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
+sysret                      11  2       B       return from system function (enter user mode) (pop return from stack)
+jmpusr  r1                                      jump and enter user mode - expands to "push r1 | sysret"
+usr                                             enter user mode - expands to "and st, st, 0xA"
 
-lfi     rd, imm64                               load full immediate macro - expands into li, lui, lti, ltui as needed
+lfi     rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
 li      rd, imm16           20  0       F       rd[0-15] = imm16
 lis     rd, imm16           20  1       F       rd = imm16          (se)
 lui     rd, imm16           20  2       F       rd[16-31] = imm16
@@ -60,6 +61,7 @@ pushc   imm16               50  3       F       sp -= 2, mem[sp] = imm16    (l. 
 pop     rd                  50  4       F       rd = mem[sp], sp += 8
 enter                       50  5       F       push fp, fp = sp    (enter stack frame)
 leave                       50  6       F       sp = fp, pop fp     (leave stack frame)
+reloc   r1, (imm16)         50  7       F       sp = r1, fp = r1 - imm16
 
 jal     r1, imm20           60          B       pc = r1 + imm16*4 (se), push (pc+4)
 jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc+4)
@@ -69,11 +71,8 @@ bcc     imm20               63          B       pc += imm20*4 (se) if condition 
 
 notes
     word -> 64 bit
-
     (se) -> sign extend
     (ze) -> zero extend
-
-    // -> considering deletion
 
 extension ideas for later
     floating point
