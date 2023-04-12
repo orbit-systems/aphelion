@@ -6,7 +6,7 @@ the PIT has 4 independent channels:
 	setting an PIT channel's interval or mode puts the channel in idle. To start a channel, use INT 41 with the channel number in the func argument.
 
 mode	name
-00		off
-01		echo
-10		for
-11		loop
+0		off
+1		echo
+2		for
+3		loop
