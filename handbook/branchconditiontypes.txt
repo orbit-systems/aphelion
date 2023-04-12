@@ -1,4 +1,4 @@
-instruction     func		meaning
+instruction     func		description
 
 beq             1 0001 		equal
 bez             2 0010 		zero

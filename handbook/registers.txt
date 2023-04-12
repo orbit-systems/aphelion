@@ -1,6 +1,6 @@
 ACCESSABLE REGISTERS:
 
-code	name    desc
+code	name    description
 
 0       rz      always 0, writes silently fail
 1-B     r[a-k]  general purpose
@@ -13,5 +13,6 @@ pc, sp, fp, and st are all read-only unless in real mode. attempting to write to
 
 INACCESSABLE REGISTERS: (operation variables)
 
-id  IDT pointer
-sc  syscall handler pointer
+0       IDT pointer
+1       syscall handler pointer
+2       hardware interrupt mask register

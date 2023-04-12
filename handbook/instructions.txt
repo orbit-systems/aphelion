@@ -2,12 +2,12 @@ name    args                op  func    format  description
 
 nop                         0f          B       no operation
 
-int     imm20               10  0       B       trigger interrupt
-virt                        10  1       B       enter user mode
-syscall                     10  2       B       jal to system function handler (enter kernel mode) (push return to stack)
-sysret                      10  3       B       return from system function (enter user mode) (pop return from stack)
-sysconf imm16, r1           11          B       set operation variable (imm16) to r1
+int     imm8, (imm4, r1-r3) 10          I       trigger interrupt imm8 with args imm4(func), r1, r2, r3 (args only apply to software interrupt requests to the hardware)
+virt                        11  1       B       enter user mode
+syscall                     11  2       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
+sysret                      11  3       B       return from system function (enter user mode) (pop return from stack)
 
+lfi     rd, imm64                               load full immediate macro - expands into li, lui, lti, ltui as needed
 li      rd, imm16           20  0       F       rd[0-15] = imm16
 lis     rd, imm16           20  1       F       rd = imm16          (se)
 lui     rd, imm16           20  2       F       rd[16-31] = imm16
@@ -16,53 +16,53 @@ lti     rd, imm16           20  4       F       rd[32-47] = imm16
 ltis    rd, imm16           20  5       F       rd = imm16 << 32    (se)
 ltui    rd, imm16           20  6       F       rd[48-63] = imm16
 ltuis   rd, imm16           20  7       F       rd = imm16 << 48    (se)
-lw      rd, [r1+imm16]      21          I       rd = mem[r1 + imm16] (word)
-lbs     rd, [r1+imm16]      22          I       rd = mem[r1 + imm16] (byte)   (se)
-lb      rd, [r1+imm16]      23          I       rd[0-7] = mem[r1 + imm16] (byte)
-st      rs, [r1+imm16]      24          I       mem[rd + imm16] = rs (word) (l. end)
-stb     rs, [r1+imm16]      25          I       mem[rd + imm16] = rs (byte)
-swp     r1, r2              26          I       (r1, r2) = (r2, r1)
+lw      rd, [r1+imm16]      21          M       rd = mem[r1 + imm16] (word)
+lbs     rd, [r1+imm16]      22          M       rd = mem[r1 + imm16] (byte)   (se)
+lb      rd, [r1+imm16]      23          M       rd[0-7] = mem[r1 + imm16] (byte)
+st      rs, [r1+imm16]      24          M       mem[rd + imm16] = rs (word) (l. end)
+stb     rs, [r1+imm16]      25          M       mem[rd + imm16] = rs (byte)
+swp     r1, r2              26          M       (r1, r2) = (r2, r1)
 
 add     rd, r1, r2          30          R       rd = r1 + r2
-add     rd, r1, imm16       31          I       rd = r1 + imm16 (se)
+add     rd, r1, imm16       31          M       rd = r1 + imm16 (se)
 adc     rd, r1, r2          32          R       rd = r1 + r2 + carry
-adc     rd, r1, imm16       33          I       rd = r1 + imm16 (se) + carry
+adc     rd, r1, imm16       33          M       rd = r1 + imm16 (se) + carry
 sub     rd, r1, r2          34          R       rd = r1 - r2
-sub     rd, r1, imm16       35          I       rd = r1 - imm16 (se)
+sub     rd, r1, imm16       35          M       rd = r1 - imm16 (se)
 sbb     rd, r1, r2          36          R       rd = r1 - r2 - borrow
-sbb     rd, r1, imm16       37          I       rd = r1 - imm16 (se) - borrow
+sbb     rd, r1, imm16       37          M       rd = r1 - imm16 (se) - borrow
 mul     rd, r1, r2          38          R       rd = r1 * r2
-mul     rd, r1, imm16       39          I       rd = r1 * imm16 (se)
+mul     rd, r1, imm16       39          M       rd = r1 * imm16 (se)
 div     rd, r1, r2          3a          R       rd = r1 / r2
-div     rd, r1, imm16       3b          I       rd = r1 / imm16 (se)
+div     rd, r1, imm16       3b          M       rd = r1 / imm16 (se)
 mod     rd, r1, r2          3c          R       rd = r1 % r2
-mod     rd, r1, imm16       3d          I       rd = r1 % imm16 (se)
+mod     rd, r1, imm16       3d          M       rd = r1 % imm16 (se)
 
 and     rd, r1, r2          40          R       rd = r1 & r2
-and     rd, r1, imm16       41          I       rd = r1 & imm16(ze)
+and     rd, r1, imm16       41          M       rd = r1 & imm16(ze)
 or      rd, r1, r2          42          R       rd = r1 | r2
-or      rd, r1, imm16       43          I       rd = r1 | imm16(ze)
+or      rd, r1, imm16       43          M       rd = r1 | imm16(ze)
 nor     rd, r1, r2          44          R       rd = !(r1 | r2)
-nor     rd, r1, imm16       45          I       rd = !(r1 | imm16(ze))
+nor     rd, r1, imm16       45          M       rd = !(r1 | imm16(ze))
 xor     rd, r1, r2          46          R       rd = r1 ^ r2
-xor     rd, r1, imm16       47          I       rd = r1 ^ imm16(ze)
+xor     rd, r1, imm16       47          M       rd = r1 ^ imm16(ze)
 shl     rd, r1, r2          48          R       rd = r1 << r2
-shl     rd, r1, imm16       49          I       rd = r1 << imm16
+shl     rd, r1, imm16       49          M       rd = r1 << imm16
 asr     rd, r1, r2          4a          R       rd = r1 >> r2
-asr     rd, r1, imm16       4b          I       rd = r1 >> imm16
+asr     rd, r1, imm16       4b          M       rd = r1 >> imm16
 lsr     rd, r1, r2          4c          R       rd = r1 >> r2
-lsr     rd, r1, imm16       4d          I       rd = r1 >> imm16
+lsr     rd, r1, imm16       4d          M       rd = r1 >> imm16
 
 push    r1                  50  0       F       sp -= 8, mem[sp] = r1   (l. end)
-push    imm16               50  1       F       sp -= 8, mem[sp] = imm16(se)  (l. end)
+pushi   imm16               50  1       F       sp -= 8, mem[sp] = imm16(se)  (l. end)
 pushz   imm16               50  2       F       sp -= 8, mem[sp] = imm16(ze)  (l. end)
-pushq   imm16               50  3       F       sp -= 2, mem[sp] = imm16    (l. end)        * for constructing 64-bit immediate push
+pushc   imm16               50  3       F       sp -= 2, mem[sp] = imm16    (l. end)        * for constructing 64-bit immediate push
 pop     rd                  50  4       F       rd = mem[sp], sp += 8
 enter                       50  5       F       push fp, fp = sp    (enter stack frame)
 leave                       50  6       F       sp = fp, pop fp     (leave stack frame)
 
 jal     r1, imm20           60          B       pc = r1 + imm16*4 (se), push (pc+4)
-jalr    r1, imm16, rd       61          I       pc = r1 + imm16*4 (se), rd = (pc+4)
+jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc+4)
 ret                         62  0       F       pc = mem[sp], sp -= 4
 retr    rd                  62  1       F       pc = rd
 bcc     imm20               63          B       pc += imm20*4 (se) if condition is met

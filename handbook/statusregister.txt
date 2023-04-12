@@ -1,0 +1,18 @@
+status register
+
+bit	    description
+
+0	    sign                    * †
+1       zero                    * †
+2       parity                  * †
+3       carry                   *
+4       borrow                  *
+5       equal                   * †
+6       greater                 *
+7       less                    *
+8       greater (unsigned)      *
+9       less (unsigned)         *
+10      mode [kernel/user]
+
+* set according to result of arithmetic instruction
+† set according to result of logical instruction (asr included )

@@ -1,6 +1,5 @@
-640x480 resolution
-8 bit color [rrrgggbb] (maybe more color modes in the future??)
-vga out
+640x480
+8-bit color [rrrgggbb] (maybe more color modes in the future??)
 
 frame buffer bit - switches render pointer between two frame buffers (307.2kb in size, location in memory is tbd)
     maybe add multiple frame buffers?

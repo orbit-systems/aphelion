@@ -1,0 +1,11 @@
+programmable interval timer
+
+the PIT has 4 independent channels:
+	A channel count based on millisecond ticks or clock signals.
+	A channel can be set to disabled(off), trigger once(echo), or trigger repeatedly(loop).
+	setting an PIT channel's interval or mode puts the channel in idle. To start a channel, use INT 41 with the channel number in the func argument.
+
+mode	name
+00		off
+01		echo
+10		loop
