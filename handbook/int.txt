@@ -42,7 +42,7 @@ code    func    args        description
 46      2                   unmask all masked ints
 47      0       r1, r2, r3  read r3 number of sectors from permanent storage, read starting from sector r1 and write starting from mem page r2
 47      1       r1, r2, r3  write r3 number of sectors to permanent storage, read starting from mem page r1 and write starting from sector r2
-49      0       r1, r2      allocate page to process r1, set r2 to new page number
+49      0       r1, r2, r3  allocate page to process r1 with perms r2, set r3 to new page number
 49      1       r1          free page r1
 49      2       r1          set active user mode process to r1
 
