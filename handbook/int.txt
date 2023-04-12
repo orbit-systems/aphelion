@@ -27,7 +27,7 @@ SOFTWARE-TRIGGERED INTERRUPTS
 
 code    func    args        description
 
-40      (sel)   r1, (r2)    set pit channel (sel) interval to r1, r2 set to amount of times before
+40      (sel)   r1, (r2)    set pit channel (sel) interval to r1 (set amount of times to activate to r2, if applicable)
 41      (sel)   r1          set pit channel (sel) mode to r1
 42      (sel)               trigger pit channel
 43      (sel)   r1          set operation variable (sel) to r1
