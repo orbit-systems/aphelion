@@ -1,2 +1,9 @@
 mmu can allocate memory in pages of 4096 bytes
 sectors on drives are also treated as 4096 bytes long
+
+mmu segment permissions
+
+bit     description
+0       read
+1       write
+2       excecute
