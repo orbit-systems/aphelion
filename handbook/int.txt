@@ -1,4 +1,4 @@
-HARDWARE-TRIGGERED INTERRUPTS
+HARDWARE-TRIGGERED INTERRUPTS - always sets the processor mode to kernel
 
 code    description
 
@@ -22,8 +22,7 @@ code    description
 25      second tick                 (masked by default)
 26      input detected
 
-
-SOFTWARE-TRIGGERED INTERRUPTS
+SOFTWARE-TRIGGERED INTERRUPTS - if kernel mode, these are handled by the hardware. in user mode, the IDT is used.
 
 code    func    args        description
 
@@ -45,6 +44,3 @@ code    func    args        description
 48      (perms) r1, r2      allocate page to process r1 with permissions (perms), set r2 to new page number
 49      1       r1          free page r1
 49      2       r1          set active user mode process to r1
-
-
-note - interrupts always set the processor mode to kernel
