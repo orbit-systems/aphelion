@@ -1,5 +1,7 @@
 # Aphelion Assembly v0.1 Reference
 
+# note - commas are ignored and treated like whitespace
+
 directives:             # labels are alphanumeric with '_' and '-'. labels cannot start with numeric digits (0-9)
 
     .string "string"    # embed a utf-8 encoded string (note: not null-terminated)
@@ -8,14 +10,16 @@ directives:             # labels are alphanumeric with '_' and '-'. labels canno
     .hexbe data         # embed hexadecimal data of arbitrary length (big-endian)
     .u(8,16,32,64,128)  # embed an unsigned integer of specified length
     .i(8,16,32,64,128)  # embed a signed integer of specified length
-    .byte data [count]  # embed (data) [count] amount of times - count can be omitted, assumed 1
+    .byte data, [count] # embed (data) [count] amount of times - count can be omitted, assumed 1
 
     .loc int            # places the following at (int) in memory
     .skip int           # skips (int) bytes
     .align int          # align the following to next multiple of (int)
 
     .inc "file"         # insert the contents of (file) - similar to #include in C
-    .def alias data     # define a preprocessor replacement
-    .mac macro_instruction arg1 arg2 arg3       # define a preprocessor macro
+    .def alias, data    # define a preprocessor replacement
+    .mac macro_instruction arg1, arg2, arg3     # define a preprocessor macro
         # (some instructions)
     .endmac
+
+# instructions must come after a label or on a new line

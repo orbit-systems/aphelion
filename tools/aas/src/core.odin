@@ -11,6 +11,8 @@
 // -ignore-ext          ignore file extension
 // -help                display this text
 
+// TODO lexer, parser, preprocessor, binary embedder
+
 package aas
 
 import "core:os"
@@ -63,7 +65,7 @@ main :: proc() {
     dbg("arguments loaded...\n")
 
     // schlorp assembly
-    raw_asm, ok := os.read_entire_file(inpath)
+    raw, ok := os.read_entire_file(inpath)
     if !ok {
         die("err: cannot read file at \"%s\"\n", inpath)
     }
@@ -71,16 +73,31 @@ main :: proc() {
         die("err: \"%s\" is not of type \".aphel\", check file extension\n", inpath)
     }
     dbg("file found...\n")
+    raw_asm := string(raw)
 
-    
-    // TODO everything
+    //tokenize
+    token_chain : [dynamic]aphel_token
+    defer delete(token_chain)
+    tokenize(raw_asm, &token_chain)
+    dbg("%d tokens processed...\n", len(token_chain))
+
+    {
+        for i in token_chain {
+            if i.value == "\n" {
+                dbg("\t-> %s\n", i.kind)
+                continue
+            }
+            dbg("%s \t-> %s\n", i.value, i.kind)
+            
+        }
+    }
 
     
 }
 
 cmd_arg :: struct {
-    key: string,
-    val: string,
+    key : string,
+    val : string,
 }
 
 // init vars
