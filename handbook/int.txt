@@ -34,13 +34,10 @@ code    func    args        description
 44      1                   hold - keep running but stop executing code, useful for debugging
 44      2                   reboot - fully shut down and boot again
 45      0       r1, r2      get uptime and store seconds in r1, milliseconds in r2
-45      1       r1          get unix timestamp and store in r1
-45      2       r1          set unix timestamp to r1
 46      0       r1          mask hardware int r1
 46      1       r1          unmask hardware int r1
 46      2                   unmask all masked ints
+
+DEBUG INTERRUPTS - handled by the emulator because i dont want to work with an emulated drive interface right now
 47      0       r1, r2, r3  read r3 number of sectors from permanent storage, read starting from sector r1 and write starting from mem page r2
 47      1       r1, r2, r3  write r3 number of sectors to permanent storage, read starting from mem page r1 and write starting from sector r2
-48      (perms) r1, r2      allocate page to process r1 with permissions (perms), set r2 to new page number
-49      1       r1          free page r1
-49      2       r1          set active user mode process to r1

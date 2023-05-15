@@ -1,0 +1,9 @@
+.loc 0
+
+start:
+    li ra, 3
+    li rb, 4
+    add rc, ra, rb
+    jmp start
+
+.string "bruh\0"

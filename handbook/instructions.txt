@@ -6,7 +6,7 @@ int     imm8, (imm4, r1-r3) 10          I       trigger interrupt imm8 with args
 syscall                     11  1       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
 sysret                      11  2       B       return from system function (enter user mode) (pop return from stack)
 jmpusr  r1                                      jump and enter user mode - expands to "push r1 | sysret"
-usr                                             enter user mode - expands to "and st, st, 0xA"
+usr                                             enter user mode - expands to "or st, st, 0xA"
 
 lfi     rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
 li      rd, imm16           20  0       F       rd[0-15] = imm16

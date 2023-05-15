@@ -1,18 +1,21 @@
-#Aphelion v0.1 Assembly Reference
+# Aphelion Assembly v0.1 Reference
 
-#Directives
+directives:             # labels are alphanumeric with '_' and '-'. labels cannot start with numeric digits (0-9)
 
-    .string "hello"     #embed a utf-8 encoded string (note: not automatically null-terminated)
-    .hex 0x00           #embed a hexadecimal string of arbitrary size (little-endian)
-    .hexbe 0x00         #embed a hexadecimal string of arbitrary size (big-endian)
-    .u[8,16,32,64]      #embed an unsigned integer of specified length
-    .i[8,16,32,64]      #embed a signed integer of specified length
+    .string "string"    # embed a utf-8 encoded string (note: not null-terminated)
+    .hex data           # embed hexadecimal data of arbitrary length (little-endian)
+    .hexle data         # same as .hex
+    .hexbe data         # embed hexadecimal data of arbitrary length (big-endian)
+    .u(8,16,32,64,128)  # embed an unsigned integer of specified length
+    .i(8,16,32,64,128)  # embed a signed integer of specified length
+    .byte data [count]  # embed (data) [count] amount of times - count can be omitted, assumed 1
 
-    .org 0x0000                 #places the following at a specified location in memory
-    .seg [text, rodata, data]   #
+    .loc int            # places the following at (int) in memory
+    .skip int           # skips (int) bytes
+    .align int          # align the following to next multiple of (int)
 
-    .def
-
-    .mac macro_instruction arg1 arg2 arg3       #define a preprocessor macro
-        # [some instructions]
+    .inc "file"         # insert the contents of (file) - similar to #include in C
+    .def alias data     # define a preprocessor replacement
+    .mac macro_instruction arg1 arg2 arg3       # define a preprocessor macro
+        # (some instructions)
     .endmac
