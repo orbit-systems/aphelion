@@ -1,6 +1,6 @@
 name    args                op  func    format  description
 
-nop                         0f          B       no operation
+nop                                             expands to "and rz, rz, 0"
 
 int     imm8, (imm4, r1-r3) 10          I       trigger interrupt imm8 with args imm4(func), r1, r2, r3 (args only apply to software interrupt requests to the hardware)
 syscall                     11  1       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
