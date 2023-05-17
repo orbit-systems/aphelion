@@ -7,42 +7,69 @@ import "core:unicode/utf8"
 tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
     using aphel_token_kind
     
-    // add all tokens
-    is_new := true
+    // setup
+    is_new      := true
+    is_comment  := false
+    is_string   := false
+    is_escape   := false
+
+    // index tokens
     for char, index in asm_string {
+
+        // handle strings
+        {
+            if char == '\"' && !is_string {
+                is_string = true
+            }
+            if is_string {
+                continue
+            }
+        }
         
+        // handle comments
+        {
+            if char == '#' {            // detect comment start
+                is_comment = true
+            }
+            if is_comment && char != '\n' { // skip if inside comment
+                continue
+            }
+            if is_comment && char == '\n' {  // reset if newline
+                is_new = true
+                is_comment = false
+                append(token_chain, aphel_token{Newline, "\n"})
+                continue
+            }
+        }
+
+        // handle everything else
         if is_separator(char) {     // skip if separator
             is_new = true
             continue
         }
-        x := utf8.runes_to_string([]rune{char})
-        if is_new {                 // if its a new word, create a new token
-            
-            append(token_chain, aphel_token{Unresolved, x})
-            if char != '\n' {       // if its a newline, create a new token and reset
-                is_new = false
-            }
+        if char == '\n' {           // if its a newline, reset
+            is_new = true
+            append(token_chain, aphel_token{Newline, "\n"})
             continue
         }
+
+        x := utf8.runes_to_string([]rune{char})
+
+        if is_new {                 // if its a new word, create a new token
+            append(token_chain, aphel_token{Unresolved, x})
+            is_new = false
+            continue
+        }
+
         // theres probably a better way to do this but i couldn't give less of a fuck right now
         token_chain^[top(token_chain)].value = strings.concatenate({token_chain^[top(token_chain)].value, x})
     }
-
-    // {
-    //     for i in token_chain^ {
-    //         if i.value == "\n" {
-    //             dbg("\n")
-    //             continue
-    //         }
-    //         dbg("%s ", i.value)
-    //     }
-    // }
     
     // determine token kinds
     last_token_kind := Unresolved
     for token, index in token_chain^ {
 
-        if token.value == "\n" {                        // mark newline
+        if token.value == "\x0A" {                        // mark newline
             token_chain^[index].kind = Newline
         }
         else if token.value[0] == '.' {                 // mark directive

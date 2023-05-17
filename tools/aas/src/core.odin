@@ -11,7 +11,7 @@
 // -ignore-ext          ignore file extension
 // -help                display this text
 
-// TODO lexer, parser, preprocessor, binary embedder
+// TODO finish lexer, start parser, preprocessor, binary embedder
 
 package aas
 
@@ -62,7 +62,7 @@ main :: proc() {
             }
         }
     }
-    dbg("arguments loaded...\n")
+    dbg("arguments loaded\n")
 
     // schlorp assembly
     raw, ok := os.read_entire_file(inpath)
@@ -72,24 +72,41 @@ main :: proc() {
     if slashpath.ext(inpath) != ".aphel" && !ignore_ext {
         die("err: \"%s\" is not of type \".aphel\", check file extension\n", inpath)
     }
-    dbg("file found...\n")
+    dbg("file found at \"%s\"\n", inpath)
     raw_asm := string(raw)
 
-    //tokenize
+    // tokenize
     token_chain : [dynamic]aphel_token
     defer delete(token_chain)
     tokenize(raw_asm, &token_chain)
-    dbg("%d tokens processed...\n", len(token_chain))
+    dbg("%d tokens indexed\n", len(token_chain))
 
+    // debug display token chain
     {
+        dbg("-------------------------------------\n")
+        for i in token_chain {
+            dbg(i.value)
+            dbg(" ")
+        }
+        dbg("\n-------------------------------------\n")
+
+        max_len := 0
+        for i in token_chain {      // determine maximum token length for nice printing
+            max_len = max(len(i.value), max_len)
+        }
+
         for i in token_chain {
             if i.value == "\n" {
-                dbg("\t-> %s\n", i.kind)
+                dbg(strings.repeat(" ", max_len))
+                dbg("  %s\n", i.kind)
                 continue
             }
-            dbg("%s \t-> %s\n", i.value, i.kind)
+            dbg("%s", i.value)
+            dbg(strings.repeat(" ", max_len-len(i.value)))
+            dbg("  %s\n", i.kind)
             
         }
+        dbg("-------------------------------------\n")
     }
 
     

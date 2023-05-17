@@ -1,4 +1,4 @@
-HARDWARE-TRIGGERED INTERRUPTS - always sets the processor mode to kernel
+note - always sets the processor mode to kernel
 
 code    description
 
@@ -21,6 +21,9 @@ code    description
 24      millisecond tick            (masked by default)
 25      second tick                 (masked by default)
 26      input detected
+
+
+!!! all of these will either be replaced by mmio interactions or `debug` functions
 
 SOFTWARE-TRIGGERED INTERRUPTS - if kernel mode, these are handled by the hardware. in user mode, the IDT is used.
 
