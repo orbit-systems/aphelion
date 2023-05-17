@@ -1,4 +1,1 @@
 640x480, 8-bit color [rrrgggbb] (maybe more modes in the future??)
-
-frame buffer 0 starts at 0x10000
-frame buffer 1 starts at 0x4b000

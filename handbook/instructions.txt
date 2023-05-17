@@ -1,12 +1,14 @@
 name    args                op  func    format  description
 
-nop                         0f          B       no operation
+nop                                             expands to "and rz, rz, 0"
 
-int     imm8, (imm4, r1-r3) 10          I       trigger interrupt imm8 with args imm4(func), r1, r2, r3 (args only apply to software interrupt requests to the hardware)
+int     imm8                10          I       trigger interrupt imm8
 syscall                     11  1       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
 sysret                      11  2       B       return from system function (enter user mode) (pop return from stack)
 jmpusr  r1                                      jump and enter user mode - expands to "push r1 | sysret"
-usr                                             enter user mode - expands to "and st, st, 0xA"
+usr                                             enter user mode - expands to "or st, st, 0xA"
+inv                         12                  explicitly generate an invalid opcode exception
+emu     imm16, r1, r2       12                  use emulator function [imm16], unmapped funcs treated as `inv` - if running on hardware, treated as `inv`
 
 lfi     rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
 li      rd, imm16           20  0       F       rd[0-15] = imm16
@@ -17,11 +19,11 @@ lti     rd, imm16           20  4       F       rd[32-47] = imm16
 ltis    rd, imm16           20  5       F       rd = imm16 << 32    (se)
 ltui    rd, imm16           20  6       F       rd[48-63] = imm16
 ltuis   rd, imm16           20  7       F       rd = imm16 << 48    (se)
-lw      rd, [r1+imm16]      21          M       rd = mem[r1 + imm16] (word)
-lbs     rd, [r1+imm16]      22          M       rd = mem[r1 + imm16] (byte)   (se)
-lb      rd, [r1+imm16]      23          M       rd[0-7] = mem[r1 + imm16] (byte)
-st      rs, [r1+imm16]      24          M       mem[rd + imm16] = rs (word) (l. end)
-stb     rs, [r1+imm16]      25          M       mem[rd + imm16] = rs (byte)
+lw      rd, r1, imm16       21          M       rd = mem[r1 + imm16] (word)
+lbs     rd, r1, imm16       22          M       rd = mem[r1 + imm16] (byte)   (se)
+lb      rd, r1, imm16       23          M       rd[0-7] = mem[r1 + imm16] (byte)
+st      rs, r1, imm16       24          M       mem[rd + imm16] = rs (word) (l. end)
+stb     rs, r1, imm16       25          M       mem[rd + imm16] = rs (byte)
 swp     r1, r2              26          M       (r1, r2) = (r2, r1)
 
 add     rd, r1, r2          30          R       rd = r1 + r2
@@ -63,7 +65,7 @@ enter                       50  5       F       push fp, fp = sp    (enter stack
 leave                       50  6       F       sp = fp, pop fp     (leave stack frame)
 reloc   r1, (imm16)         50  7       F       sp = r1, fp = r1 - imm16
 
-jal     r1, imm20           60          B       pc = r1 + imm16*4 (se), push (pc+4)
+jal     r1, imm20           60          J       pc = r1 + imm16*4 (se), push (pc+4)
 jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc+4)
 ret                         62  0       F       pc = mem[sp], sp -= 4
 retr    rd                  62  1       F       pc = rd
