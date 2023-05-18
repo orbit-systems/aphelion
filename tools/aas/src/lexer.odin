@@ -79,7 +79,7 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
     last_token_kind := Unresolved
     for token, index in token_chain^ {
 
-        if token.value == "\x0A" {                        // mark newline
+        if token.value == "\n" {                        // mark newline
             token_chain^[index].kind = Newline
         }
         else if token.value[0] == '.' {                 // mark directive
