@@ -16,4 +16,3 @@ INACCESSABLE REGISTERS: (operation variables)
 0       IDT pointer
 1       syscall handler pointer
 2       hardware interrupt masks
-3		instruction buffer

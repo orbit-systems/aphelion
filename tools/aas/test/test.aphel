@@ -1,3 +1,7 @@
+.loc 0
+
+gruh:
+    add rc ra rb
 
 lmao:
     .string: "bruh\\"   "huh"

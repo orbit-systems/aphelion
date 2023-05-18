@@ -1,1 +1,3 @@
-add more software interrupts that request data about the system and configure the system (memory capabilities, drive capabilities, video mode, etc)
+beef up the MMU to support virtual memory
+add more interrupts that request data about the system and configure the system (memory capabilities, drive capabilities, video mode, etc)
+clean up the interrupts
