@@ -1,9 +1,17 @@
-mmu can allocate memory in pages of 4096 bytes
-sectors on drives are also treated as 4096 bytes long
+memory map
 
-mmu segment permissions
+start   end         description
 
-bit     description
-0       read
-1       write
-2       excecute
+0x0     0x3FF       interrupt vector table
+0x400   0x4FF       mmio ports
+
+
+
+memory-mapped io
+
+id  width(bytes)    description
+
+0   2               pit
+1   2               keyboard
+2   4               gpu
+3   248             misc/reserved

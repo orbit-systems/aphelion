@@ -1,31 +1,24 @@
 note - always sets the processor mode to kernel
 
+
 code    description
 
 00      divide by zero
 01      integer overflow
 02      integer underflow
-01      unsigned integer overflow   (masked by default)
-02      unsigned integer underflow  (masked by default)
-03      unmapped opcode
+01      unsigned integer overflow
+02      unsigned integer underflow
+03      invalid opcode
 04      no permission               (when user programs access kernel-only registers / run kernel-only instructions)
 05      stack underflow             (raises if sp > fp)
 06      segfault - access denied
 07      segfault - cannot allocate / out of memory
 08      segfault - cannot free
 
-20      pit channel 0 signal
-21      pit channel 1 signal
-22      pit channel 2 signal
-23      pit channel 3 signal
-24      millisecond tick            (masked by default)
-25      second tick                 (masked by default)
-26      input detected
+1[0-F]  input detected from device [0-F]   
 
 
 !!! all of these will either be replaced by mmio interactions or `debug` functions
-
-SOFTWARE-TRIGGERED INTERRUPTS - if kernel mode, these are handled by the hardware. in user mode, the IDT is used.
 
 code    func    args        description
 
@@ -41,6 +34,5 @@ code    func    args        description
 46      1       r1          unmask hardware int r1
 46      2                   unmask all masked ints
 
-DEBUG INTERRUPTS - handled by the emulator because i dont want to work with an emulated drive interface right now
 47      0       r1, r2, r3  read r3 number of sectors from permanent storage, read starting from sector r1 and write starting from mem page r2
 47      1       r1, r2, r3  write r3 number of sectors to permanent storage, read starting from mem page r1 and write starting from sector r2

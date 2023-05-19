@@ -4,6 +4,9 @@ import "core:fmt"
 import "core:strings"
 import "core:unicode/utf8"
 
+// lexer
+// converts pure text into parse-able tokens and determines basic token types
+
 tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
     using aphel_token_kind
     
@@ -18,8 +21,8 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
 
         char_str := utf8.runes_to_string([]rune{char})
 
-        // handle strings
-        // shits probably so buggy but idgaf anymore
+        // handle strings - shits probably so buggy
+        // code now optimize later
         if char == '\"' && !is_string {
             is_string = true
             append(token_chain, aphel_token{Newline, char_str})
@@ -28,13 +31,15 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
         if is_string {
             if char == '\"' && !is_escape {
                 is_string = false
+                is_escape = false
+                is_new = true
+            } else if char == '\"' && is_escape {
+                is_escape = false
             } else if char == '\\' && !is_escape {
                 is_escape = true
-            } else if char == '\\' && is_escape {
-                is_escape = false
             } else if is_escape {
-                append_token_val(token_chain, char_str)
-            } 
+                is_escape = false
+            }
             append_token_val(token_chain, char_str)
             continue
         }
@@ -89,7 +94,7 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
             token_chain^[index].kind = Label
         }
         else if last_token_kind == Newline ||
-                last_token_kind == Label {              // mark label
+                last_token_kind == Label {              // mark instruction
             token_chain^[index].kind = Instruction
         }
         else if is_register(token.value) {              // mark register
@@ -151,6 +156,5 @@ aphel_token_kind :: enum {
     Instruction,
     Register,
     Literal,
-
     Unresolved,
 }

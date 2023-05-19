@@ -11,7 +11,9 @@
 // -ignore-ext          ignore file extension
 // -help                display this text
 
-// TODO finish lexer, start parser, preprocessor, binary embedder
+// TODO test    : lexer
+// TODO finish  : parser
+// TODO start   : embedder, preprocessor
 
 package aas
 
@@ -64,6 +66,8 @@ main :: proc() {
     }
     dbg("arguments loaded\n")
 
+
+
     // schlorp assembly
     raw, ok := os.read_entire_file(inpath)
     if !ok {
@@ -75,14 +79,16 @@ main :: proc() {
     dbg("file found at \"%s\"\n", inpath)
     raw_asm := string(raw)
 
+
+
     // tokenize
+    dbg("init lexer...\n")
     token_chain : [dynamic]aphel_token
     defer delete(token_chain)
     tokenize(raw_asm, &token_chain)
-    dbg("%d tokens indexed\n", len(token_chain))
 
     // debug display token chain
-    {
+    if len(token_chain) <= 30 { // dont clutter the terminal
         dbg("-------------------------------------\n")
         for i in token_chain {
             dbg(i.value)
@@ -108,7 +114,12 @@ main :: proc() {
         }
         dbg("-------------------------------------\n")
     }
+    dbg("%d tokens indexed\n", len(token_chain))
 
+
+
+    // parse
+    dbg("init parser...\n")
     
 }
 

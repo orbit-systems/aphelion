@@ -1,7 +1,5 @@
 .loc 0
-
-gruh:
+label_1:
     add rc ra rb
-
-lmao:
-    .string: "bruh\\"   "huh"
+label_2:
+    .string "test string\0"

@@ -7,8 +7,8 @@ syscall                     11  1       B       jal to system function handler (
 sysret                      11  2       B       return from system function (enter user mode) (pop return from stack)
 jmpusr  r1                                      jump and enter user mode - expands to "push r1 | sysret"
 usr                                             enter user mode - expands to "or st, st, 0xA"
-inv                         12                  explicitly generate an invalid opcode exception
-emu     imm16, r1, r2       12                  use emulator function [imm16], unmapped funcs treated as `inv` - if running on hardware, treated as `inv`
+emu     imm16, r1, r2       12                  use emulator function [imm16], unmapped funcs generate invalid opcode exception
+inv                         12                  explicitly generate invalid opcode exception - equivalent to "debug 0, r0, r0"
 
 lfi     rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
 li      rd, imm16           20  0       F       rd[0-15] = imm16
