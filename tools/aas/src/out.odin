@@ -43,6 +43,7 @@ dbg2 :: proc(msg: string, arg1, arg2: any) {
 }
 
 dbgokay :: proc(s: ..string) {
+    set_style(ANSI.Reset)
     set_style(ANSI.FG_Green)
     set_style(ANSI.Bold)
     fmt.print("OK")

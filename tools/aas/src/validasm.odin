@@ -129,8 +129,7 @@ directives :: []string{
     "i256",
     "byte",
     "string",
-    "link",
+    "addr",
     "loc",
     "skip",
-    "align",
-}
+    "align"}
