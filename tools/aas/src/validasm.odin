@@ -132,5 +132,5 @@ directives :: []string{
     "link",
     "loc",
     "skip",
-    "align"
+    "align",
 }
