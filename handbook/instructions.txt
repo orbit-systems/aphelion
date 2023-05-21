@@ -3,16 +3,12 @@ name    args                op  func    format  description
 nop                                             expands to "and rz, rz, 0"
 
 int     imm8                10          I       trigger interrupt imm8
-syscall                     11  1       B       jal to system function handler (enter kernel mode from user mode) (push return to stack)
-sysret                      11  2       B       return from system function (enter user mode) (pop return from stack)
-jmpusr  r1                                      jump and enter user mode - expands to "push r1 | sysret"
-usr                                             enter user mode - expands to "or st, st, 0xA"
-emu     imm16, r1, r2       12                  use emulator function [imm16], unmapped funcs generate invalid opcode exception
-inv                         12                  explicitly generate invalid opcode exception - equivalent to "debug 0, r0, r0"
+inv     (imm16, r1, r2)     11          M       explicitly generate invalid opcode exception OR use emulator function [imm16] - SEE INV.TXT
+usr                                             enter user mode - expands to "or st, st, 0xA", throws 'no permission' exception
 
-lfi     rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
-li      rd, imm16           20  0       F       rd[0-15] = imm16
-lis     rd, imm16           20  1       F       rd = imm16          (se)
+li      rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
+lli     rd, imm16           20  0       F       rd[0-15] = imm16
+llis    rd, imm16           20  1       F       rd = imm16          (se)
 lui     rd, imm16           20  2       F       rd[16-31] = imm16
 luis    rd, imm16           20  3       F       rd = imm16 << 16    (se)
 lti     rd, imm16           20  4       F       rd[32-47] = imm16
@@ -69,7 +65,8 @@ jal     r1, imm20           60          J       pc = r1 + imm16*4 (se), push (pc
 jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc+4)
 ret                         62  0       F       pc = mem[sp], sp -= 4
 retr    rd                  62  1       F       pc = rd
-bcc     imm20               63          B       pc += imm20*4 (se) if condition is met
+b(cc)   imm20               63          B       pc += imm20*4 (se) if condition is met - see `branch.txt`
+jmp     imm20                                   unconditional jump - expands to `and rz, rz, rz | bez imm20`
 
 notes
     word -> 64 bit
@@ -79,3 +76,22 @@ notes
 extension ideas for later
     floating point
     BCD
+
+    .hex data           # embed hexadecimal data of arbitrary length (little-endian)
+    .hexle data         # same as .hex
+    .hexbe data         # embed hexadecimal data of arbitrary length (big-endian)
+    .u(8,16,32,64,128)  # embed an unsigned integer of specified length
+    .i(8,16,32,64,128)  # embed a signed integer of specified length
+    .byte data, [count] # embed (data) [count] amount of times - count can be omitted, assumed 1
+    .string "string"    # embed a utf-8 encoded string (note: not null-terminated)
+    .link label         # embed the location of a label (8 bytes)
+
+    .loc int            # places the following at (int) in memory
+    .skip int           # skips (int) bytes
+    .align int          # align the following to next multiple of (int)
+
+    .inc "file"         # insert the contents of (file) - similar to #include in C
+    .def alias, data    # define a preprocessor replacement
+    .mac macro_instruction arg1, arg2, arg3     # define a preprocessor macro
+        # (some instructions)
+    .endmac

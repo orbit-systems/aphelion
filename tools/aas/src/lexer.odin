@@ -7,8 +7,8 @@ import "core:unicode/utf8"
 // lexer
 // converts pure text into parse-able tokens and determines basic token types
 
-tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
-    using aphel_token_kind
+tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
+    using btoken_kind
     
     // setup
     is_new              := true
@@ -25,7 +25,7 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
         // code now optimize later
         if char == '\"' && !is_string {
             is_string = true
-            append(token_chain, aphel_token{Newline, char_str})
+            append(token_chain, btoken{Newline, char_str})
             continue
         }
         if is_string {
@@ -44,7 +44,6 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
             continue
         }
         
-        
         // handle comments
         if char == '#' {            // detect comment start
             is_comment = true
@@ -55,11 +54,10 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
         if is_comment && char == '\n' {  // reset if newline
             is_new = true
             is_comment = false
-            append(token_chain, aphel_token{Newline, "\n"})
+            append(token_chain, btoken{Newline, "\n"})
             continue
         }
         
-
         // handle everything else
         if is_separator(char) {     // disregard if separator
             is_new = true
@@ -67,12 +65,12 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
         }
         if char == '\n' {           // if its a newline, reset
             is_new = true
-            append(token_chain, aphel_token{Newline, "\n"})
+            append(token_chain, btoken{Newline, "\n"})
             continue
         }
 
         if is_new {                 // if its a new word, create a new token
-            append(token_chain, aphel_token{Unresolved, char_str})
+            append(token_chain, btoken{Unresolved, char_str})
             is_new = false
             continue
         }
@@ -82,22 +80,22 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
     
     // determine token kinds
     last_token_kind := Unresolved
-    for token, index in token_chain^ {
+    for btoken, index in token_chain^ {
 
-        if token.value == "\n" {                        // mark newline
+        if btoken.value == "\n" {                        // mark newline
             token_chain^[index].kind = Newline
         }
-        else if token.value[0] == '.' {                 // mark directive
+        else if btoken.value[0] == '.' {                 // mark directive
             token_chain^[index].kind = Directive
         }
-        else if token.value[top(token.value)] == ':' {  // mark label
+        else if btoken.value[top(btoken.value)] == ':' {  // mark label
             token_chain^[index].kind = Label
         }
         else if last_token_kind == Newline ||
                 last_token_kind == Label {              // mark instruction
             token_chain^[index].kind = Instruction
         }
-        else if is_register(token.value) {              // mark register
+        else if is_register(btoken.value) {              // mark register
             token_chain^[index].kind = Register
         }
         else {                                          // mark literal
@@ -110,46 +108,29 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]aphel_token) {
 
 }
 
-append_token_val :: proc(token_chain: ^[dynamic]aphel_token, char_str: string) {
+append_token_val :: proc(token_chain: ^[dynamic]btoken, char_str: string) {
     // theres probably a better way to do this but i couldn't give less of a fuck right now
     token_chain^[top(token_chain)].value = strings.concatenate({token_chain^[top(token_chain)].value, char_str})
 }
 
-is_separator :: proc(c: rune) -> bool {
-    for r in separators {
-        if r == c do return true
-    }
-    return false
-}
 
-is_register :: proc(s: string) -> bool {
-    for r in registers {
-        if r == strings.to_lower(s) do return true
-    }
-    return false
-}
 
 top_str :: proc(s: string) -> int {
     return len(s)-1
 }
 
-top_dyn_aph_token :: proc(a: ^[dynamic]aphel_token) -> int {
+top_dyn_aph_token :: proc(a: ^[dynamic]btoken) -> int {
     return len(a^)-1
 }
 
-top :: proc{top_str, top_dyn_aph_token}
+top :: proc{top_str, top_dyn_aph_token, top_statement}
 
-separators := []rune{' ', '\t', '\r', '\v', '\f', ','}
-
-registers := []string{"rz", "ra", "rb", "rc", "rd", "re", "rf", "rg", "rh", "ri", "rj", "rk",
-                      "pc", "sp", "fp", "st"}
-
-aphel_token :: struct {
-    kind    : aphel_token_kind,
+btoken :: struct {
+    kind    : btoken_kind,
     value   : string,
 }
 
-aphel_token_kind :: enum {
+btoken_kind :: enum {
     Newline,
     Directive,
     Label,

@@ -18,13 +18,17 @@
 package aas
 
 import "core:os"
+import "core:time"
 import "core:strings"
 import "core:fmt"
 import "core:path/slashpath"
 
 main :: proc() {
 
+    timer : time.Stopwatch
+    time.stopwatch_start(&timer)
     // schlorp arguments
+
     {
         if len(os.args) < 2 {
             print_help()
@@ -82,26 +86,29 @@ main :: proc() {
 
 
     // tokenize
-    dbg("init lexer...\n")
-    token_chain : [dynamic]aphel_token
+    dbg("tokenizing...")
+    token_chain : [dynamic]btoken
     defer delete(token_chain)
     tokenize(raw_asm, &token_chain)
+    dbgokay()
+    dbg(" (%d tokens indexed)\n", len(token_chain))
 
     // debug display token chain
-    if len(token_chain) <= 30 { // dont clutter the terminal
-        dbg("-------------------------------------\n")
-        for i in token_chain {
-            dbg(i.value)
-            dbg(" ")
-        }
-        dbg("\n-------------------------------------\n")
+    if len(token_chain) <= 30 {  // dont clutter the terminal
+        // dbg("-------------------------------------\n")
+        // for i in token_chain {
+        //     dbg(i.value)
+        //     dbg(" ")
+        // }
+        // dbg("\n-------------------------------------\n")
 
         max_len := 0
-        for i in token_chain {      // determine maximum token length for nice printing
+        for i in token_chain {       // determine maximum token length for nice printing
             max_len = max(len(i.value), max_len)
         }
 
         for i in token_chain {
+            dbg("\t")
             if i.value == "\n" {
                 dbg(strings.repeat(" ", max_len))
                 dbg("  %s\n", i.kind)
@@ -112,15 +119,69 @@ main :: proc() {
             dbg("  %s\n", i.kind)
             
         }
-        dbg("-------------------------------------\n")
+        // dbg("-------------------------------------\n")
     }
-    dbg("%d tokens indexed\n", len(token_chain))
 
 
 
     // parse
-    dbg("init parser...\n")
-    
+    dbg("parsing...")
+    statement_chain : [dynamic]statement
+    defer delete(statement_chain)
+    construct_statement_chain(&statement_chain, &token_chain)
+    dbgokay()
+    dbg(" (%d statements indexed)\n", len(statement_chain))
+
+    // debug display statement chain
+    if len(statement_chain) <= 30 {     // dont clutter the terminal
+
+        for i in statement_chain {
+
+            if i.kind == statement_kind.Directive {
+                set_style(ANSI.FG_Yellow)
+            }
+            if i.kind == statement_kind.Instruction {
+                set_style(ANSI.FG_Red)
+            }
+            if i.kind != statement_kind.Label {
+                dbg("\t\t")
+            }
+
+            dbg("%s ", i.name)
+            set_style(ANSI.Reset)
+
+            if i.kind == statement_kind.Label {
+                dbg("\n")
+                continue
+            }
+
+            for arg, index in i.args {
+                if arg == (argument{}) {
+                    dbg("_")
+                } else if arg.kind == argument_kind.Integer {
+                    dbg("%d", arg.value_int)
+                } else {
+                    dbg(arg.value_str)
+                }
+
+
+                if index != len(i.args) {
+                    dbg(", ")
+                }
+
+            }
+            dbg("\n")
+            
+        }
+        // dbg("-------------------------------------\n")
+    }
+
+
+
+
+    time.stopwatch_stop(&timer)
+    dbg("assembly took %f seconds\n", time.duration_seconds(time.stopwatch_duration(timer)))
+
 }
 
 cmd_arg :: struct {

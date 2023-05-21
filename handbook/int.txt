@@ -1,4 +1,4 @@
-note - always sets the processor mode to kernel
+note - always sets the processor mode to kernel and pushes return address to stack - MAKE SURE YOU SET UP THE STACK!!
 
 
 code    description
@@ -16,23 +16,3 @@ code    description
 08      segfault - cannot free
 
 1[0-F]  input detected from device [0-F]   
-
-
-!!! all of these will either be replaced by mmio interactions or `debug` functions
-
-code    func    args        description
-
-40      (sel)   r1, (r2)    set pit channel (sel) interval to r1 (set amount of times to activate to r2, if applicable)
-41      (sel)   r1          set pit channel (sel) mode to r1
-42      (sel)               trigger pit channel
-43      (sel)   r1          set operation variable (sel) to r1
-44      0                   shutdown
-44      1                   hold - keep running but stop executing code, useful for debugging
-44      2                   reboot - fully shut down and boot again
-45      0       r1, r2      get uptime and store seconds in r1, milliseconds in r2
-46      0       r1          mask hardware int r1
-46      1       r1          unmask hardware int r1
-46      2                   unmask all masked ints
-
-47      0       r1, r2, r3  read r3 number of sectors from permanent storage, read starting from sector r1 and write starting from mem page r2
-47      1       r1, r2, r3  write r3 number of sectors to permanent storage, read starting from mem page r1 and write starting from sector r2

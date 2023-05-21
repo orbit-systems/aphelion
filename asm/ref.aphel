@@ -4,13 +4,14 @@
 
 directives:             # labels are alphanumeric with '_' and '-'. labels cannot start with numeric digits (0-9)
 
-    .string "string"    # embed a utf-8 encoded string (note: not null-terminated)
-    .hex data           # embed hexadecimal data of arbitrary length (little-endian)
-    .hexle data         # same as .hex
-    .hexbe data         # embed hexadecimal data of arbitrary length (big-endian)
+    .raw data           # embed raw data of arbitrary length (little-endian)
+    .rawle data         # same as .raw
+    .rawbe data         # embed raw data of arbitrary length (big-endian)
     .u(8,16,32,64,128)  # embed an unsigned integer of specified length
     .i(8,16,32,64,128)  # embed a signed integer of specified length
     .byte data, [count] # embed (data) [count] amount of times - count can be omitted, assumed 1
+    .string "string"    # embed a utf-8 encoded string (note: not null-terminated)
+    .link label         # embed the location of a label (8 bytes)
 
     .loc int            # places the following at (int) in memory
     .skip int           # skips (int) bytes

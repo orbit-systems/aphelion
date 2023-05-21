@@ -1,5 +1,10 @@
 .loc 0
+
 label_1:
-    add rc ra rb
+    lli rc, -0x30   # a number
+    add rc, ra, ra  # double the number
+    add rz, rz, rz  # loop unconditionally
+    bez label_1
+
 label_2:
     .string "test string\0"
