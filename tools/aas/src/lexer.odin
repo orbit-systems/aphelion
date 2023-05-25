@@ -22,7 +22,7 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
         char_str := utf8.runes_to_string([]rune{char})
 
         // handle strings - shits probably so buggy
-        // code now optimize later
+        // code now optimize --later-- never
         if char == '\"' && !is_string {
             is_string = true
             append(token_chain, btoken{Newline, char_str})
@@ -119,11 +119,11 @@ top_str :: proc(s: string) -> int {
     return len(s)-1
 }
 
-top_dyn_aph_token :: proc(a: ^[dynamic]btoken) -> int {
+top_dyn :: proc(a: ^[dynamic]$T) -> int {
     return len(a^)-1
 }
 
-top :: proc{top_str, top_dyn_aph_token, top_statement}
+top :: proc{top_str, top_dyn}
 
 btoken :: struct {
     kind    : btoken_kind,

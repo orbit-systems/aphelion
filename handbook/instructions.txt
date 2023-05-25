@@ -4,9 +4,9 @@ nop                                             expands to "and rz, rz, 0"
 
 int     imm8                10          I       trigger interrupt imm8
 inv     (imm16, r1, r2)     11          M       explicitly generate invalid opcode exception OR use emulator function [imm16] - SEE INV.TXT
-usr                                             enter user mode - expands to "or st, st, 0xA", throws 'no permission' exception
+usr                         12          B       enter user mode - throws 'no permission' exception if used in user mode
 
-li      rd, imm64                               rd = imm64, expands into li, lui, lti, ltui as needed
+li      rd, imm64                               rd = imm64, assembler expands to lli, lui, etc. as needed
 lli     rd, imm16           20  0       F       rd[0-15] = imm16
 llis    rd, imm16           20  1       F       rd = imm16          (se)
 lui     rd, imm16           20  2       F       rd[16-31] = imm16
@@ -22,35 +22,46 @@ st      rs, r1, imm16       24          M       mem[rd + imm16] = rs (word) (l. 
 stb     rs, r1, imm16       25          M       mem[rd + imm16] = rs (byte)
 swp     r1, r2              26          M       (r1, r2) = (r2, r1)
 
-add     rd, r1, r2          30          R       rd = r1 + r2
-add     rd, r1, imm16       31          M       rd = r1 + imm16 (se)
-adc     rd, r1, r2          32          R       rd = r1 + r2 + carry
-adc     rd, r1, imm16       33          M       rd = r1 + imm16 (se) + carry
-sub     rd, r1, r2          34          R       rd = r1 - r2
-sub     rd, r1, imm16       35          M       rd = r1 - imm16 (se)
-sbb     rd, r1, r2          36          R       rd = r1 - r2 - borrow
-sbb     rd, r1, imm16       37          M       rd = r1 - imm16 (se) - borrow
-mul     rd, r1, r2          38          R       rd = r1 * r2
-mul     rd, r1, imm16       39          M       rd = r1 * imm16 (se)
-div     rd, r1, r2          3a          R       rd = r1 / r2
-div     rd, r1, imm16       3b          M       rd = r1 / imm16 (se)
-mod     rd, r1, r2          3c          R       rd = r1 % r2
-mod     rd, r1, imm16       3d          M       rd = r1 % imm16 (se)
+add                                             assembler alias for 'addr' and 'addi'
+addr    rd, r1, r2          30          R       rd = r1 + r2
+addi    rd, r1, imm16       31          M       rd = r1 + imm16 (se)
+adc                                             assembler alias for 'adcr' and 'adci'
+adcr    rd, r1, r2          32          R       rd = r1 + r2 + carry
+adci    rd, r1, imm16       33          M       rd = r1 + imm16 (se) + carry
+sub                                             assembler alias for 'subr' and 'subi'
+subr    rd, r1, r2          34          R       rd = r1 - r2
+subi    rd, r1, imm16       35          M       rd = r1 - imm16 (se)
+sbb                                             assembler alias for 'sbbr' and 'sbbi'
+sbbr    rd, r1, r2          36          R       rd = r1 - r2 - borrow
+sbbi    rd, r1, imm16       37          M       rd = r1 - imm16 (se) - borrow
+mul                                             assembler alias for 'mulr' and 'muli'
+mulr    rd, r1, r2          38          R       rd = r1 * r2
+muli    rd, r1, imm16       39          M       rd = r1 * imm16 (se)
+div                                             assembler alias for 'divr' and 'divi'
+divr    rd, r1, r2          3a          R       rd = r1 / r2
+divi    rd, r1, imm16       3b          M       rd = r1 / imm16 (se)
 
-and     rd, r1, r2          40          R       rd = r1 & r2
-and     rd, r1, imm16       41          M       rd = r1 & imm16(ze)
-or      rd, r1, r2          42          R       rd = r1 | r2
-or      rd, r1, imm16       43          M       rd = r1 | imm16(ze)
-nor     rd, r1, r2          44          R       rd = !(r1 | r2)
-nor     rd, r1, imm16       45          M       rd = !(r1 | imm16(ze))
-xor     rd, r1, r2          46          R       rd = r1 ^ r2
-xor     rd, r1, imm16       47          M       rd = r1 ^ imm16(ze)
-shl     rd, r1, r2          48          R       rd = r1 << r2
-shl     rd, r1, imm16       49          M       rd = r1 << imm16
-asr     rd, r1, r2          4a          R       rd = r1 >> r2
-asr     rd, r1, imm16       4b          M       rd = r1 >> imm16
-lsr     rd, r1, r2          4c          R       rd = r1 >> r2
-lsr     rd, r1, imm16       4d          M       rd = r1 >> imm16
+and                                             assembler alias for 'andr' and 'andi'
+andr    rd, r1, r2          40          R       rd = r1 & r2
+andi    rd, r1, imm16       41          M       rd = r1 & imm16(ze)
+or                                              assembler alias for 'orr' and 'ori'
+orr     rd, r1, r2          42          R       rd = r1 | r2
+ori     rd, r1, imm16       43          M       rd = r1 | imm16(ze)
+nor                                             assembler alias for 'norr' and 'nori'
+norr    rd, r1, r2          44          R       rd = !(r1 | r2)
+nori    rd, r1, imm16       45          M       rd = !(r1 | imm16(ze))
+xor                                             assembler alias for 'xorr' and 'xori'
+xorr    rd, r1, r2          46          R       rd = r1 ^ r2
+xori    rd, r1, imm16       47          M       rd = r1 ^ imm16(ze)
+shl                                             assembler alias for 'shlr' and 'shli'
+shlr    rd, r1, r2          48          R       rd = r1 << r2
+shli    rd, r1, imm16       49          M       rd = r1 << imm16
+asr                                             assembler alias for 'asrr' and 'asri'
+asrr    rd, r1, r2          4a          R       rd = r1 >> r2
+asri    rd, r1, imm16       4b          M       rd = r1 >> imm16
+lsr                                             assembler alias for 'asrr' and 'asri'
+lsrr    rd, r1, r2          4c          R       rd = r1 >> r2
+lsri    rd, r1, imm16       4d          M       rd = r1 >> imm16
 
 push    r1                  50  0       F       sp -= 8, mem[sp] = r1   (l. end)
 pushi   imm16               50  1       F       sp -= 8, mem[sp] = imm16(se)  (l. end)
@@ -59,7 +70,7 @@ pushc   imm16               50  3       F       sp -= 2, mem[sp] = imm16    (l. 
 pop     rd                  50  4       F       rd = mem[sp], sp += 8
 enter                       50  5       F       push fp, fp = sp    (enter stack frame)
 leave                       50  6       F       sp = fp, pop fp     (leave stack frame)
-reloc   r1, (imm16)         50  7       F       sp = r1, fp = r1 - imm16
+reloc   r1, imm16           50  7       F       sp = r1, fp = r1 - imm16
 
 jal     r1, imm20           60          J       pc = r1 + imm16*4 (se), push (pc+4)
 jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc+4)

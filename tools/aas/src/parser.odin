@@ -7,6 +7,7 @@ import "core:strconv"
 
 // parser
 // converts basic tokens into statement chain, check for errors
+// * ALIAS HANDLING WILL GO IN THE PREPROCESSOR
 
 construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]btoken) {
 
@@ -70,14 +71,8 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                 registers[tok.value],
                 tok.value,
             }
-            //dbg("\n[%v]\n", new)
 
-            for arg, index in stmt_chain^[top(stmt_chain)].args {
-                if arg == (argument{}) {
-                    stmt_chain^[top(stmt_chain)].args[index] = new
-                    break
-                }
-            }
+            append(&(stmt_chain^[top(stmt_chain)].args), new)
 
         case btoken_kind.Literal:
             
@@ -86,17 +81,12 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                 if tok.value[top(tok.value)] != '\"' {
                     die("\nERR [line %d]: string not closed (%s)", line, tok.value)
                 }
+
                 new := argument{
                     kind = argument_kind.String,
-                    value_str = tok.value[1:top(tok.value)],
+                    value_str = unescape(tok.value[1:top(tok.value)]),
                 }
-
-                for arg, index in stmt_chain^[top(stmt_chain)].args {
-                    if arg == (argument{}) {
-                        stmt_chain^[top(stmt_chain)].args[index] = new
-                        break
-                    }
-                }
+                append(&(stmt_chain^[top(stmt_chain)].args), new)
                 continue
             }
 
@@ -108,12 +98,8 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                     kind = argument_kind.Integer,
                     value_int = decoded,
                 }
-                for arg, index in stmt_chain^[top(stmt_chain)].args {
-                    if arg == (argument{}) {
-                        stmt_chain^[top(stmt_chain)].args[index] = new
-                        break
-                    }
-                }
+                append(&(stmt_chain^[top(stmt_chain)].args), new)
+                // add_arg_to_statement(&(stmt_chain^[top(stmt_chain)]), new)
                 continue
             }
 
@@ -122,31 +108,48 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                 kind = argument_kind.Symbol,
                 value_str = tok.value,
             }
-            for arg, index in stmt_chain^[top(stmt_chain)].args {
-                if arg == (argument{}) {
-                    stmt_chain^[top(stmt_chain)].args[index] = new
-                    break
-                }
-            }
+            append(&(stmt_chain^[top(stmt_chain)].args), new)
 
         case btoken_kind.Unresolved:
             die("\nERR [line %d]: unresolved token \"%s\"", line, tok.value)
         }
     }
 
-}
 
-check_statement_chain :: proc() {
 
 }
 
+unescape :: proc(x: string) -> string {
+    return ""
+}
+
+reconstruct_line :: proc(x: statement) -> (res: string) {
+    res = strings.concatenate({res, x.name})
+    if x.kind == statement_kind.Label {
+        return
+    }
+    for arg, index in x.args {
+        if arg == (argument{}) {
+            res = strings.concatenate({res, "_"})
+        } else if arg.kind == argument_kind.Integer {
+            res = strings.concatenate({res, fmt.aprintf("%d", arg.value_int)})
+        } else {
+            res = strings.concatenate({res, arg.value_str})
+        }
+
+        if index != len(x.args)-1 {
+            res = strings.concatenate({res, ", "})
+        }
+    }
+    return
+}
 
 statement :: struct {
     kind        : statement_kind,   // what kind of statement it is
     name        : string,           // name without formatting - eg "byte" or "string" if directive
     opcode      : int,              // opcode, if applicable
     func        : int,              // func, if applicable
-    args        : [3]argument,      // arguments
+    args        : [dynamic]argument,// arguments
     line        : int,              // line number for error display
 }
 
@@ -165,91 +168,9 @@ statement_kind :: enum {
 
 argument_kind :: enum {
     Unresolved = 0,
+    Ignore,      // useful for doing argument checking - might merge this with Unresolved
     Register,
     Integer,    // any single literal data point that isn't a string, eg raw hex, 
     Symbol,
     String,
-}
-
-top_statement :: proc(a: ^[dynamic]statement) -> int {
-    return len(a^)-1
-}
-
-hex_decode :: proc(str: string) -> (result: int, ok := true) {
-    for char in str {
-        result = result << 4
-        result += hex_digits[char]
-        if !(char in hex_digits) {
-            ok = false
-            return
-        }
-    }
-    return
-}
-
-oct_decode :: proc(str: string) -> (result: int, ok := true) {
-    for char in str {
-        result = result << 3
-        result += oct_digits[char]
-        if !(char in oct_digits) {
-            ok = false
-            return
-        }
-    }
-    return
-}
-
-bin_decode :: proc(str: string) -> (result: int, ok := true) {
-    for char in str {
-        result = result << 1
-        result += bin_digits[char]
-        if !(char in bin_digits) {
-            ok = false
-            return
-        }
-    }
-    return
-}
-
-hex_digits := map[rune]int {
-    '0' = 0,
-    '1' = 1,
-    '2' = 2,
-    '3' = 3,
-    '4' = 4,
-    '5' = 5,
-    '6' = 6,
-    '7' = 7,
-    '8' = 8,
-    '9' = 9,
-
-    'a' = 10,
-    'b' = 11,
-    'c' = 12,
-    'd' = 13,
-    'e' = 14,
-    'f' = 15,
-
-    'A' = 10,
-    'B' = 11,
-    'C' = 12,
-    'D' = 13,
-    'E' = 14,
-    'F' = 15,
-}
-
-oct_digits := map[rune]int {
-    '0' = 0,
-    '1' = 1,
-    '2' = 2,
-    '3' = 3,
-    '4' = 4,
-    '5' = 5,
-    '6' = 6,
-    '7' = 7,
-}
-
-bin_digits := map[rune]int {
-    '0' = 0,
-    '1' = 1,
 }

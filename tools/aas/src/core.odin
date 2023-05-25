@@ -94,7 +94,8 @@ main :: proc() {
     dbg(" (%d tokens indexed)\n", len(token_chain))
 
     // debug display token chain
-    if len(token_chain) <= 30 {  // dont clutter the terminal
+    display_more := len(token_chain) <= 30 && print_dbg // && false
+    if display_more {       // dont clutter the terminal
         // dbg("-------------------------------------\n")
         // for i in token_chain {
         //     dbg(i.value)
@@ -133,7 +134,7 @@ main :: proc() {
     dbg(" (%d statements indexed)\n", len(statement_chain))
 
     // debug display statement chain
-    if len(statement_chain) <= 30 {     // dont clutter the terminal
+    if display_more {       // dont clutter the terminal
 
         for i in statement_chain {
 
@@ -164,8 +165,7 @@ main :: proc() {
                     dbg(arg.value_str)
                 }
 
-
-                if index != len(i.args) {
+                if index != len(i.args)-1 {
                     dbg(", ")
                 }
 

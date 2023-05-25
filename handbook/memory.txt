@@ -3,7 +3,8 @@ memory map
 start   end         description
 
 0x0     0x7FF       interrupt vector table
-0x800   0x8FF       mmio ports
+0x800   0x9FF       mmio ports
+0xA00   ---         RAM
 
 
 
@@ -14,4 +15,4 @@ id  width(bytes)    description
 0   8               pit
 1   8               keyboard
 2   8               gpu
-    232             reserved
+    488             reserved

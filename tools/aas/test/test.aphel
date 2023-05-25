@@ -1,10 +1,11 @@
-.loc 0
+.loc 0xA00          # beginning of RAM
 
 label_1:
-    lli rc, -0x30   # a number
-    add rc, ra, ra  # double the number
-    add rz, rz, rz  # loop unconditionally
-    bez label_1
+    lli  rc, -0x30   # a number
+    addr rc, ra, ra  # double the number
+    addr rz, rz, rz  # loop unconditionally
+    bez  label_1
 
+.loc 0xA30
 label_2:
     .string "test string\0"
