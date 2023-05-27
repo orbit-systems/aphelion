@@ -64,7 +64,7 @@ main :: proc() {
                     inpath = argument.key
                     continue
                 }
-                die("err: invalid argument \"%s\"\n", argument.key)
+                die("ERR: invalid argument \"%s\"\n", argument.key)
             }
         }
     }
@@ -75,10 +75,10 @@ main :: proc() {
     // schlorp assembly
     raw, ok := os.read_entire_file(inpath)
     if !ok {
-        die("err: cannot read file at \"%s\"\n", inpath)
+        die("ERR: cannot read file at \"%s\"\n", inpath)
     }
     if slashpath.ext(inpath) != ".aphel" && !ignore_ext {
-        die("err: \"%s\" is not of type \".aphel\", check file extension\n", inpath)
+        die("ERR: \"%s\" is not of type \".aphel\", check file extension\n", inpath)
     }
     dbg("file found at \"%s\"\n", inpath)
     raw_asm := string(raw)

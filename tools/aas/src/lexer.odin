@@ -78,7 +78,7 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
         append_token_val(token_chain, char_str)
     }
     
-    // determine token kinds
+    // determine token kinds - later revise to use regex for a more flexible system?
     last_token_kind := Unresolved
     for btoken, index in token_chain^ {
 

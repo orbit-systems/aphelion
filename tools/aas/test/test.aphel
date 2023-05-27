@@ -1,5 +1,6 @@
 .loc 0xA00          # beginning of RAM
 
+.align 4
 label_1:
     lli  rc, -0x30   # a number
     addr rc, ra, ra  # double the number

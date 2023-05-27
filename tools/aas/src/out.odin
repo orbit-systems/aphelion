@@ -6,7 +6,7 @@ import "core:fmt"
 @(private="file")
 die_exit_code :: 0
 
-die :: proc{die0, die1, die2}
+die :: proc{die0, die1, die2, die3, die4}
 dbg :: proc{dbg0, dbg1, dbg2}
 
 die0 :: proc(msg: string) {
@@ -27,6 +27,20 @@ die2 :: proc(msg: string, arg1: any, arg2: any) {
     set_style(ANSI.FG_Red)
     set_style(ANSI.Bold)
     fmt.printf(msg, arg1, arg2)
+    set_style(ANSI.Reset)
+    os.exit(die_exit_code)
+}
+die3 :: proc(msg: string, arg1, arg2, arg3: any) {
+    set_style(ANSI.FG_Red)
+    set_style(ANSI.Bold)
+    fmt.printf(msg, arg1, arg2, arg3)
+    set_style(ANSI.Reset)
+    os.exit(die_exit_code)
+}
+die4 :: proc(msg: string, arg1, arg2, arg3, arg4: any) {
+    set_style(ANSI.FG_Red)
+    set_style(ANSI.Bold)
+    fmt.printf(msg, arg1, arg2, arg3, arg4)
     set_style(ANSI.Reset)
     os.exit(die_exit_code)
 }
