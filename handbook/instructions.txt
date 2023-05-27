@@ -72,12 +72,12 @@ enter                       50  5       F       push fp, fp = sp    (enter stack
 leave                       50  6       F       sp = fp, pop fp     (leave stack frame)
 reloc   r1, imm16           50  7       F       sp = r1, fp = r1 - imm16
 
-jal     r1, imm16/label     60          J       pc = r1 + imm16*4 (se), push (pc+4)
-jalr    r1, imm16/label, rd 61          M       pc = r1 + imm16*4 (se), rd = (pc+4)
+jal     r1, imm16           60          J       pc = r1 + imm16*4 (se), push (pc+4)
+jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc+4)
 ret                         62  0       F       pc = mem[sp], sp -= 4
 retr    rd                  62  1       F       pc = rd
-b(cc)   imm20/label         63          B       pc += imm20*4 (se) if condition is met - see `branch.txt`
-jmp     imm20/label                             unconditional jump - expands to `and rz, rz, rz | bez imm20`
+b(cc)   label               63          B       pc += imm20*4 (se) if condition is met - see `branch.txt`
+jmp     label                                   unconditional jump - expands to `and rz, rz, rz | bez imm20`
 
 notes
     word -> 64 bit

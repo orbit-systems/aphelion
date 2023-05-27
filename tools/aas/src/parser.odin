@@ -172,8 +172,6 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
     }
 
 
-
-
     // trace statement chain, fill in LOC and SIZE values - optimize / clean up later
     img_pointer := 0
     for st, index in stmt_chain^ {
@@ -241,6 +239,35 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
         }
 
         img_pointer += st.size
+    }
+
+    
+    // build symbol table -- 2mil test file breaks here!! i'll have to write a program to generate a valid one
+    symbol_table := make(map[string]int)
+    defer delete(symbol_table)
+    for st in stmt_chain^ {
+        if st.kind != statement_kind.Label {
+            continue
+        }
+        if st.name in symbol_table {
+            die("ERR [line %d]: duplicate label \"%s\"", st.line, st.name)
+        }
+        symbol_table[st.name] = st.loc
+    }
+
+    // symbol replacement
+    for st in stmt_chain^ {
+
+        // val directive
+        if st.kind == statement_kind.Directive && strings.to_lower(st.name) == "val" {
+            
+        }
+
+        // if branch instruction
+        if st.kind == statement_kind.Instruction && native_instruction_opcodes[st.name][0] == 0x63 {
+            
+        }
+        
     }
 
 }

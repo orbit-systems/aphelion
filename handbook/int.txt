@@ -15,4 +15,4 @@ code    description
 07      segfault - cannot allocate / out of memory
 08      segfault - cannot free
 
-1[0-F]  input detected from device [0-F]   
+1[0-F]  input detected from device [0-F]
