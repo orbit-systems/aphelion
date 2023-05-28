@@ -9,6 +9,7 @@ import "core:strconv"
 // parser
 // converts basic tokens into statement chain, check for errors
 // * ALIAS HANDLING WILL GO IN THE PREPROCESSOR
+// TODO jal with label support
 
 construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]btoken) {
 
@@ -55,9 +56,10 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             }
 
             new := statement{
-                kind = statement_kind.Instruction,
-                name = tok.value,
-                line = line,
+                kind    = statement_kind.Instruction,
+                opcode  = native_instruction_opcodes[strings.to_lower(tok.value)][0],
+                name    = tok.value,
+                line    = line,
             }
 
             append(stmt_chain, new)
@@ -174,6 +176,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
 
     // trace statement chain, fill in LOC and SIZE values - optimize / clean up later
     img_pointer := 0
+    img_size := 0
     for st, index in stmt_chain^ {
         switch st.kind {
         case statement_kind.Unresolved:
@@ -220,6 +223,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                     die("ERR [line %d]: cannot find file at \"%s\"", st.line, st.args[0].value_str)
                 }
                 stmt_chain^[index].size = len(binfile)
+                delete(binfile)
 
             // sectioning
             case "loc":
@@ -238,11 +242,11 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             }
         }
 
-        img_pointer += st.size
+        img_pointer += stmt_chain^[index].size
+        img_size = max(img_size, img_pointer)
     }
-
     
-    // build symbol table -- 2mil test file breaks here!! i'll have to write a program to generate a valid one
+    // build symbol table -- old 2mil test file breaks here!! i'll have to write a program to generate a valid one
     symbol_table := make(map[string]int)
     defer delete(symbol_table)
     for st in stmt_chain^ {
@@ -260,12 +264,25 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
 
         // val directive
         if st.kind == statement_kind.Directive && strings.to_lower(st.name) == "val" {
-            
+            addr, ok := symbol_table[st.args[0].value_str]
+            if !ok {
+                die("ERR [line %d]: symbol not declared \"%s\"", st.line, st.args[0].value_str)
+            }
+            st.args[0].value_int = addr
+            continue
         }
 
         // if branch instruction
-        if st.kind == statement_kind.Instruction && native_instruction_opcodes[st.name][0] == 0x63 {
-            
+        if st.kind == statement_kind.Instruction && st.opcode == 0x63 {
+            addr, ok := symbol_table[st.args[0].value_str]
+            if !ok {
+                die("ERR [line %d]: symbol not declared \"%s\"", st.line, st.args[0].value_str)
+            }
+            diff := addr - st.loc
+            if (diff % 4 != 0) {
+                die("ERR [line %d]: label \"%s\" is unaligned, cannot branch from \"%s\"", st.line, st.args[0].value_str, st.name)
+            }
+            st.args[0].value_int = diff
         }
         
     }
