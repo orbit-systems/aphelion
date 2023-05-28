@@ -14,6 +14,7 @@
 // TODO test    : lexer
 // TODO finish  : parser
 // TODO start   : embedder, preprocessor
+// * ideas - cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
 
 package aas
 

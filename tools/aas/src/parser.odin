@@ -58,6 +58,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             new := statement{
                 kind    = statement_kind.Instruction,
                 opcode  = native_instruction_opcodes[strings.to_lower(tok.value)][0],
+                func    = native_instruction_opcodes[strings.to_lower(tok.value)][1],
                 name    = tok.value,
                 line    = line,
             }
@@ -164,7 +165,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
 
         case statement_kind.Label:
             if len(st.args) != 0 {
-                die("ERR [line %d]: what? something has gone very wrong, contact me immediately", st.line)
+                die("ERR [line %d]: something has gone very wrong, contact me immediately", st.line)
             }
         case statement_kind.Unresolved:
             die("ERR [line %d]: unresolved statement (how did this even happen) \"%s\"", st.line, st.name)
@@ -212,7 +213,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                 stmt_chain^[index].size = st.args[1].value_int
             case "string":
                 stmt_chain^[index].loc = img_pointer
-                stmt_chain^[index].size = len(st.args[0].value_str)
+                stmt_chain^[index].size = len(st.args[0].value_str) //byte length of string should be the correct size because it has been unescaped
             case "val":
                 stmt_chain^[index].loc = img_pointer
                 stmt_chain^[index].size = 8     // 64 bits
@@ -278,15 +279,14 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             if !ok {
                 die("ERR [line %d]: symbol not declared \"%s\"", st.line, st.args[0].value_str)
             }
+            // the branch instruction can only jump in increments of 4 bytes, so the label and the instruction must be aligned
             diff := addr - st.loc
             if (diff % 4 != 0) {
-                die("ERR [line %d]: label \"%s\" is unaligned, cannot branch from \"%s\"", st.line, st.args[0].value_str, st.name)
+                die("ERR [line %d]: label \"%s\" is unaligned with branch, cannot resolve \"%s\"", st.line, st.args[0].value_str, st.name)
             }
-            st.args[0].value_int = diff
+            st.args[0].value_int = diff / 4
         }
-        
     }
-
 }
 
 unescape :: proc(x: string) -> (res: string, err := "") {
