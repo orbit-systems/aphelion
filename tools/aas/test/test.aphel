@@ -2,13 +2,16 @@
 
 .align 4
 label_1:
-    lli  ra, -0x30  # a number
-    addr rc, ra, ra # double the number
-    muli rc, ra, 2  # also double it like this
-    shli rC, ra, 1  # double it like this too
-    addr rz, rz, rz # loop unconditionally
+    lli  ra, -0x30      # a number
+    addr rc, ra, ra     # double the number
+    muli rc, ra, 2      # you could also double it like this
+    shli rc, ra, 1      # you could double it like this too
+    addr rz, rz, rz     # loop unconditionally
     beq  label_1
 
 .loc 0xA30
+
+.def doub 2
+
 label_2:
     .string "test string\0"

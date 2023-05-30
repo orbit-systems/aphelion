@@ -7,13 +7,13 @@
  
 // -debug               print debug info
 // -out:[path]          set output path
-// -preprocess          only invoke preprocessor - expand macros, etc.
+//// -preprocess          only invoke preprocessor - expand macros, etc.
 // -ignore-ext          ignore file extension
 // -help                display this text
 
-// TODO test    : lexer
-// TODO finish  : parser
-// TODO start   : embedder, preprocessor
+// todo test    : lexer
+// todo finish  : parser
+// todo start   : embedder, preprocessor
 // * ideas - cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
 
 package aas
@@ -95,7 +95,7 @@ main :: proc() {
     dbg(" (%d tokens indexed)\n", len(token_chain))
 
     // debug display token chain
-    display_more := len(token_chain) <= 30 && print_dbg // && false
+    display_more := len(token_chain) <= 30 && print_dbg && false
     if display_more {       // dont clutter the terminal
         // dbg("-------------------------------------\n")
         // for i in token_chain {
@@ -125,14 +125,35 @@ main :: proc() {
     }
 
 
+    // preprocess
+    // dbg("preprocessing...")
+    // preproc(&token_chain)
+    // dbgokay()
+    // dbg("\n")
+    // dbg(" (%d tokens removed)\n", tokens_removed)
 
-    // parse
-    dbg("parsing...")
+
+    dbg("building statement chain...")
     statement_chain : [dynamic]statement
     defer delete(statement_chain)
-    construct_statement_chain(&statement_chain, &token_chain)
+    construct_stmt_chain(&statement_chain, &token_chain)
     dbgokay()
     dbg(" (%d statements indexed)\n", len(statement_chain))
+    
+    dbg("checking arguments...")
+    check_stmt_args(&statement_chain)
+    dbgokay()
+    dbg(" (%d statements checked)\n", len(statement_chain))
+
+    dbg("resolving labels...")
+    label_count, ref_count := resolve_labels(&statement_chain)
+    dbgokay()
+    dbg(" (%d labels found, %d references resolved)\n", label_count, ref_count)
+
+    dbg("tracing image...")
+    trace(&statement_chain)
+    dbgokay()
+    dbg(" (%d statements traced)\n", len(statement_chain))
 
     // debug display statement chain
     if display_more {       // dont clutter the terminal
@@ -176,8 +197,6 @@ main :: proc() {
         }
         // dbg("-------------------------------------\n")
     }
-
-
 
 
     time.stopwatch_stop(&timer)

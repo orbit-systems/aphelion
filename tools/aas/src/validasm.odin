@@ -64,9 +64,10 @@ registers := map[string]int{
     "st" = 15,
 }
 
-ak :: argument_kind
+instruction_aliases := map[string][]string{}
 
-// these are the only instructions that should reach the lexer and parser. these have definite arguments.
+// these are the only instructions that should reach the parser. these have definite arguments.
+ak :: argument_kind
 native_instruction_args := map[string][]argument_kind{
     "nop"   = []ak{},
     "int"   = []ak{ak.Integer},

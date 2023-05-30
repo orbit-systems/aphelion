@@ -9,15 +9,11 @@ import "core:strconv"
 // parser
 // converts basic tokens into statement chain, check for errors
 // * ALIAS HANDLING WILL GO IN THE PREPROCESSOR
-// TODO jal with label support
+// todo jal with label, char literal support
 
-construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]btoken) {
-
-
-
+construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]btoken) {
     // construct chain
     line := 1
-    current_addr := 0
     for tok in tokens^ {
         switch tok.kind {
         case btoken_kind.Newline:
@@ -26,9 +22,9 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
 
             new_value := tok.value[1:]  //get rid of '.'
             // simple name check
-            if !is_native_directive(new_value) {
-                die("ERR [line %d]: invalid directive \"%s\"", line, tok.value)
-            }
+            // if !is_native_directive(new_value) {
+            //     die("ERR [line %d]: invalid directive \"%s\"", line, tok.value)
+            // }
 
             new := statement{
                 kind = statement_kind.Directive,
@@ -126,9 +122,9 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             die("ERR [line %d]: unresolved token \"%s\"", line, tok.value)
         }
     }
+}
 
-
-
+check_stmt_args :: proc(stmt_chain: ^[dynamic]statement) {
     // these are not the arguments your are looking for (check arguments)
     for st in stmt_chain^ {
 
@@ -175,8 +171,10 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
         }
 
     }
+}
 
-
+trace :: proc(stmt_chain: ^[dynamic]statement) {
+    
     // trace statement chain, fill in LOC and SIZE values - optimize / clean up later
     img_pointer := 0
     img_size := 0
@@ -248,8 +246,11 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
         img_pointer += stmt_chain^[index].size
         img_size = max(img_size, img_pointer)
     }
+}
+
+resolve_labels :: proc(stmt_chain: ^[dynamic]statement) -> (labels, refs: int) {
     
-    // build symbol table -- old 2mil test file breaks here!! i'll have to write a program to generate a valid one
+    // build symbol table
     symbol_table := make(map[string]int)
     defer delete(symbol_table)
     for st in stmt_chain^ {
@@ -259,6 +260,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
         if st.name in symbol_table {
             die("ERR [line %d]: duplicate label \"%s\"", st.line, st.name)
         }
+        labels += 1
         symbol_table[st.name] = st.loc
     }
 
@@ -271,6 +273,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             if !ok {
                 die("ERR [line %d]: symbol not declared \"%s\"", st.line, st.args[0].value_str)
             }
+            refs += 1
             st.args[0].value_int = addr
             continue
         }
@@ -281,14 +284,20 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
             if !ok {
                 die("ERR [line %d]: symbol not declared \"%s\"", st.line, st.args[0].value_str)
             }
-            // the branch instruction can only jump in increments of 4 bytes, so the label and the instruction must be aligned
             diff := addr - st.loc
-            if (diff % 4 != 0) {
-                die("ERR [line %d]: label \"%s\" is unaligned with branch, cannot resolve \"%s\"", st.line, st.args[0].value_str, st.name)
+            // check if in 20-bit range: label is too far if not
+            if (diff / 4) < -524_288 || (diff / 4) > 524_287 {
+                die("ERR [line %d]: label \"%s\" is too far (%d bytes offset), cannot branch", st.line, st.args[0].value_str, diff)
             }
+            // the branch instruction can only jump in increments of 4 bytes, so the label and the instruction must be aligned
+            if (diff % 4 != 0) {
+                die("ERR [line %d]: label \"%s\" and current instruction are not 4-byte aligned, cannot branch", st.line, st.args[0].value_str)
+            }
+            refs += 1
             st.args[0].value_int = diff / 4
         }
     }
+    return
 }
 
 unescape :: proc(x: string) -> (res: string, err := "") {
@@ -312,37 +321,6 @@ unescape :: proc(x: string) -> (res: string, err := "") {
             prev_slash = false
         }
     }
-    return
-}
-
-// only really useful for error messages and debug - might delete if nothing relies on it
-reconstruct_line :: proc(x: statement) -> (res: string) {
-    if x.kind == statement_kind.Label {
-        res = strings.concatenate({x.name, ":"})
-        return
-    }
-    if x.kind == statement_kind.Directive {
-        res = strings.concatenate({".", x.name})
-
-    }
-    if x.kind == statement_kind.Instruction {
-        res = x.name
-    }
-    res = strings.concatenate({res," "})
-    for arg, index in x.args {
-        if arg == (argument{}) {
-            res = strings.concatenate({res, "_"})
-        } else if arg.kind == argument_kind.Integer {
-            res = strings.concatenate({res, fmt.aprintf("%d", arg.value_int)})
-        } else {
-            res = strings.concatenate({res, arg.value_str})
-        }
-
-        if index != len(x.args)-1 {
-            res = strings.concatenate({res, ", "})
-        }
-    }
-    
     return
 }
 
@@ -375,7 +353,7 @@ argument_kind :: enum {
     Unresolved = 0,
     Ignore,      // was useful for doing argument checking - might delete now that it's not really that useful
     Register,
-    Integer,    // any single literal data point that isn't a string, eg raw hex, 
+    Integer,    // any single literal data point that isn't a string, eg raw hex, etc
     Symbol,
     String,
 }

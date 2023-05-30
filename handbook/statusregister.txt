@@ -13,6 +13,7 @@ bit	    description
 8       greater (unsigned)              ‡
 9       less (unsigned)                 ‡
 10      mode [0 kernel / 1 user]
+11      [always 1]
 
 * set according to result of arithmetic instruction
 † set according to result of logical instruction (asr included)

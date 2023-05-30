@@ -6,6 +6,7 @@ import "core:unicode/utf8"
 
 // lexer
 // converts pure text into parse-able tokens and determines basic token types
+// todo include separator/comment token group for better text/debug output
 
 tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
     using btoken_kind
@@ -22,7 +23,7 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
         char_str := utf8.runes_to_string([]rune{char})
 
         // handle strings - shits probably so buggy
-        // code now optimize --later-- never
+        // code now optimize never
         if char == '\"' && !is_string {
             is_string = true
             append(token_chain, btoken{Newline, char_str})

@@ -77,7 +77,7 @@ jalr    r1, imm16, rd       61          M       pc = r1 + imm16*4 (se), rd = (pc
 ret                         62  0       F       pc = mem[sp], sp -= 4
 retr    rd                  62  1       F       pc = rd
 b(cc)   label               63          B       pc += imm20*4 (se) if condition is met - see `branch.txt`
-jmp     label                                   unconditional jump - expands to `and rz, rz, rz | bez label`
+jmp     label                                   unconditional branch - expands to `and rz, rz, rz | bez label`  might replace with branch type, because this resets flags
 
 notes
     word -> 64 bit
