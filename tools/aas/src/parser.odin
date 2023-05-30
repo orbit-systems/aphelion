@@ -59,7 +59,7 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                 kind    = statement_kind.Instruction,
                 opcode  = native_instruction_opcodes[strings.to_lower(tok.value)][0],
                 func    = native_instruction_opcodes[strings.to_lower(tok.value)][1],
-                name    = tok.value,
+                name    = strings.to_lower(tok.value), // normalize
                 line    = line,
             }
 
@@ -72,10 +72,12 @@ construct_statement_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dyn
                 die("ERR [line %d]: invalid register \"%s\"", line, tok.value) 
             }
 
+            norm := strings.to_lower(tok.value) // normalize
+
             new := argument{
                 argument_kind.Register,
-                registers[tok.value],
-                tok.value,
+                registers[norm],
+                norm, // normalize
             }
 
             append(&(stmt_chain^[top(stmt_chain)].args), new)

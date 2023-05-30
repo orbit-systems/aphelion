@@ -129,6 +129,7 @@ native_instruction_args := map[string][]argument_kind{
     "jalr"  = []ak{ak.Register, ak.Integer, ak.Register},
     "ret"   = []ak{},
     "retr"  = []ak{ak.Register},
+    "bra"   = []ak{ak.Symbol},
     "beq"   = []ak{ak.Symbol},
     "bez"   = []ak{ak.Symbol},
     "blt"   = []ak{ak.Symbol},

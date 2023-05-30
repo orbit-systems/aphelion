@@ -1,5 +1,6 @@
 instruction     func		description
 
+bra             0 0000      true
 beq             1 0001 		equal
 bez             2 0010 		zero
 blt             3 0011 		less than
