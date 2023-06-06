@@ -28,8 +28,9 @@ import "core:path/slashpath"
 
 main :: proc() {
 
-    timer : time.Stopwatch
-    time.stopwatch_start(&timer)
+    overall_timer : time.Stopwatch
+    individual_timer : time.Stopwatch
+    time.stopwatch_start(&overall_timer)
     // schlorp arguments
 
     {
@@ -94,133 +95,157 @@ main :: proc() {
     dbg("tokenizing...        ")
     token_chain : [dynamic]btoken   // might switch to linked list later
     //defer delete(token_chain)
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
     tokenize(raw_asm, &token_chain)
+    time.stopwatch_stop(&individual_timer)
     dbgokay()
     set_style(ANSI.Dim)
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     dbg(" (%d tokens indexed)\n", len(token_chain))
     set_style(ANSI.Reset)
 
     // debug display token chain
-    display_more := false
-    if display_more {
-        // dbg("-------------------------------------\n")
-        // for i in token_chain {
-        //     dbg(i.value)
-        //     dbg(" ")
-        // }
-        // dbg("\n-------------------------------------\n")
+    // display_more := false
+    // if display_more {
+    //     // dbg("-------------------------------------\n")
+    //     // for i in token_chain {
+    //     //     dbg(i.value)
+    //     //     dbg(" ")
+    //     // }
+    //     // dbg("\n-------------------------------------\n")
 
-        max_len := 0
-        for i in token_chain {       // determine maximum token length for nice printing
-            max_len = max(len(i.value), max_len)
-        }
+    //     max_len := 0
+    //     for i in token_chain {       // determine maximum token length for nice printing
+    //         max_len = max(len(i.value), max_len)
+    //     }
 
-        for i in token_chain {
-            dbg("\t")
-            if i.value == "\n" {
-                dbg(strings.repeat(" ", max_len))
-                dbg("  %s\n", i.kind)
-                continue
-            }
-            dbg("%s", i.value)
-            dbg(strings.repeat(" ", max_len-len(i.value)))
-            dbg("  %s\n", i.kind)
+    //     for i in token_chain {
+    //         dbg("\t")
+    //         if i.value == "\n" {
+    //             dbg(strings.repeat(" ", max_len))
+    //             dbg("  %s\n", i.kind)
+    //             continue
+    //         }
+    //         dbg("%s", i.value)
+    //         dbg(strings.repeat(" ", max_len-len(i.value)))
+    //         dbg("  %s\n", i.kind)
             
-        }
-        // dbg("-------------------------------------\n")
-    }
+    //     }
+    //     // dbg("-------------------------------------\n")
+    // }
 
     dbg("building chain...    ")
     statement_chain : [dynamic]statement
     defer delete(statement_chain)
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
     construct_stmt_chain(&statement_chain, &token_chain)
+    time.stopwatch_stop(&individual_timer)
     dbgokay()
     set_style(ANSI.Dim)
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     dbg(" (%d statements indexed)\n", len(statement_chain))
     set_style(ANSI.Reset)
 
     delete(token_chain) // not needed anymore
     
     dbg("checking...          ")
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
     check_stmt_chain(&statement_chain)
+    time.stopwatch_stop(&individual_timer)
     dbgokay()
     set_style(ANSI.Dim)
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     dbg(" (%d statements checked)\n", len(statement_chain))
     set_style(ANSI.Reset)
 
     dbg("tracing image...     ")
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
     predicted_len := trace(&statement_chain)
+    time.stopwatch_stop(&individual_timer)
     dbgokay()
     set_style(ANSI.Dim)
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     dbg(" (%d statements traced)\n", len(statement_chain))
     set_style(ANSI.Reset)
 
     dbg("resolving labels...  ")
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
     label_count, ref_count := resolve_labels(&statement_chain)
+    time.stopwatch_stop(&individual_timer)
     dbgokay()
     set_style(ANSI.Dim)
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     dbg(" (%d labels found, %d references resolved)\n", label_count, ref_count)
     set_style(ANSI.Reset)
 
     dbg("writing image...     ")
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
     imgbin := make_bin(&statement_chain, predicted_len)
+    time.stopwatch_stop(&individual_timer)
     defer delete(imgbin)
     writeok := os.write_entire_file(outpath, imgbin)
     if !writeok {
-        die("ERR: Cannot write file at \"%s\"", outpath)
+        die("ERR: Cannot write file \"%s\"", outpath)
     }
     dbgokay()
     set_style(ANSI.Dim)
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     dbg(" (%d bytes written)\n", predicted_len)
     set_style(ANSI.Reset)
 
     // debug display statement chain
-    if display_more {       // dont clutter the terminal
+    // if display_more {       // dont clutter the terminal
 
-        for i in statement_chain {
+    //     for i in statement_chain {
 
-            if i.kind == statement_kind.Directive {
-                set_style(ANSI.FG_Yellow)
-            }
-            if i.kind == statement_kind.Instruction {
-                set_style(ANSI.FG_Red)
-            }
-            if i.kind != statement_kind.Label {
-                dbg("\t\t")
-            }
+    //         if i.kind == statement_kind.Directive {
+    //             set_style(ANSI.FG_Yellow)
+    //         }
+    //         if i.kind == statement_kind.Instruction {
+    //             set_style(ANSI.FG_Red)
+    //         }
+    //         if i.kind != statement_kind.Label {
+    //             dbg("\t\t")
+    //         }
 
-            dbg("%s ", i.name)
-            set_style(ANSI.Reset)
+    //         dbg("%s ", i.name)
+    //         set_style(ANSI.Reset)
 
-            if i.kind == statement_kind.Label {
-                dbg("\n")
-                continue
-            }
+    //         if i.kind == statement_kind.Label {
+    //             dbg("\n")
+    //             continue
+    //         }
 
-            for arg, index in i.args {
-                if arg == (argument{}) {
-                    dbg("_")
-                } else if arg.kind == argument_kind.Integer {
-                    dbg("%d", arg.value_int)
-                } else {
-                    dbg(arg.value_str)
-                }
+    //         for arg, index in i.args {
+    //             if arg == (argument{}) {
+    //                 dbg("_")
+    //             } else if arg.kind == argument_kind.Integer {
+    //                 dbg("%d", arg.value_int)
+    //             } else {
+    //                 dbg(arg.value_str)
+    //             }
 
-                if index != len(i.args)-1 {
-                    dbg(", ")
-                }
+    //             if index != len(i.args)-1 {
+    //                 dbg(", ")
+    //             }
 
-            }
-            dbg("\n")
+    //         }
+    //         dbg("\n")
             
-        }
-        // dbg("-------------------------------------\n")
-    }
+    //     }
+    //     // dbg("-------------------------------------\n")
+    // }
 
     
 
-    time.stopwatch_stop(&timer)
-    dbg("assembly took %f seconds\n", time.duration_seconds(time.stopwatch_duration(timer)))
+    time.stopwatch_stop(&overall_timer)
+    dbg("assembly took %f seconds\n", time.duration_seconds(time.stopwatch_duration(overall_timer)))
 
 }
 
