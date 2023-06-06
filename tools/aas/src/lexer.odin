@@ -6,7 +6,7 @@ import "core:unicode/utf8"
 
 // lexer
 // converts pure text into parse-able tokens and determines basic token types
-// todo include separator/comment token group for better text/debug output
+// todo convert to regex or lua patterns for determining token types
 
 tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
     using btoken_kind
@@ -83,23 +83,23 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
     last_token_kind := Unresolved
     for btoken, index in token_chain^ {
 
-        if btoken.value == "\n" {                        // mark newline
+        if btoken.value == "\n" {                           // mark newline
             token_chain^[index].kind = Newline
         }
-        else if btoken.value[0] == '.' {                 // mark directive
+        else if btoken.value[0] == '.' {                    // mark directive
             token_chain^[index].kind = Directive
         }
-        else if btoken.value[top(btoken.value)] == ':' {  // mark label
+        else if btoken.value[top(btoken.value)] == ':' {    // mark label
             token_chain^[index].kind = Label
         }
         else if last_token_kind == Newline ||
-                last_token_kind == Label {              // mark instruction
+                last_token_kind == Label || index == 0 {    // mark instruction
             token_chain^[index].kind = Instruction
         }
-        else if is_register(btoken.value) {              // mark register
+        else if is_register(btoken.value) {                 // mark register
             token_chain^[index].kind = Register
         }
-        else {                                          // mark literal
+        else {                                              // mark literal
             token_chain^[index].kind = Literal
         }
 

@@ -3,7 +3,6 @@ package aas
 import "core:os"
 import "core:fmt"
 
-@(private="file")
 die_exit_code :: 0
 
 die :: proc{die0, die1, die2, die3, die4}
@@ -47,37 +46,39 @@ die4 :: proc(msg: string, arg1, arg2, arg3, arg4: any) {
 
 
 dbg0 :: proc(msg: string) {
-    if print_dbg do fmt.printf(msg)
+    if flag_print_dbg do fmt.printf(msg)
 }
 dbg1 :: proc(msg: string, args: any) {
-    if print_dbg do fmt.printf(msg, args)
+    if flag_print_dbg do fmt.printf(msg, args)
 }
 dbg2 :: proc(msg: string, arg1, arg2: any) {
-    if print_dbg do fmt.printf(msg, arg1, arg2)
+    if flag_print_dbg do fmt.printf(msg, arg1, arg2)
 }
 
 dbgokay :: proc(s: ..string) {
-    if !print_dbg do return
+    if !flag_print_dbg do return
+    for str in s {
+        fmt.print(str)
+    }
     set_style(ANSI.Reset)
     set_style(ANSI.FG_Green)
     set_style(ANSI.Bold)
     fmt.print("OK")
     set_style(ANSI.Reset)
-    for str in s {
-        fmt.print(str)
-    }
 }
 
 print_help :: proc() {
     fmt.print("\nusage: aas (path) [flags]\n")
     fmt.print("\n-debug               print debug info")
     fmt.print("\n-out:[path]          set output path")
+    fmt.print("\n-no-color            disable output coloring")
     fmt.print("\n-preprocess          only invoke preprocessor - expand macros, etc.")
     fmt.print("\n-ignore-ext          ignore file extension")
     fmt.print("\n-help                display this text\n\n")
 }
 
 set_style :: proc(code: ANSI) {
+    if flag_no_color do return
     fmt.printf("\x1b[%dm", code)
 }
 
@@ -107,7 +108,4 @@ ANSI :: enum {
     BG_Cyan     = 46,
     BG_White    = 47,
     BG_Default  = 49,
-
-
-
 }

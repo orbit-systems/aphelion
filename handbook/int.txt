@@ -1,4 +1,4 @@
-note - always sets the processor mode to kernel and pushes return address to stack - MAKE SURE YOU SET UP THE STACK!!
+note - always sets the processor mode to kernel and pushes return address to the current stack - MAKE SURE YOU SET UP THE STACK!!
 
 
 code    description

@@ -3,6 +3,8 @@ package aas
 import "core:strings"
 
 // this file contains everything that defines valid Aphelion assembly.
+// todo put everything about the instructions in a single map, with an info struct or smth
+// * if i make this comprehensive enough, maybe i can use this to assemble different instruction sets
 
 is_separator :: proc(c: rune) -> bool {
     for r in separators {
@@ -63,8 +65,6 @@ registers := map[string]int{
     "fp" = 14, 
     "st" = 15,
 }
-
-instruction_aliases := map[string][]string{}
 
 // these are the only instructions that should reach the parser. these have definite arguments.
 ak :: argument_kind
@@ -147,85 +147,6 @@ native_instruction_args := map[string][]argument_kind{
     "bpd"   = []ak{ak.Symbol},
 }
 
-native_instruction_opcodes := map[string][]int{
-                //  op, func
-    "nop"   = []int{0x0A, 0}
-    "int"   = []int{0x10, 0}
-    "inv"   = []int{0x11, 0}
-    "usr"   = []int{0x12, 0}
-
-    "lli"   = []int{0x20, 0}
-    "llis"  = []int{0x20, 1}
-    "lui"   = []int{0x20, 2}
-    "luis"  = []int{0x20, 3}
-    "lti"   = []int{0x20, 4}
-    "ltis"  = []int{0x20, 5}
-    "ltui"  = []int{0x20, 6}
-    "ltuis" = []int{0x20, 7}
-    "lw"    = []int{0x21, 0}
-    "lbs"   = []int{0x22, 0}
-    "lb"    = []int{0x23, 0}
-    "st"    = []int{0x24, 0}
-    "stb"   = []int{0x25, 0}
-    "swp"   = []int{0x26, 0}
-
-    "addr"  = []int{0x30, 0}
-    "addi"  = []int{0x31, 0}
-    "adcr"  = []int{0x32, 0}
-    "adci"  = []int{0x33, 0}
-    "subr"  = []int{0x34, 0}
-    "subi"  = []int{0x35, 0}
-    "sbbr"  = []int{0x36, 0}
-    "sbbi"  = []int{0x37, 0}
-    "mulr"  = []int{0x38, 0}
-    "muli"  = []int{0x39, 0}
-    "divr"  = []int{0x3a, 0}
-    "divi"  = []int{0x3b, 0}
-
-    "andr"  = []int{0x40, 0}
-    "andi"  = []int{0x41, 0}
-    "orr"   = []int{0x42, 0}
-    "ori"   = []int{0x43, 0}
-    "norr"  = []int{0x44, 0}
-    "nori"  = []int{0x45, 0}
-    "xorr"  = []int{0x46, 0}
-    "xori"  = []int{0x47, 0}
-    "shlr"  = []int{0x48, 0}
-    "shli"  = []int{0x49, 0}
-    "asrr"  = []int{0x4a, 0}
-    "asri"  = []int{0x4b, 0}
-    "lsrr"  = []int{0x4c, 0}
-    "lsri"  = []int{0x4d, 0}
-
-    "push"  = []int{0x50, 0}
-    "pushi" = []int{0x50, 1}
-    "pushz" = []int{0x50, 2}
-    "pushc" = []int{0x50, 3}
-    "pop"   = []int{0x50, 4}
-    "enter" = []int{0x50, 5}
-    "leave" = []int{0x50, 6}
-    "reloc" = []int{0x50, 7}
-
-    "jal"   = []int{0x60, 0}
-    "jalr"  = []int{0x61, 0}
-    "ret"   = []int{0x62, 0}
-    "retr"  = []int{0x62, 0}
-    "beq"   = []int{0x63, 0x1}
-    "bez"   = []int{0x63, 0x2}
-    "blt"   = []int{0x63, 0x3}
-    "ble"   = []int{0x63, 0x4}
-    "bltu"  = []int{0x63, 0x5}
-    "bleu"  = []int{0x63, 0x6}
-    "bpe"   = []int{0x63, 0x7}
-    "bne"   = []int{0x63, 0x9}
-    "bnz"   = []int{0x63, 0xa}
-    "bge"   = []int{0x63, 0xb}
-    "bgt"   = []int{0x63, 0xc}
-    "bgeu"  = []int{0x63, 0xd}
-    "bgtu"  = []int{0x63, 0xe}
-    "bpd"   = []int{0x63, 0xf}
-}
-
 native_directive_args := map[string][]argument_kind{
     "u8"     = []ak{ak.Integer},
     "u16"    = []ak{ak.Integer},
@@ -258,6 +179,251 @@ native_directive_args := map[string][]argument_kind{
     "skip"   = []ak{ak.Integer},
     "align"  = []ak{ak.Integer},
 }
+
+native_instruction_opcodes := map[string][]int{
+                //  op, func
+    "nop"   = []int{0x0A, 0},
+    "int"   = []int{0x10, 0},
+    "inv"   = []int{0x11, 0},
+    "usr"   = []int{0x12, 0},
+
+    "lli"   = []int{0x20, 0},
+    "llis"  = []int{0x20, 1},
+    "lui"   = []int{0x20, 2},
+    "luis"  = []int{0x20, 3},
+    "lti"   = []int{0x20, 4},
+    "ltis"  = []int{0x20, 5},
+    "ltui"  = []int{0x20, 6},
+    "ltuis" = []int{0x20, 7},
+    "lw"    = []int{0x21, 0},
+    "lbs"   = []int{0x22, 0},
+    "lb"    = []int{0x23, 0},
+    "st"    = []int{0x24, 0},
+    "stb"   = []int{0x25, 0},
+    "swp"   = []int{0x26, 0},
+
+    "addr"  = []int{0x30, 0},
+    "addi"  = []int{0x31, 0},
+    "adcr"  = []int{0x32, 0},
+    "adci"  = []int{0x33, 0},
+    "subr"  = []int{0x34, 0},
+    "subi"  = []int{0x35, 0},
+    "sbbr"  = []int{0x36, 0},
+    "sbbi"  = []int{0x37, 0},
+    "mulr"  = []int{0x38, 0},
+    "muli"  = []int{0x39, 0},
+    "divr"  = []int{0x3a, 0},
+    "divi"  = []int{0x3b, 0},
+
+    "andr"  = []int{0x40, 0},
+    "andi"  = []int{0x41, 0},
+    "orr"   = []int{0x42, 0},
+    "ori"   = []int{0x43, 0},
+    "norr"  = []int{0x44, 0},
+    "nori"  = []int{0x45, 0},
+    "xorr"  = []int{0x46, 0},
+    "xori"  = []int{0x47, 0},
+    "shlr"  = []int{0x48, 0},
+    "shli"  = []int{0x49, 0},
+    "asrr"  = []int{0x4a, 0},
+    "asri"  = []int{0x4b, 0},
+    "lsrr"  = []int{0x4c, 0},
+    "lsri"  = []int{0x4d, 0},
+
+    "push"  = []int{0x50, 0},
+    "pushi" = []int{0x50, 1},
+    "pushz" = []int{0x50, 2},
+    "pushc" = []int{0x50, 3},
+    "pop"   = []int{0x50, 4},
+    "enter" = []int{0x50, 5},
+    "leave" = []int{0x50, 6},
+    "reloc" = []int{0x50, 7},
+
+    "jal"   = []int{0x60, 0},
+    "jalr"  = []int{0x61, 0},
+    "ret"   = []int{0x62, 0},
+    "retr"  = []int{0x62, 0},
+
+    "bra"   = []int{0x63, 0x0},
+    "beq"   = []int{0x63, 0x1},
+    "bez"   = []int{0x63, 0x2},
+    "blt"   = []int{0x63, 0x3},
+    "ble"   = []int{0x63, 0x4},
+    "bltu"  = []int{0x63, 0x5},
+    "bleu"  = []int{0x63, 0x6},
+    "bpe"   = []int{0x63, 0x7},
+    "bne"   = []int{0x63, 0x9},
+    "bnz"   = []int{0x63, 0xa},
+    "bge"   = []int{0x63, 0xb},
+    "bgt"   = []int{0x63, 0xc},
+    "bgeu"  = []int{0x63, 0xd},
+    "bgtu"  = []int{0x63, 0xe},
+    "bpd"   = []int{0x63, 0xf},
+}
+
+// maps the instruction arguments to embedded fields
+iff :: instruction_fmt_fields
+native_instruction_args_to_fields := map[string][]iff{
+    "nop"   = []iff{},
+    "int"   = []iff{iff.IMM},
+    "inv"   = []iff{iff.IMM, iff.R1, iff.R2},
+    "usr"   = []iff{},
+
+    "lli"   = []iff{iff.R1, iff.IMM},
+    "llis"  = []iff{iff.R1, iff.IMM},
+    "lui"   = []iff{iff.R1, iff.IMM},
+    "luis"  = []iff{iff.R1, iff.IMM},
+    "lti"   = []iff{iff.R1, iff.IMM},
+    "ltis"  = []iff{iff.R1, iff.IMM},
+    "ltui"  = []iff{iff.R1, iff.IMM},
+    "ltuis" = []iff{iff.R1, iff.IMM},
+    "lw"    = []iff{iff.R1, iff.R2, iff.IMM},
+    "lbs"   = []iff{iff.R1, iff.R2, iff.IMM},
+    "lb"    = []iff{iff.R1, iff.R2, iff.IMM},
+    "st"    = []iff{iff.R1, iff.R2, iff.IMM},
+    "stb"   = []iff{iff.R1, iff.R2, iff.IMM},
+    "swp"   = []iff{iff.R2, iff.R3},
+
+    "addr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "addi"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "adcr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "adci"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "subr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "subi"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "sbbr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "sbbi"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "mulr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "muli"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "divr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "divi"  = []iff{iff.R1, iff.R2, iff.IMM},
+
+    "andr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "andi"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "orr"   = []iff{iff.R1, iff.R2, iff.R3},
+    "ori"   = []iff{iff.R1, iff.R2, iff.IMM},
+    "norr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "nori"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "xorr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "xori"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "shlr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "shli"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "asrr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "asri"  = []iff{iff.R1, iff.R2, iff.IMM},
+    "lsrr"  = []iff{iff.R1, iff.R2, iff.R3},
+    "lsri"  = []iff{iff.R1, iff.R2, iff.IMM},
+
+    "push"  = []iff{iff.R2},
+    "pushi" = []iff{iff.IMM},
+    "pushz" = []iff{iff.IMM},
+    "pushc" = []iff{iff.IMM},
+    "pop"   = []iff{iff.R1},
+    "enter" = []iff{},
+    "leave" = []iff{},
+    "reloc" = []iff{iff.R2, iff.IMM},
+
+    "jal"   = []iff{iff.R2, iff.IMM},
+    "jalr"  = []iff{iff.R2, iff.IMM, iff.R1},
+    "ret"   = []iff{},
+    "retr"  = []iff{iff.R1},
+
+    "bra"   = []iff{iff.R2},
+    "beq"   = []iff{iff.R2},
+    "bez"   = []iff{iff.R2},
+    "blt"   = []iff{iff.R2},
+    "ble"   = []iff{iff.R2},
+    "bltu"  = []iff{iff.R2},
+    "bleu"  = []iff{iff.R2},
+    "bpe"   = []iff{iff.R2},
+    "bne"   = []iff{iff.R2},
+    "bnz"   = []iff{iff.R2},
+    "bge"   = []iff{iff.R2},
+    "bgt"   = []iff{iff.R2},
+    "bgeu"  = []iff{iff.R2},
+    "bgtu"  = []iff{iff.R2},
+    "bpd"   = []iff{iff.R2},
+}
+
+native_instruction_formats := map[string]instruction_fmt{
+    "nop"   = instruction_fmt.B,
+    "int"   = instruction_fmt.B,
+    "inv"   = instruction_fmt.M,
+    "usr"   = instruction_fmt.B,
+
+    "lli"   = instruction_fmt.F,
+    "llis"  = instruction_fmt.F,
+    "lui"   = instruction_fmt.F,
+    "luis"  = instruction_fmt.F,
+    "lti"   = instruction_fmt.F,
+    "ltis"  = instruction_fmt.F,
+    "ltui"  = instruction_fmt.F,
+    "ltuis" = instruction_fmt.F,
+    "lw"    = instruction_fmt.M,
+    "lbs"   = instruction_fmt.M,
+    "lb"    = instruction_fmt.M,
+    "st"    = instruction_fmt.M,
+    "stb"   = instruction_fmt.M,
+    "swp"   = instruction_fmt.M,
+
+    "addr"  = instruction_fmt.R,
+    "addi"  = instruction_fmt.M,
+    "adcr"  = instruction_fmt.R,
+    "adci"  = instruction_fmt.M,
+    "subr"  = instruction_fmt.R,
+    "subi"  = instruction_fmt.M,
+    "sbbr"  = instruction_fmt.R,
+    "sbbi"  = instruction_fmt.M,
+    "mulr"  = instruction_fmt.R,
+    "muli"  = instruction_fmt.M,
+    "divr"  = instruction_fmt.R,
+    "divi"  = instruction_fmt.M,
+
+    "andr"  = instruction_fmt.R,
+    "andi"  = instruction_fmt.M,
+    "orr"   = instruction_fmt.R,
+    "ori"   = instruction_fmt.M,
+    "norr"  = instruction_fmt.R,
+    "nori"  = instruction_fmt.M,
+    "xorr"  = instruction_fmt.R,
+    "xori"  = instruction_fmt.M,
+    "shlr"  = instruction_fmt.R,
+    "shli"  = instruction_fmt.M,
+    "asrr"  = instruction_fmt.R,
+    "asri"  = instruction_fmt.M,
+    "lsrr"  = instruction_fmt.R,
+    "lsri"  = instruction_fmt.M,
+
+    "push"  = instruction_fmt.F,
+    "pushi" = instruction_fmt.F,
+    "pushz" = instruction_fmt.F,
+    "pushc" = instruction_fmt.F,
+    "pop"   = instruction_fmt.F,
+    "enter" = instruction_fmt.F,
+    "leave" = instruction_fmt.F,
+    "reloc" = instruction_fmt.F,
+
+    "jal"   = instruction_fmt.J,
+    "jalr"  = instruction_fmt.M,
+    "ret"   = instruction_fmt.F,
+    "retr"  = instruction_fmt.F,
+
+    "bra"   = instruction_fmt.B,
+    "beq"   = instruction_fmt.B,
+    "bez"   = instruction_fmt.B,
+    "blt"   = instruction_fmt.B,
+    "ble"   = instruction_fmt.B,
+    "bltu"  = instruction_fmt.B,
+    "bleu"  = instruction_fmt.B,
+    "bpe"   = instruction_fmt.B,
+    "bne"   = instruction_fmt.B,
+    "bnz"   = instruction_fmt.B,
+    "bge"   = instruction_fmt.B,
+    "bgt"   = instruction_fmt.B,
+    "bgeu"  = instruction_fmt.B,
+    "bgtu"  = instruction_fmt.B,
+    "bpd"   = instruction_fmt.B,
+}
+
+
 
 // hex_digits := map[rune]int {
 //     '0' = 0,

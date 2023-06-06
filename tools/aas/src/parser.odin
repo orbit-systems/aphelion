@@ -21,11 +21,7 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
         case btoken_kind.Directive:
 
             new_value := tok.value[1:]  //get rid of '.'
-            // simple name check
-            // if !is_native_directive(new_value) {
-            //     die("ERR [line %d]: invalid directive \"%s\"", line, tok.value)
-            // }
-
+            
             new := statement{
                 kind = statement_kind.Directive,
                 name = new_value,
@@ -46,11 +42,6 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
 
         case btoken_kind.Instruction:
 
-            // simple name check
-            if !is_native_instruction(tok.value) {
-                die("ERR [line %d]: invalid instruction \"%s\"", line, tok.value)
-            }
-
             new := statement{
                 kind    = statement_kind.Instruction,
                 opcode  = native_instruction_opcodes[strings.to_lower(tok.value)][0],
@@ -63,17 +54,11 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
 
         case btoken_kind.Register:
 
-            // simple name check
-            if !is_register(tok.value) {    // shouldn't trigger since invalid registers are cast to literals by the lexer but whatever
-                die("ERR [line %d]: invalid register \"%s\"", line, tok.value) 
-            }
-
-            norm := strings.to_lower(tok.value) // normalize
 
             new := argument{
                 argument_kind.Register,
-                registers[norm],
-                norm, // normalize
+                registers[strings.to_lower(tok.value)],
+                strings.to_lower(tok.value), // normalize
             }
 
             append(&(stmt_chain^[top(stmt_chain)].args), new)
@@ -82,7 +67,7 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
             
             // recognize string literal
             if tok.value[0] == '\"' {
-                if tok.value[top(tok.value)] != '\"' {
+                if len(tok.value) == 1 || tok.value[top(tok.value)] != '\"' {
                     die("ERR [line %d]: string not closed (%s)", line, tok.value)
                 }
                 unsc, ok := unescape(tok.value[1:top(tok.value)])
@@ -124,9 +109,10 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
     }
 }
 
-check_stmt_args :: proc(stmt_chain: ^[dynamic]statement) {
-    // these are not the arguments your are looking for (check arguments)
+check_stmt_chain :: proc(stmt_chain: ^[dynamic]statement) {
+    // these are not the arguments you are looking for (check arguments)
     for st in stmt_chain^ {
+
 
         args : [dynamic]argument_kind
         defer delete(args)
@@ -137,6 +123,12 @@ check_stmt_args :: proc(stmt_chain: ^[dynamic]statement) {
 
         switch st.kind {
         case statement_kind.Directive:
+
+            // simple name check
+            if !is_native_directive(st.name) {
+                die("ERR [line %d]: invalid directive \"%s\"", st.line, st.name)
+            }
+
             ref_args := native_directive_args[st.name]
 
             if len(ref_args) != len(args) {
@@ -150,6 +142,11 @@ check_stmt_args :: proc(stmt_chain: ^[dynamic]statement) {
             
         case statement_kind.Instruction:
         
+            // simple name check
+            if !is_native_instruction(st.name) {
+                die("ERR [line %d]: invalid instruction \"%s\"", st.line, st.name)
+            }
+
             ref_args := native_instruction_args[st.name]
 
             if len(ref_args) != len(args) {
@@ -173,7 +170,7 @@ check_stmt_args :: proc(stmt_chain: ^[dynamic]statement) {
     }
 }
 
-trace :: proc(stmt_chain: ^[dynamic]statement) {
+trace :: proc(stmt_chain: ^[dynamic]statement) -> int {
     
     // trace statement chain, fill in LOC and SIZE values - optimize / clean up later
     img_pointer := 0
@@ -246,6 +243,7 @@ trace :: proc(stmt_chain: ^[dynamic]statement) {
         img_pointer += stmt_chain^[index].size
         img_size = max(img_size, img_pointer)
     }
+    return img_size
 }
 
 resolve_labels :: proc(stmt_chain: ^[dynamic]statement) -> (labels, refs: int) {
@@ -326,11 +324,16 @@ unescape :: proc(x: string) -> (res: string, err := "") {
 
 statement :: struct {
     kind        : statement_kind,   // what kind of statement it is
-    name        : string,           // name without formatting - eg "byte" or "string" if directive
-    opcode      : int,              // opcode, if applicable
-    func        : int,              // func, if applicable
+    name        : string,           // name without formatting
     args        : [dynamic]argument,// arguments
     line        : int,              // line number for error display
+
+    opcode      : int,              // opcode
+    func        : int,              // func
+    r1          : int,              // r1 for instruction encoding
+    r2          : int,              // r2 for instruction encoding
+    r3          : int,              // r3 for instruction encoding
+    imm         : int,              // imm for instruction encoding
 
     loc         : int,              // location in image
     size        : int,              // size of statement in bytes

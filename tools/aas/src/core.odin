@@ -7,14 +7,16 @@
  
 // -debug               print debug info
 // -out:[path]          set output path
+// -no-color            disable output coloring
 //// -preprocess          only invoke preprocessor - expand macros, etc.
 // -ignore-ext          ignore file extension
 // -help                display this text
 
-// todo test    : lexer
-// todo finish  : parser
-// todo start   : embedder, preprocessor
-// * ideas - cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
+// todo test    : lexer, parser
+// todo finish  : embedder
+// todo start   : preprocessor
+// * ideas
+// * cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
 
 package aas
 
@@ -54,12 +56,14 @@ main :: proc() {
                 print_help()
                 os.exit(0)
             case "-debug":
-                print_dbg = true
+                flag_print_dbg = true
             case "-ignore-ext":
-                ignore_ext = true
+                flag_ignore_ext = true
+            case "-no-color":
+                flag_no_color = true
             case "-out":
                 outpath = argument.val
-                outpath_loaded = true
+                flag_outpath_loaded = true
             case: // default
                 if index == 0 && argument.key[0] != '-' {
                     inpath = argument.key
@@ -69,34 +73,36 @@ main :: proc() {
             }
         }
     }
-    dbg("arguments loaded\n")
+    //dbg("arguments loaded\n")
 
 
 
     // schlorp assembly
-    raw, ok := os.read_entire_file(inpath)
-    if !ok {
+    raw, readok := os.read_entire_file(inpath)
+    if !readok {
         die("ERR: cannot read file at \"%s\"\n", inpath)
     }
-    if slashpath.ext(inpath) != ".aphel" && !ignore_ext {
+    if slashpath.ext(inpath) != ".aphel" && !flag_ignore_ext {
         die("ERR: \"%s\" is not of type \".aphel\", check file extension\n", inpath)
     }
-    dbg("file found at \"%s\"\n", inpath)
+    //dbg("file found at \"%s\"\n", inpath)
     raw_asm := string(raw)
 
 
 
     // tokenize
-    dbg("tokenizing...")
-    token_chain : [dynamic]btoken
-    defer delete(token_chain)
+    dbg("tokenizing...        ")
+    token_chain : [dynamic]btoken   // might switch to linked list later
+    //defer delete(token_chain)
     tokenize(raw_asm, &token_chain)
     dbgokay()
+    set_style(ANSI.Dim)
     dbg(" (%d tokens indexed)\n", len(token_chain))
+    set_style(ANSI.Reset)
 
     // debug display token chain
-    display_more := len(token_chain) <= 30 && print_dbg && false
-    if display_more {       // dont clutter the terminal
+    display_more := false
+    if display_more {
         // dbg("-------------------------------------\n")
         // for i in token_chain {
         //     dbg(i.value)
@@ -124,36 +130,49 @@ main :: proc() {
         // dbg("-------------------------------------\n")
     }
 
-
-    // preprocess
-    // dbg("preprocessing...")
-    // preproc(&token_chain)
-    // dbgokay()
-    // dbg("\n")
-    // dbg(" (%d tokens removed)\n", tokens_removed)
-
-
-    dbg("building statement chain...")
+    dbg("building chain...    ")
     statement_chain : [dynamic]statement
     defer delete(statement_chain)
     construct_stmt_chain(&statement_chain, &token_chain)
     dbgokay()
+    set_style(ANSI.Dim)
     dbg(" (%d statements indexed)\n", len(statement_chain))
-    
-    dbg("checking arguments...")
-    check_stmt_args(&statement_chain)
-    dbgokay()
-    dbg(" (%d statements checked)\n", len(statement_chain))
+    set_style(ANSI.Reset)
 
-    dbg("resolving labels...")
+    delete(token_chain) // not needed anymore
+    
+    dbg("checking...          ")
+    check_stmt_chain(&statement_chain)
+    dbgokay()
+    set_style(ANSI.Dim)
+    dbg(" (%d statements checked)\n", len(statement_chain))
+    set_style(ANSI.Reset)
+
+    dbg("tracing image...     ")
+    predicted_len := trace(&statement_chain)
+    dbgokay()
+    set_style(ANSI.Dim)
+    dbg(" (%d statements traced)\n", len(statement_chain))
+    set_style(ANSI.Reset)
+
+    dbg("resolving labels...  ")
     label_count, ref_count := resolve_labels(&statement_chain)
     dbgokay()
+    set_style(ANSI.Dim)
     dbg(" (%d labels found, %d references resolved)\n", label_count, ref_count)
+    set_style(ANSI.Reset)
 
-    dbg("tracing image...")
-    trace(&statement_chain)
+    dbg("writing image...     ")
+    imgbin := make_bin(&statement_chain, predicted_len)
+    defer delete(imgbin)
+    writeok := os.write_entire_file(outpath, imgbin)
+    if !writeok {
+        die("ERR: Cannot write file at \"%s\"", outpath)
+    }
     dbgokay()
-    dbg(" (%d statements traced)\n", len(statement_chain))
+    set_style(ANSI.Dim)
+    dbg(" (%d bytes written)\n", predicted_len)
+    set_style(ANSI.Reset)
 
     // debug display statement chain
     if display_more {       // dont clutter the terminal
@@ -198,6 +217,7 @@ main :: proc() {
         // dbg("-------------------------------------\n")
     }
 
+    
 
     time.stopwatch_stop(&timer)
     dbg("assembly took %f seconds\n", time.duration_seconds(time.stopwatch_duration(timer)))
@@ -212,6 +232,7 @@ cmd_arg :: struct {
 // init vars
 inpath          : string
 outpath         : string
-print_dbg       := false
-ignore_ext      := false
-outpath_loaded  := false
+flag_print_dbg       := false
+flag_ignore_ext      := false
+flag_outpath_loaded  := false
+flag_no_color        := false
