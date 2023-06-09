@@ -3,9 +3,9 @@ package aas
 // embedder
 // takes the statement chain and writes the actual binary file
 
-// get the instructions and fill the encoding values correctly according to each instruction
-// todo integrate this with one of the parser stages
+import "core:os"
 
+// todo integrate this with one of the parser stages
 precode :: proc(stmt_chain: ^[dynamic]statement) {
     for stmt, stmt_index in stmt_chain^ {
         if stmt.kind != statement_kind.Instruction {
@@ -19,14 +19,10 @@ precode :: proc(stmt_chain: ^[dynamic]statement) {
         args_to_fields := native_instruction_args_to_fields[stmt.name]
         for arg, arg_index in args_to_fields {
             switch arg {
-            case iff.R1:  
-                stmt_chain^[stmt_index].r1 = stmt.args[arg_index].value_int
-            case iff.R2:  
-                stmt_chain^[stmt_index].r2 = stmt.args[arg_index].value_int
-            case iff.R3:  
-                stmt_chain^[stmt_index].r3 = stmt.args[arg_index].value_int
-            case iff.IMM: 
-                stmt_chain^[stmt_index].imm = stmt.args[arg_index].value_int
+            case iff.R1:  stmt_chain^[stmt_index].r1 = stmt.args[arg_index].value_int
+            case iff.R2:  stmt_chain^[stmt_index].r2 = stmt.args[arg_index].value_int
+            case iff.R3:  stmt_chain^[stmt_index].r3 = stmt.args[arg_index].value_int
+            case iff.IMM: stmt_chain^[stmt_index].imm = stmt.args[arg_index].value_int
             }
         }
     }
@@ -46,7 +42,71 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
             continue
 
         case statement_kind.Directive:
-            bin[stmt.loc] = 0x44
+            
+            val := stmt.args[0].value_int
+
+            switch stmt.name {
+            case "u8", "i8":
+                bin[stmt.loc] = cast(u8) (val)
+            case "u16", "i16":
+                bin[stmt.loc]   = cast(u8) (val)
+                bin[stmt.loc+1] = cast(u8) (val >> 8)
+            case "u32", "i32":
+                bin[stmt.loc]   = cast(u8) (val)
+                bin[stmt.loc+1] = cast(u8) (val >> 8)
+                bin[stmt.loc+2] = cast(u8) (val >> 16)
+                bin[stmt.loc+3] = cast(u8) (val >> 24)
+            case "u64", "i64":
+                bin[stmt.loc]   = cast(u8) (val)
+                bin[stmt.loc+1] = cast(u8) (val >> 8)
+                bin[stmt.loc+2] = cast(u8) (val >> 16)
+                bin[stmt.loc+3] = cast(u8) (val >> 24)
+                bin[stmt.loc+4] = cast(u8) (val >> 32)
+                bin[stmt.loc+5] = cast(u8) (val >> 40)
+                bin[stmt.loc+6] = cast(u8) (val >> 48)
+                bin[stmt.loc+7] = cast(u8) (val >> 56)
+            case "u8be", "i8be":
+                bin[stmt.loc] = cast(u8) (val)
+            case "u16be", "i16be":
+                bin[stmt.loc+1] = cast(u8) (val)
+                bin[stmt.loc]   = cast(u8) (val >> 8)
+            case "u32be", "i32be":
+                bin[stmt.loc+3] = cast(u8) (val)
+                bin[stmt.loc+2] = cast(u8) (val >> 8)
+                bin[stmt.loc+1] = cast(u8) (val >> 16)
+                bin[stmt.loc]   = cast(u8) (val >> 24)
+            case "u64be", "i64be":
+                bin[stmt.loc+7] = cast(u8) (val)
+                bin[stmt.loc+6] = cast(u8) (val >> 8)
+                bin[stmt.loc+5] = cast(u8) (val >> 16)
+                bin[stmt.loc+4] = cast(u8) (val >> 24)
+                bin[stmt.loc+3] = cast(u8) (val >> 32)
+                bin[stmt.loc+2] = cast(u8) (val >> 40)
+                bin[stmt.loc+1] = cast(u8) (val >> 48)
+                bin[stmt.loc] = cast(u8) (val >> 56)
+            case "byte":
+                val_byte := cast(u8) val
+                count := stmt.args[1].value_int
+                for i := 0 ; i < count ; i+=1 {
+                    bin[stmt.loc + i] = val_byte
+                }
+            case "string":
+                str_u8 := transmute([]u8) stmt.args[0].value_str
+                for b, index in str_u8 {
+                    bin[stmt.loc + index] = b
+                }
+            case "bin":
+                bin, ok := os.read_entire_file(stmt.args[0].value_str)
+                for b, index in bin {
+                    bin[stmt.loc + index] = b
+                }
+            case "loc", "skip", "align":
+                // ignore
+            case:
+                die("ERR [line %d]: cannot embed directive \"%s\"", stmt.line, stmt.name)
+            }
+
+            //bin[stmt.loc] = 0x44 // debug
 
         case statement_kind.Instruction:
 

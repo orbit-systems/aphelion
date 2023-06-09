@@ -5,10 +5,10 @@
 directives:               # labels are alphanumeric with '_' and '-'. labels cannot start with numeric digits (0-9)
 
     # embedding - insert data into the image
-    .u(8,16,32,64,128)    # embed an unsigned integer of specified length (little endian)
-    .i(8,16,32,64,128)    # embed a signed integer of specified length (little endian)
-    .u(8,16,32,64,128)be  # embed an unsigned integer of specified length (big endian)
-    .i(8,16,32,64,128)be  # embed a signed integer of specified length (big endian)
+    .u(8,16,32,64)    # embed an unsigned integer of specified length (little endian)
+    .i(8,16,32,64)    # embed a signed integer of specified length (little endian)
+    .u(8,16,32,64)be  # embed an unsigned integer of specified length (big endian)
+    .i(8,16,32,64)be  # embed a signed integer of specified length (big endian)
     .byte data, count     # embed byte (data) (count) amount of times
     .string "string"      # embed a utf-8 encoded string (note: not null-terminated)
     .val label            # embed the location of a label (8 bytes)

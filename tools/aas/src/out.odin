@@ -88,6 +88,7 @@ ANSI :: enum {
 
     Bold        = 1,
     Dim         = 2,
+    Italic      = 3,
 
     FG_Black    = 30,
     FG_Red      = 31,

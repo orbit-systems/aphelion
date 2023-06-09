@@ -1,3 +1,5 @@
+package aas
+
 // ╭──────────╮
 // │ aas v0.1 │ (C) 2023 sandwichman
 // ╰──────────╯
@@ -17,8 +19,6 @@
 // todo start   : preprocessor
 // * ideas
 // * cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
-
-package aas
 
 import "core:os"
 import "core:time"
@@ -100,13 +100,13 @@ main :: proc() {
     tokenize(raw_asm, &token_chain)
     time.stopwatch_stop(&individual_timer)
     dbgokay()
-    set_style(ANSI.Dim)
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
     dbg(" (%d tokens indexed)\n", len(token_chain))
     set_style(ANSI.Reset)
 
     // debug display token chain
-    // display_more := false
+    // display_more := true
     // if display_more {
     //     // dbg("-------------------------------------\n")
     //     // for i in token_chain {
@@ -143,12 +143,12 @@ main :: proc() {
     construct_stmt_chain(&statement_chain, &token_chain)
     time.stopwatch_stop(&individual_timer)
     dbgokay()
-    set_style(ANSI.Dim)
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
     dbg(" (%d statements indexed)\n", len(statement_chain))
     set_style(ANSI.Reset)
 
-    delete(token_chain) // not needed anymore
+    delete(token_chain)
     
     dbg("checking...          ")
     time.stopwatch_reset(&individual_timer)
@@ -156,8 +156,8 @@ main :: proc() {
     check_stmt_chain(&statement_chain)
     time.stopwatch_stop(&individual_timer)
     dbgokay()
-    set_style(ANSI.Dim)
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
     dbg(" (%d statements checked)\n", len(statement_chain))
     set_style(ANSI.Reset)
 
@@ -167,8 +167,8 @@ main :: proc() {
     predicted_len := trace(&statement_chain)
     time.stopwatch_stop(&individual_timer)
     dbgokay()
-    set_style(ANSI.Dim)
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
     dbg(" (%d statements traced)\n", len(statement_chain))
     set_style(ANSI.Reset)
 
@@ -178,8 +178,8 @@ main :: proc() {
     label_count, ref_count := resolve_labels(&statement_chain)
     time.stopwatch_stop(&individual_timer)
     dbgokay()
-    set_style(ANSI.Dim)
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
     dbg(" (%d labels found, %d references resolved)\n", label_count, ref_count)
     set_style(ANSI.Reset)
 
@@ -194,8 +194,8 @@ main :: proc() {
         die("ERR: Cannot write file \"%s\"", outpath)
     }
     dbgokay()
-    set_style(ANSI.Dim)
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
     dbg(" (%d bytes written)\n", predicted_len)
     set_style(ANSI.Reset)
 

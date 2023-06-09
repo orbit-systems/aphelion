@@ -2,7 +2,7 @@
 
 .align 4
 label_1:
-    lli  ra, 0x30      # a number
+    lli  ra, -0x30      # a number
     addr rc, ra, ra     # double the number
     muli rc, ra, 2      # you could also double it like this
     shli rc, ra, 1      # you could double it like this too
@@ -12,3 +12,4 @@ label_1:
 
 label_2:
     .string "test string\0"
+    .u64 -0b101111

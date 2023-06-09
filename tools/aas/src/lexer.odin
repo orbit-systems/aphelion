@@ -21,6 +21,20 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
     for char, index in asm_string {
 
         char_str := utf8.runes_to_string([]rune{char})
+        
+        // handle comments
+        if char == '#' && !is_string {            // detect comment start
+            is_comment = true
+        }
+        if is_comment && char != '\n' { // disregard if inside comment
+            continue
+        }
+        if is_comment && char == '\n' {  // reset if newline
+            is_new = true
+            is_comment = false
+            append(token_chain, btoken{Newline, "\n"})
+            continue
+        }
 
         // handle strings - shits probably so buggy
         // code now optimize never
@@ -42,20 +56,6 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
                 is_escape = false
             }
             append_token_val(token_chain, char_str)
-            continue
-        }
-        
-        // handle comments
-        if char == '#' {            // detect comment start
-            is_comment = true
-        }
-        if is_comment && char != '\n' { // disregard if inside comment
-            continue
-        }
-        if is_comment && char == '\n' {  // reset if newline
-            is_new = true
-            is_comment = false
-            append(token_chain, btoken{Newline, "\n"})
             continue
         }
         
