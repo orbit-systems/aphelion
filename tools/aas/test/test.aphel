@@ -12,4 +12,3 @@ label_1:
 
 label_2:
     .string "test string\0"
-    .u64 -0b101111
