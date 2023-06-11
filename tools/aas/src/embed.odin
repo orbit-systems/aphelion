@@ -46,6 +46,7 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
             
             val := stmt.args[0].value_int
 
+            // i think theres a better way to do this but this works for now
             switch stmt.name {
             case "u8", "i8":
                 bin[stmt.loc] = cast(u8) (val)
@@ -57,7 +58,7 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
                 bin[stmt.loc+1] = cast(u8) (val >> 8)
                 bin[stmt.loc+2] = cast(u8) (val >> 16)
                 bin[stmt.loc+3] = cast(u8) (val >> 24)
-            case "u64", "i64":
+            case "u64", "i64", "val":
                 bin[stmt.loc]   = cast(u8) (val)
                 bin[stmt.loc+1] = cast(u8) (val >> 8)
                 bin[stmt.loc+2] = cast(u8) (val >> 16)

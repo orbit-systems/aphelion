@@ -5,7 +5,7 @@ AAS_BUILD_FLAGS = -o:speed -out:./tools/aas/bin/aas.exe
 
 AAS_STRESSTEST_INPATH = ./tools/aas/test/twomil.aphel
 AAS_TEST_INPATH = ./tools/aas/test/test.aphel
-AAS_TEST_FLAGS = -out:tools/aas/test/out.amg -debug -no-color # apparently make has trouble displaying ansi codes
+AAS_TEST_FLAGS = -out:tools/aas/test/out.bin -debug -no-color # apparently make has trouble displaying ansi codes
 
 build:
 	@odin build $(AAS_BUILD_INPATH) $(AAS_BUILD_FLAGS)

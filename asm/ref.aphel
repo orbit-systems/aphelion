@@ -11,7 +11,7 @@ directives:               # labels are alphanumeric with '_' and '-'. labels can
     .i(8,16,32,64)be      # embed a signed integer of specified length (big endian)
     .byte data, count     # embed byte (data) (count) amount of times
     .string "string"      # embed a utf-8 encoded string (note: not null-terminated)
-    .val label            # embed the location of a label (8 bytes)
+    .val label            # embed the location of a label (8 bytes, little endian)
     .bin "path"           # embed a file 1:1
 
     # sectioning - control where your assembly/data is in the image
@@ -22,7 +22,7 @@ directives:               # labels are alphanumeric with '_' and '-'. labels can
     # preprocessing - resolved by the preprocessor
     .inc "path"           # insert the contents of file at (path) - similar to #include in C
     .def alias, data      # define a preprocessor replacement
-    .mac macro_instruction (arg1, arg2, etc.)   # define a preprocessor macro
+    .mac macro_instruction arg1, arg2, etc.     # define a preprocessor macro
         # (some instructions)
     .endmac
 

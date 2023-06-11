@@ -1,0 +1,6 @@
+.mac bruh r1, r2, r3
+    push ra
+    add  r1, r2, ra
+    shlr r3, ra, r3
+    pop  ra
+.endmac

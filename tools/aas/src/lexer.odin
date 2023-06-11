@@ -6,7 +6,7 @@ import "core:unicode/utf8"
 
 // lexer
 // converts pure text into parse-able tokens and determines basic token types
-// todo convert to regex or lua patterns for determining token types
+// todo convert to regex or lua patterns for determining token types (maybe? might just make it slower)
 
 tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
     using btoken_kind

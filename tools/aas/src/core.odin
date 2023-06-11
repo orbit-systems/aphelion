@@ -108,34 +108,38 @@ main :: proc() {
     set_style(ANSI.Reset)
 
     // debug display token chain
-    // display_more := true
-    // if display_more {
-    //     // dbg("-------------------------------------\n")
-    //     // for i in token_chain {
-    //     //     dbg(i.value)
-    //     //     dbg(" ")
-    //     // }
-    //     // dbg("\n-------------------------------------\n")
+    display_more := flag_prep_only && flag_print_dbg
+    if display_more {
+        // dbg("-------------------------------------\n")
+        // for i in token_chain {
+        //     dbg(i.value)
+        //     dbg(" ")
+        // }
+        // dbg("\n-------------------------------------\n")
 
-    //     max_len := 0
-    //     for i in token_chain {       // determine maximum token length for nice printing
-    //         max_len = max(len(i.value), max_len)
-    //     }
+        max_len := 0
+        for i in token_chain {       // determine maximum token length for nice printing
+            max_len = max(len(i.value), max_len)
+        }
 
-    //     for i in token_chain {
-    //         dbg("\t")
-    //         if i.value == "\n" {
-    //             dbg(strings.repeat(" ", max_len))
-    //             dbg("  %s\n", i.kind)
-    //             continue
-    //         }
-    //         dbg("%s", i.value)
-    //         dbg(strings.repeat(" ", max_len-len(i.value)))
-    //         dbg("  %s\n", i.kind)
+        for i in token_chain {
+            dbg("\t")
+            if i.value == "\n" {
+                dbg(strings.repeat(" ", max_len))
+                dbg("  %s\n", i.kind)
+                continue
+            }
+            dbg("%s", i.value)
+            dbg(strings.repeat(" ", max_len-len(i.value)))
+            dbg("  %s\n", i.kind)
             
-    //     }
-    //     // dbg("-------------------------------------\n")
-    // }
+        }
+        // dbg("-------------------------------------\n")
+    }
+
+    if flag_prep_only {
+        return
+    }
 
     dbg("building chain...    ")
     statement_chain : [dynamic]statement
