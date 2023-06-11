@@ -5,54 +5,16 @@ import "core:fmt"
 
 die_exit_code :: 0
 
-die :: proc{die0, die1, die2, die3, die4}
-dbg :: proc{dbg0, dbg1, dbg2}
-
-die0 :: proc(msg: string) {
+die :: proc(msg: string, args: ..any) {
     set_style(ANSI.FG_Red)
     set_style(ANSI.Bold)
-    fmt.print(msg)
-    set_style(ANSI.Reset)
-    os.exit(die_exit_code)
-}
-die1 :: proc(msg: string, args: any) {
-    set_style(ANSI.FG_Red)
-    set_style(ANSI.Bold)
-    fmt.printf(msg, args)
-    set_style(ANSI.Reset)
-    os.exit(die_exit_code)
-}
-die2 :: proc(msg: string, arg1: any, arg2: any) {
-    set_style(ANSI.FG_Red)
-    set_style(ANSI.Bold)
-    fmt.printf(msg, arg1, arg2)
-    set_style(ANSI.Reset)
-    os.exit(die_exit_code)
-}
-die3 :: proc(msg: string, arg1, arg2, arg3: any) {
-    set_style(ANSI.FG_Red)
-    set_style(ANSI.Bold)
-    fmt.printf(msg, arg1, arg2, arg3)
-    set_style(ANSI.Reset)
-    os.exit(die_exit_code)
-}
-die4 :: proc(msg: string, arg1, arg2, arg3, arg4: any) {
-    set_style(ANSI.FG_Red)
-    set_style(ANSI.Bold)
-    fmt.printf(msg, arg1, arg2, arg3, arg4)
+    fmt.printf(msg, ..args)
     set_style(ANSI.Reset)
     os.exit(die_exit_code)
 }
 
-
-dbg0 :: proc(msg: string) {
-    if flag_print_dbg do fmt.printf(msg)
-}
-dbg1 :: proc(msg: string, args: any) {
-    if flag_print_dbg do fmt.printf(msg, args)
-}
-dbg2 :: proc(msg: string, arg1, arg2: any) {
-    if flag_print_dbg do fmt.printf(msg, arg1, arg2)
+dbg :: proc(msg: string, args: ..any) {
+    if flag_print_dbg do fmt.printf(msg, ..args)
 }
 
 dbgokay :: proc(s: ..string) {
@@ -72,7 +34,7 @@ print_help :: proc() {
     fmt.print("\n-debug               print debug info")
     fmt.print("\n-out:[path]          set output path")
     fmt.print("\n-no-color            disable output coloring")
-    fmt.print("\n-preprocess          only invoke preprocessor - expand macros, etc.")
+    fmt.print("\n-prep                only invoke preprocessor - expand macros, etc.")
     fmt.print("\n-ignore-ext          ignore file extension")
     fmt.print("\n-help                display this text\n\n")
 }

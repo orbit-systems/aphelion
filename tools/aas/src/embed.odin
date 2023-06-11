@@ -35,6 +35,7 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
 
     bin := make([]u8, imglen)
 
+    #no_bounds_check {
     for stmt, index in stmt_chain^ {
 
         switch stmt.kind {
@@ -106,8 +107,6 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
                 die("ERR [line %d]: cannot embed directive \"%s\"", stmt.line, stmt.name)
             }
 
-            //bin[stmt.loc] = 0x44 // debug
-
         case statement_kind.Instruction:
 
             if !(stmt.name in native_instruction_formats) {
@@ -127,12 +126,11 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
 
             write_u32_le(&bin, stmt.loc, ins)
             
-
-            //bin[stmt.loc] = cast(u8) stmt.opcode
         case statement_kind.Unresolved:
             die("wtf")
         }
 
+    }
     }
 
     

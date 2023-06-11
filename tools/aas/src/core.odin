@@ -10,7 +10,7 @@ package aas
 // -debug               print debug info
 // -out:[path]          set output path
 // -no-color            disable output coloring
-//// -preprocess          only invoke preprocessor - expand macros, etc.
+// -prep                only invoke preprocessor - expand macros, etc.
 // -ignore-ext          ignore file extension
 // -help                display this text
 
@@ -65,6 +65,8 @@ main :: proc() {
             case "-out":
                 outpath = argument.val
                 flag_outpath_loaded = true
+            case "-prep":
+                flag_prep_only = true
             case: // default
                 if index == 0 && argument.key[0] != '-' {
                     inpath = argument.key
@@ -257,7 +259,8 @@ cmd_arg :: struct {
 // init vars
 inpath          : string
 outpath         : string
-flag_print_dbg       := false
-flag_ignore_ext      := false
-flag_outpath_loaded  := false
-flag_no_color        := false
+flag_print_dbg      := false
+flag_prep_only      := false
+flag_ignore_ext     := false
+flag_outpath_loaded := false
+flag_no_color       := false
