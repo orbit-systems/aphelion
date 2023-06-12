@@ -1,0 +1,42 @@
+memory-mapped io (input is buffered, no worrying about io misses)
+
+id  bytes   loc     description
+
+0   8       0x800   pit
+1   8       0x808   keyboard
+2   8       0x810   gpu
+    488     0x818   reserved
+
+
+
+
+note * all formats in this file (ex. RGBYYXX[OP]) are listed most significant byte to least significant byte. so in RGBYYXX[03], the most significant byte would be the R value.
+
+internal gpu interface
+    640x480, 24-bit color (maybe more modes later)
+
+    op      desc
+
+    0       invalid
+    1       reserved [information query]
+    2       reserved [set color mode]
+    3       set pixel color (does not modify cursor pos and color)                                  RGBYYXX(0x03)
+    4       set cursor color                                                                        RGB----(0x04)
+    5       set cursor position                                                                     ---YYXX(0x05)
+    6       draw text character (uses cursor position, modify cursor position for next character)   CC-----(0x06)
+    7       draw text character AT (modify cursor position for next character)                      CC-YYXX(0x07)
+
+keyboard interface
+
+    note * returns keycodes, not ascii or unicode values
+
+    poll:       (0x00000000000000)[POLL CODE]
+    response:   [KEY7][KEY6][KEY5][KEY4][KEY3][KEY2][KEY1][RESPONSE CODE]       * keycodes will be returned lowest-first
+
+    poll codes
+        0   invalid, will result in an ERROR response
+        1   poll keys actively pressed
+
+    response codes
+        0   error
+        1   acknowledge

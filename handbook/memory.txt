@@ -5,14 +5,3 @@ start   end         description
 0x0     0x7FF       interrupt vector table
 0x800   0x9FF       mmio
 0xA00   ---         RAM
-
-
-
-memory-mapped io (input is buffered, no worrying about io misses)
-
-id  bytes   loc     description
-
-0   8       0x800   pit
-1   8       0x808   keyboard
-2   8       0x810   gpu
-    488     0x818   reserved
