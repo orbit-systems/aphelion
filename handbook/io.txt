@@ -20,11 +20,11 @@ internal gpu interface
     0       invalid
     1       reserved [information query]
     2       reserved [set color mode]
-    3       set pixel color (does not modify cursor pos and color)                                  RGBYYXX(0x03)
-    4       set cursor color                                                                        RGB----(0x04)
-    5       set cursor position                                                                     ---YYXX(0x05)
-    6       draw text character (uses cursor position, modify cursor position for next character)   CC-----(0x06)
-    7       draw text character AT (modify cursor position for next character)                      CC-YYXX(0x07)
+    3       set pixel color (does not modify cursor pos and color)                                  YYXXRGB(0x03)
+    4       set cursor color                                                                        ----RGB(0x04)
+    5       set cursor position                                                                     YYXX---(0x05)
+    6       draw text character (uses cursor position, modify cursor position for next character)   ----CC-(0x06)
+    7       draw text character AT (modify cursor position for next character)                      YYXXCC-(0x07)
 
 keyboard interface
 
