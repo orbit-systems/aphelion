@@ -19,9 +19,9 @@ precode :: proc(stmt_chain: ^[dynamic]statement) {
         args_to_fields := native_instruction_args_to_fields[stmt.name]
         for arg, arg_index in args_to_fields {
             switch arg {
-            case iff.R1:  stmt_chain^[stmt_index].r1 = stmt.args[arg_index].value_int
-            case iff.R2:  stmt_chain^[stmt_index].r2 = stmt.args[arg_index].value_int
-            case iff.R3:  stmt_chain^[stmt_index].r3 = stmt.args[arg_index].value_int
+            case iff.RDE: stmt_chain^[stmt_index].rde = stmt.args[arg_index].value_int
+            case iff.RS1: stmt_chain^[stmt_index].rs1 = stmt.args[arg_index].value_int
+            case iff.RS2: stmt_chain^[stmt_index].rs2 = stmt.args[arg_index].value_int
             case iff.IMM: stmt_chain^[stmt_index].imm = stmt.args[arg_index].value_int
             }
         }
@@ -118,10 +118,10 @@ make_bin :: proc(stmt_chain: ^[dynamic]statement, imglen: int) -> []u8 {
             ins : u32
 
             switch format {
-            case instruction_fmt.R: ins = encode_r(stmt.r1, stmt.r2, stmt.r3, stmt.imm, stmt.opcode)
-            case instruction_fmt.M: ins = encode_m(stmt.r1, stmt.r2, stmt.imm, stmt.opcode)
-            case instruction_fmt.F: ins = encode_f(stmt.r1, stmt.func, stmt.imm, stmt.opcode)
-            case instruction_fmt.J: ins = encode_j(stmt.r1, stmt.imm, stmt.opcode)
+            case instruction_fmt.R: ins = encode_r(stmt.rde, stmt.rs1, stmt.rs2, stmt.imm, stmt.opcode)
+            case instruction_fmt.M: ins = encode_m(stmt.rde, stmt.rs1, stmt.imm, stmt.opcode)
+            case instruction_fmt.F: ins = encode_f(stmt.rde, stmt.func, stmt.imm, stmt.opcode)
+            case instruction_fmt.J: ins = encode_j(stmt.rde, stmt.imm, stmt.opcode)
             case instruction_fmt.B: ins = encode_b(stmt.func, stmt.imm, stmt.opcode)
             }
 
@@ -187,12 +187,4 @@ encode_b :: proc(func, imm, op: int) -> (bin: u32) {
     bin = bin & cast(u32) 0xFFF_FFFF    // limit imm
     bin = bin | cast(u32) (func << 28)  // embed r1
     return
-}
-
-instruction_fmt :: enum {
-    R, M, F, J, B,
-}
-
-instruction_fmt_fields :: enum {
-    R1, R2, R3, IMM,
 }

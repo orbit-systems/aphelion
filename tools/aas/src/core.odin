@@ -95,7 +95,7 @@ main :: proc() {
 
     // tokenize
     dbg("tokenizing...        ")
-    token_chain : [dynamic]btoken   // might switch to linked list later
+    token_chain : [dynamic]btoken
     //defer delete(token_chain)
     time.stopwatch_reset(&individual_timer)
     time.stopwatch_start(&individual_timer)
@@ -105,6 +105,18 @@ main :: proc() {
     dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
     set_style(ANSI.Dim)
     dbg(" (%d tokens indexed)\n", len(token_chain))
+    set_style(ANSI.Reset)
+
+    // preprocess
+    dbg("preprocessing...     ")
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
+    resolve_macros(&token_chain)
+    time.stopwatch_stop(&individual_timer)
+    dbgokay()
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
+    dbg(" (%d tokens left)\n", len(token_chain))
     set_style(ANSI.Reset)
 
     // debug display token chain
@@ -138,6 +150,7 @@ main :: proc() {
     }
 
     if flag_prep_only {
+        delete(token_chain)
         return
     }
 

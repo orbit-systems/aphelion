@@ -322,6 +322,7 @@ unescape :: proc(x: string) -> (res: string, err := "") {
     return
 }
 
+// todo make custom destructor
 statement :: struct {
     kind        : statement_kind,   // what kind of statement it is
     name        : string,           // name without formatting
@@ -330,9 +331,9 @@ statement :: struct {
 
     opcode      : int,              // opcode
     func        : int,              // func
-    r1          : int,              // r1 for instruction encoding
-    r2          : int,              // r2 for instruction encoding
-    r3          : int,              // r3 for instruction encoding
+    rde         : int,              // r1 for instruction encoding
+    rs1         : int,              // r2 for instruction encoding
+    rs2         : int,              // r3 for instruction encoding
     imm         : int,              // imm for instruction encoding
 
     loc         : int,              // location in image

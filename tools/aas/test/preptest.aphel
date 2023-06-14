@@ -4,3 +4,10 @@
     shlr r3, ra, r3
     pop  ra
 .endmac
+
+.mac a
+    push ra
+.endmac
+
+bruh 3, 2, 1
+a

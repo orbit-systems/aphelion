@@ -1,9 +1,9 @@
 STORED LITTLE ENDIAN
 note * r1 is usually used as a destination register with r2 and r3 as operands. when defining new instructions, please adhere to this.
 
-     MSB                                                                                                 LSB
-R -> |    r1 [28-31]  |    r2 [24-27]  |  r3 [20-23]  |                   imm12 [8-19]  |  opcode [0-7]  |
-M -> |    r1 [28-31]  |    r2 [24-27]  |                                  imm16 [8-23]  |  opcode [0-7]  |
-F -> |    r1 [28-31]  |  func [24-27]  |                                  imm16 [8-23]  |  opcode [0-7]  |
-J -> |    r1 [28-31]  |                                                   imm20 [8-27]  |  opcode [0-7]  |
-B -> |  func [28-31]  |                                                   imm20 [8-27]  |  opcode [0-7]  |
+     MSB                                                                                      LSB
+R -> |   rde [28-31]  |   rs1 [24-27]  |  rs2 [20-23]  |             imm [8-19]  |   op [0-7]   |
+M -> |   rde [28-31]  |   rs1 [24-27]  |                             imm [8-23]  |   op [0-7]   |
+F -> |   rde [28-31]  |  func [24-27]  |                             imm [8-23]  |   op [0-7]   |
+J -> |   rde [28-31]  |                                              imm [8-27]  |   op [0-7]   |
+B -> |  func [28-31]  |                                              imm [8-27]  |   op [0-7]   |

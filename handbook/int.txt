@@ -6,13 +6,13 @@ code    description
 00      divide by zero
 01      integer overflow
 02      integer underflow
-01      unsigned integer overflow
-02      unsigned integer underflow
-03      invalid opcode
-04      no permission               (when user programs access kernel-only registers / run kernel-only instructions)
-05      stack underflow             (raises if sp > fp)
-06      segfault - access denied
-07      segfault - cannot allocate / out of memory
-08      segfault - cannot free
+03      unsigned integer overflow
+04      unsigned integer underflow
+05      invalid opcode
+06      no permission               (when user programs access kernel-only registers / run kernel-only instructions)
+07      stack underflow             (raises if sp > fp)
+08      segfault - access denied
+09      segfault - cannot allocate / out of memory
+0A      segfault - cannot free
 
 1[0-F]  input detected from device [0-F]
