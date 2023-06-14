@@ -326,7 +326,7 @@ native_instruction_args_to_fields := map[string][]iff{
     "jal"   = []iff{iff.RS1, iff.IMM},
     "jalr"  = []iff{iff.RS1, iff.IMM, iff.RDE},
     "ret"   = []iff{},
-    "retr"  = []iff{iff.RDE},
+    "retr"  = []iff{iff.RS1},
 
     "bra"   = []iff{iff.RS1},
     "beq"   = []iff{iff.RS1},
