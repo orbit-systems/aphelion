@@ -1,41 +1,6 @@
-.mac bruh r1, r2, r3
-    push ra
-    add  r1, r2, ra
-    shlr r3, ra, r3
-    pop  ra
-.endmac
-
-.mac a
-    push ra
-.endmac
-
-.mac la reg, sym    # no idea if this actually works lmao
+.mac la reg, sym
+    add pc, pc, 8   # skip past .val
     .val sym
     lw reg, pc, -8
 .endmac
 
-bruh 3, 2, 1
-a
-
-
-
-
-
-
-
-
-
-
-
-label2:
-
-
-
-
-
-
-
-
-
-.val label2
-lw ra, pc, -8

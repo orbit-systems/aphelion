@@ -66,7 +66,23 @@ registers := map[string]int{
     "st" = 15,
 }
 
-// these are the only instructions that should reach the parser. these have definite arguments.
+instruction_aliases := map[string][]string{
+    "add"   = []string{"addi", "addr"},
+    "adc"   = []string{"adci", "adcr"},
+    "sub"   = []string{"subi", "subr"},
+    "sbb"   = []string{"sbbi", "sbbr"},
+    "mul"   = []string{"muli", "mulr"},
+    "div"   = []string{"divi", "divr"},
+
+    "and"   = []string{"andi", "andr"},
+    "or"    = []string{"ori", "orr"},
+    "nor"   = []string{"nori", "norr"},
+    "xor"   = []string{"xori", "xorr"},
+    "shl"   = []string{"shli", "shlr"},
+    "asr"   = []string{"asri", "asrr"},
+    "lsr"   = []string{"lsri", "lsrr"},
+}
+
 ak :: argument_kind
 native_instruction_args := map[string][]argument_kind{
     "nop"   = []ak{},
@@ -126,8 +142,8 @@ native_instruction_args := map[string][]argument_kind{
     "leave" = []ak{},
     "reloc" = []ak{ak.Register, ak.Integer},
 
-    "jal"   = []ak{ak.Register, ak.Integer},
-    "jalr"  = []ak{ak.Register, ak.Integer, ak.Register},
+    "ljal"  = []ak{ak.Register, ak.Integer},
+    "ljalr" = []ak{ak.Register, ak.Integer, ak.Register},
     "ret"   = []ak{},
     "retr"  = []ak{ak.Register},
     "bra"   = []ak{ak.Symbol},
@@ -145,6 +161,8 @@ native_instruction_args := map[string][]argument_kind{
     "bgeu"  = []ak{ak.Symbol},
     "bgtu"  = []ak{ak.Symbol},
     "bpd"   = []ak{ak.Symbol},
+    "jal"   = []ak{ak.Symbol},
+    "jalr"  = []ak{ak.Symbol, ak.Register},
 }
 
 native_directive_args := map[string][]argument_kind{
@@ -233,10 +251,12 @@ native_instruction_opcodes := map[string][]int{
     "leave" = []int{0x50, 6},
     "reloc" = []int{0x50, 7},
 
-    "jal"   = []int{0x60, 0},
-    "jalr"  = []int{0x61, 0},
+    "ljal"  = []int{0x60, 0},
+    "ljalr" = []int{0x61, 0},
     "ret"   = []int{0x62, 0},
-    "retr"  = []int{0x62, 0},
+    "retr"  = []int{0x62, 1},
+    "jal"   = []int{0x64, 0},
+    "jalr"  = []int{0x65, 0},
 
     "bra"   = []int{0x63, 0x0},
     "beq"   = []int{0x63, 0x1},
@@ -323,26 +343,29 @@ native_instruction_args_to_fields := map[string][]iff{
     "leave" = []iff{},
     "reloc" = []iff{iff.RS1, iff.IMM},
 
-    "jal"   = []iff{iff.RS1, iff.IMM},
-    "jalr"  = []iff{iff.RS1, iff.IMM, iff.RDE},
+    "ljal"  = []iff{iff.RS1, iff.IMM},
+    "ljalr" = []iff{iff.RS1, iff.IMM, iff.RDE},
     "ret"   = []iff{},
     "retr"  = []iff{iff.RS1},
 
-    "bra"   = []iff{iff.RS1},
-    "beq"   = []iff{iff.RS1},
-    "bez"   = []iff{iff.RS1},
-    "blt"   = []iff{iff.RS1},
-    "ble"   = []iff{iff.RS1},
-    "bltu"  = []iff{iff.RS1},
-    "bleu"  = []iff{iff.RS1},
-    "bpe"   = []iff{iff.RS1},
-    "bne"   = []iff{iff.RS1},
-    "bnz"   = []iff{iff.RS1},
-    "bge"   = []iff{iff.RS1},
-    "bgt"   = []iff{iff.RS1},
-    "bgeu"  = []iff{iff.RS1},
-    "bgtu"  = []iff{iff.RS1},
-    "bpd"   = []iff{iff.RS1},
+    "bra"   = []iff{iff.IMM},
+    "beq"   = []iff{iff.IMM},
+    "bez"   = []iff{iff.IMM},
+    "blt"   = []iff{iff.IMM},
+    "ble"   = []iff{iff.IMM},
+    "bltu"  = []iff{iff.IMM},
+    "bleu"  = []iff{iff.IMM},
+    "bpe"   = []iff{iff.IMM},
+    "bne"   = []iff{iff.IMM},
+    "bnz"   = []iff{iff.IMM},
+    "bge"   = []iff{iff.IMM},
+    "bgt"   = []iff{iff.IMM},
+    "bgeu"  = []iff{iff.IMM},
+    "bgtu"  = []iff{iff.IMM},
+    "bpd"   = []iff{iff.IMM},
+
+    "jal"   = []iff{iff.IMM},
+    "jalr"  = []iff{iff.IMM, iff.RDE},
 }
 
 native_instruction_formats := map[string]instruction_fmt{
@@ -403,10 +426,12 @@ native_instruction_formats := map[string]instruction_fmt{
     "leave" = instruction_fmt.F,
     "reloc" = instruction_fmt.F,
 
-    "jal"   = instruction_fmt.J,
-    "jalr"  = instruction_fmt.M,
+    "ljal"  = instruction_fmt.M,
+    "ljalr" = instruction_fmt.M,
     "ret"   = instruction_fmt.F,
     "retr"  = instruction_fmt.F,
+    "jal"   = instruction_fmt.J,
+    "jalr"  = instruction_fmt.J,
 
     "bra"   = instruction_fmt.B,
     "beq"   = instruction_fmt.B,

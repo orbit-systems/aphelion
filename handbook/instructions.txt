@@ -63,20 +63,22 @@ lsr                                                             assembler alias 
 lsrr    rd, r1, r2          4c          R       rde rs1 rs2     rd = r1 >> r2
 lsri    rd, r1, imm16       4d          M       rde rs1 imm     rd = r1 >> imm16
 
-push    rs                  50  0       F       rs1             sp -= 8, mem[sp] = rs   (l. end)
+push    rs                  50  0       F       rde             sp -= 8, mem[sp] = rs   (l. end)
 pushi   imm16               50  1       F       imm             sp -= 8, mem[sp] = imm16(se)  (l. end)
 pushz   imm16               50  2       F       imm             sp -= 8, mem[sp] = imm16(ze)  (l. end)
 pushc   imm16               50  3       F       imm             sp -= 2, mem[sp] = imm16    (l. end)        * for constructing 64-bit immediate push
 pop     rd                  50  4       F       rde             rd = mem[sp], sp += 8
 enter                       50  5       F                       push fp, fp = sp    (enter stack frame)
 leave                       50  6       F                       sp = fp, pop fp     (leave stack frame)
-reloc   rs, imm16           50  7       F       rs1 imm         sp = rs, fp = rs - imm16
+reloc   rs, imm16           50  7       F       rde imm         sp = rs, fp = rs - imm16
 
-jal     rs, imm20           60          J       rs1 imm         pc = rs + imm20*4 (se), push (pc+4)
-jalr    rs, imm16, rd       61          M       rs1 imm         pc = rs + imm16*4 (se), rd = (pc+4)
+ljal    rs, imm16           60          M       rs1 imm         pc = rs + imm16*4 (se), push (pc+4)
+ljalr   rs, imm16, rd       61          M       rs1 imm rde     pc = rs + imm16*4 (se), rd = (pc+4)
 ret                         62  0       F                       pc = mem[sp], sp -= 4
 retr    rs                  62  1       F       rs1             pc = rs
-b(cc)   label               63          B       imm             pc += imm20*4 (se) if condition is met - see `branch.txt`
+b(cc)   label               63          B       imm             jump to label if condition is met - see `branch.txt`
+jal     label               64          J       imm             jump to label, push (pc+4)
+jalr    label, rd           65          J       imm rde         jump to label, rd = (pc+4)
 
 notes
     word -> 64 bit

@@ -2,11 +2,11 @@
 
 .align 4
 label_1:
-    lli  ra, -0x30      # a number
-    addr rc, ra, ra     # double the number
-    muli rc, ra, 2      # you could also double it like this
-    shli rc, ra, 1      # you could double it like this too
-    bra  label_1        # loop unconditionally
+    lli ra, -0x30      # a number
+    add rc, ra, ra     # double the number
+    mul rc, ra, 2      # you could also double it like this
+    shl rc, ra, 1      # you could double it like this too
+    bra label_1        # loop unconditionally
 
 .loc 0xA30
 

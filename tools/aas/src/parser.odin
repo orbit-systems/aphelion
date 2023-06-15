@@ -44,8 +44,8 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
 
             new := statement{
                 kind    = statement_kind.Instruction,
-                opcode  = native_instruction_opcodes[strings.to_lower(tok.value)][0],
-                func    = native_instruction_opcodes[strings.to_lower(tok.value)][1],
+                // opcode  = native_instruction_opcodes[strings.to_lower(tok.value)][0],
+                // func    = native_instruction_opcodes[strings.to_lower(tok.value)][1],
                 name    = strings.to_lower(tok.value), // normalize
                 line    = line,
             }
@@ -111,7 +111,7 @@ construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]
 
 check_stmt_chain :: proc(stmt_chain: ^[dynamic]statement) {
     // these are not the arguments you are looking for (check arguments)
-    for st in stmt_chain^ {
+    for st, index in stmt_chain^ {
 
 
         args : [dynamic]argument_kind
@@ -141,13 +141,38 @@ check_stmt_chain :: proc(stmt_chain: ^[dynamic]statement) {
             }
             
         case statement_kind.Instruction:
+
+            name := st.name
         
+            // resolve aliases - i wrote this and im looking back at it and i almost dont know how it works, god forgive me
+            if st.name in instruction_aliases{
+                real_names := instruction_aliases[st.name]
+                for n in real_names{
+                    ref_args := native_instruction_args[n]
+                    match := true
+                    for i := 0; i < len(ref_args); i += 1 {
+                        if ref_args[i] != args[i] {
+                            match = false
+                            break
+                        }
+                    }
+
+                    if match {
+                        name = n
+                        break
+                    }
+                }
+            }
+            stmt_chain^[index].name   = name
+            stmt_chain^[index].opcode = native_instruction_opcodes[name][0]
+            stmt_chain^[index].func   = native_instruction_opcodes[name][1]
+
             // simple name check
-            if !is_native_instruction(st.name) {
+            if !is_native_instruction(name) {
                 die("ERR [line %d]: invalid instruction \"%s\"", st.line, st.name)
             }
 
-            ref_args := native_instruction_args[st.name]
+            ref_args := native_instruction_args[name]
 
             if len(ref_args) != len(args) {
                 die("ERR [line %d]: invalid arguments for \"%s\" - expected %v, got %v", st.line, st.name, ref_args, args)
@@ -276,8 +301,8 @@ resolve_labels :: proc(stmt_chain: ^[dynamic]statement) -> (labels, refs: int) {
             continue
         }
 
-        // if branch instruction
-        if st.kind == statement_kind.Instruction && st.opcode == 0x63 {
+        // if branch / jal instruction
+        if st.kind == statement_kind.Instruction && (st.opcode == 0x63 || st.opcode == 0x64 || st.opcode == 0x65) {
             addr, ok := symbol_table[st.args[0].value_str]
             if !ok {
                 die("ERR [line %d]: symbol not declared \"%s\"", st.line, st.args[0].value_str)
@@ -294,6 +319,7 @@ resolve_labels :: proc(stmt_chain: ^[dynamic]statement) -> (labels, refs: int) {
             refs += 1
             st.args[0].value_int = diff / 4
         }
+
     }
     return
 }
