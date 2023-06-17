@@ -1,0 +1,21 @@
+GPU_set_cursor_color: # RGB vals in ra, rb, rc respectively
+
+    push    rk
+    llis    rk, 0           # clear rk - probably not needed but why not
+    
+    and     ra, ra, 0xFF    # sanitize inputs so they're only one byte
+    and     rb, rb, 0xFF
+    and     rc, rc, 0xFF
+
+    and     rk, rk, ra      # ----RGB(0x04)
+    shl     rk, rk, 8
+    and     rk, rk, rb
+    shl     rk, rk, 8
+    and     rk, rk, rc
+    shl     rk, rk, 8
+    lli     rk, 0x04
+
+    st      rk, rz, 0x810       # send to gpu
+
+    pop     rk
+    ret

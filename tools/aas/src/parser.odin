@@ -162,14 +162,14 @@ check_stmt_chain :: proc(stmt_chain: ^[dynamic]statement) {
                     }
                 }
             }
-            stmt_chain^[index].name   = name
-            stmt_chain^[index].opcode = native_instruction_opcodes[name][0]
-            stmt_chain^[index].func   = native_instruction_opcodes[name][1]
 
-            // simple name check
             if !is_native_instruction(name) {
                 die("ERR [line %d]: invalid instruction \"%s\"", st.line, st.name)
             }
+
+            stmt_chain^[index].name   = name
+            stmt_chain^[index].opcode = native_instruction_opcodes[name][0]
+            stmt_chain^[index].func   = native_instruction_opcodes[name][1]
 
             ref_args := native_instruction_args[name]
 
