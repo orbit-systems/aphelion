@@ -15,8 +15,8 @@ package aas
 // -help                display this text
 
 // todo test    : lexer, parser, embedder
-// todo finish  : preprocessor
-// todo start   : 
+// todo finish  : 
+// todo start   : preprocessor
 // * ideas
 // * cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
 
@@ -25,6 +25,7 @@ import "core:time"
 import "core:strings"
 import "core:fmt"
 import "core:path/slashpath"
+import "core:path/filepath"
 
 main :: proc() {
 
@@ -77,6 +78,9 @@ main :: proc() {
         }
     }
     //dbg("arguments loaded\n")
+    if !flag_outpath_loaded {
+        outpath = replace_ext(inpath, ".bin")
+    }
 
 
 
@@ -271,6 +275,10 @@ main :: proc() {
 cmd_arg :: struct {
     key : string,
     val : string,
+}
+
+replace_ext :: proc(p, new_ext: string) -> string {
+    return strings.join([]string{filepath.join([]string{filepath.dir(p),  filepath.stem(p)}), new_ext}, "")
 }
 
 // init vars
