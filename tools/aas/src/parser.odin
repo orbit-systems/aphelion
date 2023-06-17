@@ -8,8 +8,7 @@ import "core:strconv"
 
 // parser
 // converts basic tokens into statement chain, check for errors
-// * ALIAS HANDLING WILL GO IN THE PREPROCESSOR
-// todo jal with label, char literal support
+// todo char literal support
 
 construct_stmt_chain :: proc(stmt_chain: ^[dynamic]statement, tokens: ^[dynamic]btoken) {
     // construct chain

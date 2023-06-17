@@ -1,6 +1,8 @@
 .mac la reg, sym
-    add pc, pc, 8   # skip past .val
+    add  pc, pc, 8      # skip past .val
     .val sym
-    lw reg, pc, -8
+    lw   reg, pc, -8
 .endmac
 
+ok:
+    la ra, ok

@@ -1,7 +1,7 @@
 package aas
 
 // ╭──────────╮
-// │ aas v0.1 │ (C) 2023 sandwichman
+// │ aas v0.1 │ by sandwichman
 // ╰──────────╯
 // Aphelion Assembler
 
@@ -14,9 +14,9 @@ package aas
 // -ignore-ext          ignore file extension
 // -help                display this text
 
-// todo test    : lexer, parser
-// todo finish  : embedder
-// todo start   : preprocessor
+// todo test    : lexer, parser, embedder
+// todo finish  : preprocessor
+// todo start   : 
 // * ideas
 // * cache token chain / statment chain for fast recompilation - im not smart enough to implement this yet
 
@@ -108,16 +108,16 @@ main :: proc() {
     set_style(ANSI.Reset)
 
     // preprocess
-    dbg("preprocessing...     ")
-    time.stopwatch_reset(&individual_timer)
-    time.stopwatch_start(&individual_timer)
-    resolve_macros(&token_chain)
-    time.stopwatch_stop(&individual_timer)
-    dbgokay()
-    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
-    set_style(ANSI.Dim)
-    dbg(" (%d tokens left)\n", len(token_chain))
-    set_style(ANSI.Reset)
+    // dbg("preprocessing...     ")
+    // time.stopwatch_reset(&individual_timer)
+    // time.stopwatch_start(&individual_timer)
+    // preprocess(&token_chain)
+    // time.stopwatch_stop(&individual_timer)
+    // dbgokay()
+    // dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    // set_style(ANSI.Dim)
+    // dbg(" (%d tokens left)\n", len(token_chain))
+    // set_style(ANSI.Reset)
 
     // debug display token chain
     display_more := flag_prep_only && flag_print_dbg

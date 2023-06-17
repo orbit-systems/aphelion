@@ -1,14 +1,37 @@
 package aas
 
 // preprocessor
-// takes the token chain and resolves macros, definitions, and instruction aliases
+// takes the token chain and resolves macros, definitions
+// * currently not working in any capacity - ill probably have to redo this
+
+preprocess :: proc(t: ^[dynamic]btoken) {
+    resolve_macros(t)
+}
+
+resolve_def :: proc(token_chain: ^[dynamic]btoken) {
+
+    def_table := make(map[string]btoken)
+
+    // collect definitions
+    this_def_name := false
+    for tok in token_chain {
+        if tok.kind == btoken_kind.Directive && tok.value == ".def" {
+            this_def_name = true
+            continue
+        }
+
+        // if this_def_name {
+            
+        // }
+    }
+
+}
 
 resolve_macros :: proc(token_chain: ^[dynamic]btoken) {
 
     macro_table : [dynamic]macro
 
     // collect macros
-
     inside_macro_name := false
     inside_macro_args := false
     inside_macro_body := false
@@ -66,7 +89,7 @@ resolve_macros :: proc(token_chain: ^[dynamic]btoken) {
     for mac in macro_table {
         for tok in token_chain^ {
             if tok.kind == btoken_kind.Instruction && tok.value == mac.name.value {
-                //dbg("\nINSTANCE FOUND HOLY SHIT [%v]\n", mac.name.value)
+                //how to actually fucjking do this im too tired to figure out but the framework is there
             }
         }
     }
@@ -74,10 +97,6 @@ resolve_macros :: proc(token_chain: ^[dynamic]btoken) {
     //dbg("\n%#v\n", macro_table)
 
     delete(macro_table)
-
-    
-    
-
 }
 
 // todo make custom destructor for this bc this probably leaks memory
