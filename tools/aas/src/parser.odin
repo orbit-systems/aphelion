@@ -240,12 +240,11 @@ trace :: proc(stmt_chain: ^[dynamic]statement) -> int {
                 stmt_chain^[index].size = 8     // 64 bits
             case "bin":
                 stmt_chain^[index].loc = img_pointer
-                binfile, ok := os.read_entire_file(st.args[0].value_str)
-                if !ok {
+                length := os.file_size_from_path(st.args[0].value_str)
+                if !os.exists(st.args[0].value_str) {
                     die("ERR [line %d]: cannot find file at \"%s\"", st.line, st.args[0].value_str)
                 }
-                stmt_chain^[index].size = len(binfile)
-                delete(binfile)
+                stmt_chain^[index].size = cast(int) length
 
             // sectioning
             case "loc":

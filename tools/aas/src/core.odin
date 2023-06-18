@@ -12,6 +12,7 @@ package aas
 // -no-color            disable output coloring
 // -prep                only invoke preprocessor - expand macros, etc.
 // -ignore-ext          ignore file extension
+// -keep-dupl-inc       do not filter duplicate file includes
 // -help                display this text
 
 // todo test    : lexer, parser, embedder
@@ -68,6 +69,8 @@ main :: proc() {
                 flag_outpath_loaded = true
             case "-prep":
                 flag_prep_only = true
+            case "-keep-dupl-inc":
+                flag_keep_dup_inc = true
             case: // default
                 if index == 0 && argument.key[0] != '-' {
                     inpath = argument.key
@@ -79,7 +82,12 @@ main :: proc() {
     }
     //dbg("arguments loaded\n")
     if !flag_outpath_loaded {
-        outpath = replace_ext(inpath, ".bin")
+        if flag_prep_only {
+            outpath = filepath.join([]string{filepath.dir(inpath), "out.aphel"})
+        } else {
+            //outpath = replace_ext(inpath, ".bin")
+            outpath = filepath.join([]string{filepath.dir(inpath), "out.bin"})
+        }
     }
 
 
@@ -96,6 +104,25 @@ main :: proc() {
     raw_asm := string(raw)
 
 
+    // preprocess
+    dbg("preprocessing...     ")
+    time.stopwatch_reset(&individual_timer)
+    time.stopwatch_start(&individual_timer)
+    raw_asm = preprocess(raw_asm)
+    time.stopwatch_stop(&individual_timer)
+    dbgokay()
+    dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
+    set_style(ANSI.Dim)
+    dbg(" (%d lines processed)\n", (strings.count(raw_asm, "\n")+1))
+    set_style(ANSI.Reset)
+
+    if flag_prep_only {
+        writeok := os.write_entire_file(outpath, transmute([]u8) raw_asm)
+        if !writeok {
+            die("ERR: Cannot write file \"%s\"", outpath)
+        }
+        return
+    }
 
     // tokenize
     dbg("tokenizing...        ")
@@ -110,18 +137,6 @@ main :: proc() {
     set_style(ANSI.Dim)
     dbg(" (%d tokens indexed)\n", len(token_chain))
     set_style(ANSI.Reset)
-
-    // preprocess
-    // dbg("preprocessing...     ")
-    // time.stopwatch_reset(&individual_timer)
-    // time.stopwatch_start(&individual_timer)
-    // preprocess(&token_chain)
-    // time.stopwatch_stop(&individual_timer)
-    // dbgokay()
-    // dbg(" %fs", time.duration_seconds(time.stopwatch_duration(individual_timer)))
-    // set_style(ANSI.Dim)
-    // dbg(" (%d tokens left)\n", len(token_chain))
-    // set_style(ANSI.Reset)
 
     // debug display token chain
     display_more := flag_prep_only && flag_print_dbg
@@ -151,11 +166,6 @@ main :: proc() {
             
         }
         // dbg("-------------------------------------\n")
-    }
-
-    if flag_prep_only {
-        delete(token_chain)
-        return
     }
 
     dbg("building chain...    ")
@@ -289,3 +299,4 @@ flag_prep_only      := false
 flag_ignore_ext     := false
 flag_outpath_loaded := false
 flag_no_color       := false
+flag_keep_dup_inc   := false

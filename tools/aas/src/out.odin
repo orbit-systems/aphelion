@@ -36,6 +36,7 @@ print_help :: proc() {
     fmt.print("\n-no-color            disable output coloring")
     fmt.print("\n-prep                only invoke preprocessor - expand macros, etc.")
     fmt.print("\n-ignore-ext          ignore file extension")
+    fmt.print("\n-keep-dupl-inc       do not filter duplicate file includes")
     fmt.print("\n-help                display this text\n\n")
 }
 

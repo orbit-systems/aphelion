@@ -37,7 +37,8 @@ is_native_instruction :: proc(s: string) -> bool {
     return strings.to_lower(s) in native_instruction_args
 }
 
-separators :: []rune{' ', '\t', '\r', '\v', '\f', ','}
+separators      :: []rune{' ', '\t', '\r', '\v', '\f', ','}
+separators_str  :: []string{" ", "\t", "\r", "\v", "\f", ","}
 
 escape_seqs := map[string]string{
     "0"   = "\x00",

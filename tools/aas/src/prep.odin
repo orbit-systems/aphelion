@@ -1,107 +1,61 @@
 package aas
 
+import "core:os"
+import str "core:strings"
+
 // preprocessor
-// takes the token chain and resolves macros, definitions
-// * currently not working in any capacity - ill probably have to redo this
+// takes the raw assembly and expands .inc, .def, and .mac
 
-preprocess :: proc(t: ^[dynamic]btoken) {
-    resolve_macros(t)
-}
+preprocess :: proc(t: string) -> (res: string) {
 
-resolve_def :: proc(token_chain: ^[dynamic]btoken) {
+    res = str.expand_tabs(t, 4)
 
-    def_table := make(map[string]btoken)
+    {
+        // hacky, redo later with the string scanner from the lexer
+        included := make([dynamic]string)
+        inc_seen := str.count(res, ".inc") != 0
+        for inc_seen {
+            inc_seen = false
+            for l, index in str.split_lines(res) {
+                if str.has_prefix(l, ".inc ") {
+                    inc_seen = true
+                    inc_path := l[6:(len(l)-1)]
 
-    // collect definitions
-    this_def_name := false
-    for tok in token_chain {
-        if tok.kind == btoken_kind.Directive && tok.value == ".def" {
-            this_def_name = true
-            continue
-        }
-
-        // if this_def_name {
-            
-        // }
-    }
-
-}
-
-resolve_macros :: proc(token_chain: ^[dynamic]btoken) {
-
-    macro_table : [dynamic]macro
-
-    // collect macros
-    inside_macro_name := false
-    inside_macro_args := false
-    inside_macro_body := false
-    def_start         := -2     // also keeps track of whether macros still remain in the file or not
-    for def_start != -1 {
-        def_start = -1
-        for tok, index in token_chain {
-        
-            if tok.kind == btoken_kind.Directive && tok.value == ".mac" {
-                inside_macro_name = true
-                def_start = index
-                append(&macro_table, macro{})
-                continue
-            }
-
-            if inside_macro_name {
-                macro_table[top(&macro_table)].name = btoken{btoken_kind.Instruction, tok.value}
-                inside_macro_name = false
-                inside_macro_args = true
-                continue
-            }
-
-            if inside_macro_args {
-                if tok.kind != btoken_kind.Newline {
-                    append(&(macro_table[top(&macro_table)].arguments), tok)
-                } else {
-                    inside_macro_args = false
-                    inside_macro_body = true
-                }
-                continue
-            }
-
-            if inside_macro_body {
-                if tok.kind == btoken_kind.Directive && tok.value == ".endmac" {
-                    inside_macro_body = false
-                    remove_range(token_chain, def_start, index+1)
-                    break
-                } else {
-                    append(&(macro_table[top(&macro_table)].body), tok)
+                    inc_file, inc_readok := os.read_entire_file(inc_path)
+                    if !inc_readok {
+                        die("ERR: cannot read file at \"%s\"\n", inc_path)
+                    }
+                    
+                    if !in_dynarr(included, inc_path) || flag_keep_dup_inc {
+                        r, _ := str.replace(res, l, transmute(string) inc_file, 1)
+                        res = r
+                        append(&included, inc_path)
+                        break
+                    } else {
+                        r, _ := str.remove(res, l, 1)
+                        res = r
+                    }
                 }
             }
         }
     }
+    
 
-    // we do a little checking its called we do a little checking (i am deranged)
-    for mac1, index in macro_table {
-        for mac2 in macro_table[(index+1):] {
-            if mac1.name == mac2.name {
-                die("ERR: macro redefined \"%s\"", mac1.name.value)
-            }
+    return
+}
+
+in_dynarr :: proc(arr: [dynamic]string, str: string) -> bool {
+    for i in arr {
+        if str == i {
+            return true
         }
     }
-
-    // replace macro instances
-    for mac in macro_table {
-        for tok in token_chain^ {
-            if tok.kind == btoken_kind.Instruction && tok.value == mac.name.value {
-                //how to actually fucjking do this im too tired to figure out but the framework is there
-            }
-        }
-    }
-
-    //dbg("\n%#v\n", macro_table)
-
-    delete(macro_table)
+    return false
 }
 
 // todo make custom destructor for this bc this probably leaks memory
 macro :: struct {
-    name        : btoken,
-    arguments   : [dynamic]btoken,
-    body        : [dynamic]btoken,
+    name        : string,
+    arguments   : [dynamic]string,
+    body        : string,
 }
