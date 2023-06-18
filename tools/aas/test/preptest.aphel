@@ -1,10 +1,10 @@
 .inc "asm/mmio.aphel"
 
-# .mac la reg, sym
-#     add  pc, pc, 8      # skip past .val
-#     .val sym
-#     lw   reg, pc, -8
-# .endmac
+// .mac la reg, sym
+//     add  pc, pc, 8      # skip past .val
+//     .val sym
+//     lw   reg, pc, -8
+// .endmac
 
-# ok:
-#     la ra, ok
+// ok:
+//     la ra, ok

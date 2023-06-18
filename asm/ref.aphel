@@ -1,29 +1,29 @@
-# Aphelion Assembly v0.1 Reference
+// Aphelion Assembly v0.1 Reference
 
-# note - commas are ignored and treated like whitespace
+// note - commas are ignored and treated like whitespace
 
-directives:               # labels are alphanumeric with '_' and '-'. labels cannot start with numeric digits (0-9)
+directives:               // labels are alphanumeric with '_' and '-'. labels cannot start with numeric digits (0-9)
 
-    # embedding - insert data into the image
-    .u(8,16,32,64)        # embed an unsigned integer of specified length (little endian)
-    .i(8,16,32,64)        # embed a signed integer of specified length (little endian)
-    .u(8,16,32,64)be      # embed an unsigned integer of specified length (big endian)
-    .i(8,16,32,64)be      # embed a signed integer of specified length (big endian)
-    .byte data, count     # embed byte (data) (count) amount of times
-    .string "string"      # embed a utf-8 encoded string (note: not null-terminated)
-    .val label            # embed the location of a label (8 bytes, little endian)
-    .bin "path"           # embed a file 1:1
+    // embedding - insert data into the image
+    .u(8,16,32,64)        // embed an unsigned integer of specified length (little endian)
+    .i(8,16,32,64)        // embed a signed integer of specified length (little endian)
+    .u(8,16,32,64)be      // embed an unsigned integer of specified length (big endian)
+    .i(8,16,32,64)be      // embed a signed integer of specified length (big endian)
+    .byte data, count     // embed byte (data) (count) amount of times
+    .string "string"      // embed a utf-8 encoded string (note: not null-terminated)
+    .val label            // embed the location of a label (8 bytes, little endian)
+    .bin "path"           // embed a file 1:1
 
-    # sectioning - control where your assembly/data is in the image
-    .loc int              # places the following at (int) in memory
-    .skip int             # skips (int) bytes
-    .align int            # align the following to next multiple of (int)
+    // sectioning - control where your assembly/data is in the image
+    .loc int              // places the following at (int) in memory
+    .skip int             // skips (int) bytes
+    .align int            // align the following to next multiple of (int)
 
-    # preprocessing - resolved by the preprocessor
-    .inc "path"           # insert the contents of file at (path) - similar to #include in C
-    .def alias, data      # define a preprocessor replacement
-    .mac macro_instruction arg1, arg2, etc.     # define a preprocessor macro
-        # (some instructions)
+    // preprocessing - resolved by the preprocessor
+    .inc "path"           // insert the contents of file at (path) - similar to #include in C
+    .def alias, data      // define a preprocessor replacement
+    .mac macro_instruction arg1, arg2, etc.     // define a preprocessor macro
+        // (some instructions)
     .endmac
 
-# instructions must come after a label or on a new line
+// instructions must come after a label or on a new line

@@ -13,7 +13,9 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
     
     // setup
     is_new              := true
-    is_comment          := false
+    is_line_comment     := false
+    block_comment_depth := 0
+    continue_next       := 0
     is_string           := false
     is_escape           := false
 
@@ -23,15 +25,35 @@ tokenize :: proc(asm_string: string, token_chain: ^[dynamic]btoken) {
         char_str := utf8.runes_to_string([]rune{char})
         
         // handle comments
-        if char == '#' && !is_string {            // detect comment start
-            is_comment = true
-        }
-        if is_comment && char != '\n' { // disregard if inside comment
+        if continue_next > 0 {
+            continue_next -= 1;
             continue
         }
-        if is_comment && char == '\n' {  // reset if newline
+        if !is_string {            // detect comment start
+            if char == '/' && asm_string[index+1] == '/'{
+                is_line_comment = true
+            }
+            if char == '/' && asm_string[index+1] == '*'{
+                block_comment_depth += 1
+            }
+            if char == '*' && asm_string[index+1] == '/'{
+                block_comment_depth -= 1
+                if block_comment_depth < 0 {
+                    die("ERR: Unmatched \"*/\"")
+                }
+                continue_next = 1
+                continue
+            }
+        }
+        if block_comment_depth != 0 {
+            continue
+        }
+        if is_line_comment && char != '\n' { // disregard if inside comment
+            continue
+        }
+        if is_line_comment && char == '\n' {  // reset if newline
             is_new = true
-            is_comment = false
+            is_line_comment = false
             append(token_chain, btoken{Newline, "\n"})
             continue
         }

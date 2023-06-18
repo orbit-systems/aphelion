@@ -19,3 +19,13 @@ GPU_set_cursor_color: // RGB vals in ra, rb, rc respectively
 
     pop     rk
     ret
+
+
+// .mac la reg, sym
+//     add  pc, pc, 8      # skip past .val
+//     .val sym
+//     lw   reg, pc, -8
+// .endmac
+
+// ok:
+//     la ra, ok
