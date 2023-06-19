@@ -10,7 +10,7 @@ id  bytes   loc     description
 
 
 
-note * all formats in this file (ex. RGBYYXX[OP]) are listed most significant byte to least significant byte. so in RGBYYXX[03], the most significant byte would be the R value.
+note * all formats in this file (ex. RGBYYXX[OP]) are listed most significant byte to least significant byte. so in RGBXXYY[03], the most significant byte would be the R value.
 
 internal gpu interface
     640x480, 24-bit color (maybe more modes later)
