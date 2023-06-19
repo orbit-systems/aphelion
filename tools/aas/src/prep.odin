@@ -14,6 +14,7 @@ preprocess :: proc(t: string) -> (res: string) {
     // .def
     {
         defined := make([dynamic]string)
+        defer delete(defined)
         for str.contains(res, ".def") {
             for l, index in str.split_lines(res) {
                 if !str.contains(l, ".def") {
@@ -46,6 +47,7 @@ preprocess :: proc(t: string) -> (res: string) {
     // .inc
     {
         included := make([dynamic]string)
+        defer delete(included)
         for str.contains(res, ".inc") {
             for l, index in str.split_lines(res) {
                 if !str.contains(l, ".inc") {
