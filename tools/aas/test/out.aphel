@@ -1,3 +1,36 @@
+.loc 0xA00
+
+main:
+    llis    ra, 0xFFFF
+    reloc   ra, 0       // place stack at 0xFFFF
+    llis    ra, 0
+
+loop:
+    add     ra, ra, 1
+    add     rb, rb, 1
+    add     rc, rc, 1
+    jal     GPU_set_cursor_color
+    jal     GPU_set_cursor_pos
+    bra     loop
+
+GPU_set_cursor_pos: // X, Y vals in ra, rb respectively
+    
+    push    rk
+    llis    rk, 0           // clear rk
+
+    and     ra, ra, 0xFFFF  // sanitize inputs so they're only two bytes
+    and     rb, rb, 0xFFFF
+    and     rc, rc, 0xFFFF
+
+    and     rk, rk, ra      //XXYY---(0x05)
+    shl     rk, rk, 16
+    and     rk, rk, rb
+    shl     rk, rk, 48
+    lli     rk, 0x05
+
+    pop     rk              
+    ret
+
 GPU_set_cursor_color: // RGB vals in ra, rb, rc respectively
 
     push    rk
@@ -22,7 +55,7 @@ GPU_set_cursor_color: // RGB vals in ra, rb, rc respectively
 
 
 // .mac la reg, sym
-//     add  pc, pc, 8      # skip past .val
+//     add  pc, pc, 8      // skip past .val
 //     .val sym
 //     lw   reg, pc, -8
 // .endmac

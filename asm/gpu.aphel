@@ -1,3 +1,21 @@
+GPU_set_cursor_pos: // X, Y vals in ra, rb respectively
+    
+    push    rk
+    llis    rk, 0           // clear rk
+
+    and     ra, ra, 0xFFFF  // sanitize inputs so they're only two bytes
+    and     rb, rb, 0xFFFF
+    and     rc, rc, 0xFFFF
+
+    and     rk, rk, ra      //XXYY---(0x05)
+    shl     rk, rk, 16
+    and     rk, rk, rb
+    shl     rk, rk, 48
+    lli     rk, 0x05
+
+    pop     rk              
+    ret
+
 GPU_set_cursor_color: // RGB vals in ra, rb, rc respectively
 
     push    rk
