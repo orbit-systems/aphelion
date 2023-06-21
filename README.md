@@ -4,4 +4,4 @@ Aphelion is a RISC instruction set architecture built for low-bloat, high-perfor
 
 
 ### Important repositories
-- [Mercury - assembler](https://github.com/orbit-systems/mercury)
+- [Luna: the Aphelion ISA assembler](https://github.com/orbit-systems/luna)
