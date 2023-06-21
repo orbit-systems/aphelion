@@ -87,3 +87,19 @@ Instructions - 32 bits wide
     asri    r1, r2, imm     r1 = r2 >> imm  (keep sign)
     lsrr    r1, r2, r3      r1 = r2 >> r3
     lsri    r1, r2, imm     r1 = r2 >> imm
+
+    push    r1              push r1 to stack
+    pushi   imm             push i64(imm) to stack
+    pushz   imm             push u64(imm) to stack
+    pushc   imm             push 16-bit imm to stack
+    pop     r1              pop 64-bit value to r1
+    enter                   enter stack frame (push fp, fp = sp)
+    leave                   leave stack frame (sp = fp, pop fp)
+    reloc   r1, imm         relocate stack to r1 with (imm) frame pointer offset (sp = r1, fp = r1 - imm16)
+
+    jal     label           jump to label, push return address (pc+4)
+    jalr    label, r1       jump to label, r1 = return address (pc+4) 
+    ljal    r1, imm         long jump and link, push return address (pc = r1 + imm*4, push pc+4)
+    ljalr   r1, imm, r2     long jump and link, r1 = return address (pc = r1 + imm*4, rd = pc+4)
+    ret                     pop return address and set pc to 
+    retr    r1              
