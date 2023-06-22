@@ -43,7 +43,7 @@ Instructions - 32 bits wide
     st      r1, r2, imm     store r1 as 64-bit word at address (r2 + imm)
     stb     r1, r2, imm     store bits 0-7 of r1 at address (r2 + imm)
     swp     r1, r2          swap values of r1 and r2
-    mov     r1, r2          copy value of r1 to r2
+    mov     r1, r2          copy value of r2 to r1
 
     add     r1, r2, r3|imm  r1 = r2 + (r3|imm)          * pseudo-instruction, expands to 'addr' and 'addi'
     adc     r1, r2, r3|imm  r1 = r2 + (r3|imm) + carry  * pseudo-instruction, expands to 'adcr' and 'adci'

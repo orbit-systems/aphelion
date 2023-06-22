@@ -15,6 +15,8 @@ bit	    description
 10      mode [0 kernel / 1 user]
 11      [always 1]
 
+31-63   current instruction
+
 * set according to result of arithmetic instruction
 † set according to result of logical instruction (asr included)
 ‡ set according to operands of arithmetic AND logical instructions
