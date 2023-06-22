@@ -4,15 +4,11 @@ note - always sets the processor mode to kernel and pushes return address to the
 code    description
 
 00      divide by zero
-01      integer overflow
-02      integer underflow
-03      unsigned integer overflow
-04      unsigned integer underflow
-05      invalid opcode
-06      no permission               (when user programs access kernel-only registers / run kernel-only instructions)
-07      stack underflow             (raises if sp > fp)
-08      segfault - access denied
-09      segfault - cannot allocate / out of memory
-0A      segfault - cannot free
+01      invalid opcode
+02      no permission               (when user programs access kernel-only registers / run kernel-only instructions)
+03      stack underflow             (raises if sp > fp)
+04      segfault - access denied
+05      segfault - cannot allocate / out of memory
+06      segfault - cannot free
 
 1[0-F]  input detected from device [0-F]
