@@ -13,7 +13,8 @@ bit	    description
 8       greater (unsigned)              ‡
 9       less (unsigned)                 ‡
 10      mode [0 kernel / 1 user]
-11      [always 1]
+11      carry (unsigned)            *
+12      borrow (unsigned)           *
 
 31-63   current instruction
 
