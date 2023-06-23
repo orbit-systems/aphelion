@@ -76,7 +76,7 @@ reloc   rs, imm16           50  7       F       rde imm         sp = rs, fp = rs
 ljal    rs, imm16           60          M       rs1 imm         pc = rs + imm16*4 (se), push (pc+4)
 ljalr   rs, imm16, rd       61          M       rs1 imm rde     pc = rs + imm16*4 (se), rd = (pc+4)
 ret                         62  0       F                       pc = mem[sp], sp -= 4
-retr    rs                  62  1       F       rs1             pc = rs
+retr    rs                  62  1       F       rde             pc = rs
 b(cc)   label               63          B       imm             jump to label if condition is met - see `branch.txt`
 jal     label               64          J       imm             jump to label, push (pc+4)
 jalr    label, rd           65          J       imm rde         jump to label, rd = (pc+4)
