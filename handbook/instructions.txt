@@ -18,9 +18,9 @@ ltuis   rd, imm16           20  7       F       rde imm         rd = imm16 << 48
 ld      rd, rs, imm16       21          M       rde rs1 imm     rd = mem[rs + imm16] (word)
 lbs     rd, rs, imm16       22          M       rde rs1 imm     rd = mem[rs + imm16] (byte)   (se)
 lb      rd, rs, imm16       23          M       rde rs1 imm     rd[0-7] = mem[rs + imm16] (byte)
-st      rd, rs, imm16       24          M       rs1 rs2 imm     mem[rs + imm16] = rd (word) (l. end)
-stb     rd, rs, imm16       25          M       rs1 rs2 imm     mem[rs + imm16] = rd (byte)
-swp     r1, r2              26          M       rs1 rs2         (r1, r2) = (r2, r1)
+st      rd, rs, imm16       24          M       rde rs1 imm     mem[rs + imm16] = rd (word) (l. end)
+stb     rd, rs, imm16       25          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
+swp     r1, r2              26          M       rde rs1         (r1, r2) = (r2, r1)
 mov     r1, r2              27          M       rde rs1         r1 = r2
 
 add                                                             assembler alias for 'addr' and 'addi'
