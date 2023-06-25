@@ -40,3 +40,44 @@ keyboard interface
     response codes
         0   error
         1   acknowledge
+
+
+PORT BASED IO:
+
+the general communication between the cpu and devices should be done through a port based device polling system,
+allowing up to 224 ports for devices to be connected
+
+communication protocol:
+the cpu will poll the device, with a value on a 64 bit bus (we can use 8 bits and use a kind of bit-banging method)
+the device will then recieve the poll and the value, allowing the device to recieve data from the cpu
+the device can then poll the cpu through device specific IRQs, which are allocated and provided to the device
+counting down from 0xFF.
+
+example communication for a keyboard interface:
+
+//aphelion asm below
+
+
+pout ra, 0x3 // polls device 3 with the value stored in ra, with the value being output for at a minimum of 16 cycles
+pin rb //places the value in the bus into rb
+
+//keyboard handling code for reading values should be below
+
+this system allows a call and response style communication from the cpu
+
+in the reverse case, the device will poll the IRQ the cpu has told it has access to
+the device should keep this value on for atleast 16 cycles, to allow the cpu to
+start executing code
+
+//device polls IRQ 0xF3
+//code below that 0xF3 points to
+
+pin rb //read the value the device has sent
+
+//handling code
+
+ret
+
+this is not a bidirectional communication system, and is subject to bus clashes and race conditions. this means that
+communication between devices and the cpu should be facilitated by some kind of bus arbiter, that allows only
+one device to place values on the bus at a time. this is essentially a multiplexer, acting on >200 devices.
