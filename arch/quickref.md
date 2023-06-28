@@ -3,17 +3,17 @@
 Registers - 64 bits wide
 
     rz      always reads zero, writes are ignored
-    ra      general purpose
-    rb      general purpose
-    rc      general purpose
-    rd      general purpose
+    ra      general purpose (function parameters)
+    rb      general purpose (function parameters)
+    rc      general purpose (function parameters)
+    rd      general purpose (function parameters)
     re      general purpose
     rf      general purpose
     rg      general purpose
     rh      general purpose
-    ri      general purpose
-    rj      general purpose
-    rk      general purpose
+    ri      general purpose (callee saved)
+    rj      general purpose (callee saved)
+    rk      general purpose (callee saved)
     pc      program counter - points to current instruction in memory
     sp      stack pointer - stack grows down
     fp      frame pointer
