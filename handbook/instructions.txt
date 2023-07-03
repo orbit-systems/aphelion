@@ -1,3 +1,5 @@
+APHELION v0.2.1
+
 name    args                op  func    format  args -> fields  description
 
 nop                         0A          B                       does nothing
@@ -15,11 +17,11 @@ lti     rd, imm16           20  4       F       rde imm         rd[32-47] = imm1
 ltis    rd, imm16           20  5       F       rde imm         rd = imm16 << 32    (se)
 ltui    rd, imm16           20  6       F       rde imm         rd[48-63] = imm16
 ltuis   rd, imm16           20  7       F       rde imm         rd = imm16 << 48    (se)
-ld      rd, rs, imm16       21          M       rde rs1 imm     rd = mem[rs + imm16] (word)
+lw      rd, rs, imm16       21          M       rde rs1 imm     rd = mem[rs + imm16] (word)
 lbs     rd, rs, imm16       22          M       rde rs1 imm     rd = mem[rs + imm16] (byte)   (se)
 lb      rd, rs, imm16       23          M       rde rs1 imm     rd[0-7] = mem[rs + imm16] (byte)
-st      rd, rs, imm16       24          M       rde rs1 imm     mem[rs + imm16] = rd (word) (l. end)
-stb     rd, rs, imm16       25          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
+sw      rd, rs, imm16       24          M       rde rs1 imm     mem[rs + imm16] = rd (word) (l. end)
+sb      rd, rs, imm16       25          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
 swp     r1, r2              26          M       rde rs1         (r1, r2) = (r2, r1)
 mov     r1, r2              27          M       rde rs1         r1 = r2
 
@@ -64,22 +66,22 @@ lsr                                                             assembler alias 
 lsrr    rd, r1, r2          4c          R       rde rs1 rs2     rd = r1 >> r2
 lsri    rd, r1, imm16       4d          M       rde rs1 imm     rd = r1 >> imm16
 
-push    rs                  50  0       F       rde             sp -= 8, mem[sp] = rs   (l. end)
-pushi   imm16               50  1       F       imm             sp -= 8, mem[sp] = imm16(se)  (l. end)
-pushz   imm16               50  2       F       imm             sp -= 8, mem[sp] = imm16(ze)  (l. end)
-pushc   imm16               50  3       F       imm             sp -= 2, mem[sp] = imm16    (l. end)        * for constructing 64-bit immediate push
-pop     rd                  50  4       F       rde             rd = mem[sp], sp += 8
-enter                       50  5       F                       push fp, fp = sp    (enter stack frame)
-leave                       50  6       F                       sp = fp, pop fp     (leave stack frame)
-reloc   rs, imm16           50  7       F       rde imm         sp = rs, fp = rs - imm16
+push    rs                  50          M       rs1             sp -= 8, mem[sp] = rs   (l. end)
+pushi   imm16               51          M       imm             sp -= 8, mem[sp] = imm16(se)  (l. end)
+pushz   imm16               52          M       imm             sp -= 8, mem[sp] = imm16(ze)  (l. end)
+pushc   imm16               53          M       imm             sp -= 2, mem[sp] = imm16    (l. end)        * for constructing 64-bit immediate push
+pop     rd                  54          M       rde             rd = mem[sp], sp += 8
+enter                       55          B                       push fp, fp = sp    (enter stack frame)
+leave                       56          B                       sp = fp, pop fp     (leave stack frame)
+reloc   rs, imm16           57          M       rs1 imm         sp = rs, fp = rs - imm16
 
 ljal    rs, imm16           60          M       rs1 imm         pc = rs + imm16*4 (se), push (pc+4)
 ljalr   rs, imm16, rd       61          M       rs1 imm rde     pc = rs + imm16*4 (se), rd = (pc+4)
-ret                         62  0       F                       pc = mem[sp], sp -= 4
-retr    rs                  62  1       F       rde             pc = rs
-b(cc)   label               63          B       imm             jump to label if condition is met - see `branch.txt`
-jal     label               64          J       imm             jump to label, push (pc+4)
-jalr    label, rd           65          J       imm rde         jump to label, rd = (pc+4)
+ret                         62          M                       pc = mem[sp], sp -= 4
+retr    rs                  63          M       rs1             pc = rs
+b(cc)   label               64          B       imm             jump to label if condition is met - see `branch.txt`
+jal     label               65          J       imm             jump to label, push (pc+4)
+jalr    label, rd           66          J       imm rde         jump to label, rd = (pc+4)
 
 notes
     word -> 64 bit

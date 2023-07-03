@@ -1,5 +1,7 @@
 # Aphelion ISA v0.2 Quick Reference
 
+NOT AUTHORITATIVE - UNFINISHED
+
 Registers - 64 bits wide
 
     rz      always reads zero, writes are ignored

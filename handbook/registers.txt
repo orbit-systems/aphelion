@@ -9,5 +9,5 @@ D       sp      stack pointer
 E       fp      frame pointer
 F       st      status register, contains bit flags and information about the processor state
 
-note - fp and st are initialized to 0 and that the stack expands downward. 
+note - fp and st are initialized to 0 and that the stack expands downward.
 in order to use the stack, you must relocate the stack somewhere specific.
