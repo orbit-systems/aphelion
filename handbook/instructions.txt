@@ -1,4 +1,4 @@
-APHELION v0.2.1
+APHELION v0.2.2
 
 name    args                op  func    format  args -> fields  description
 
@@ -24,6 +24,11 @@ sw      rd, rs, imm16       24          M       rde rs1 imm     mem[rs + imm16] 
 sb      rd, rs, imm16       25          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
 swp     r1, r2              26          M       rde rs1         (r1, r2) = (r2, r1)
 mov     r1, r2              27          M       rde rs1         r1 = r2
+
+test                                                            assembler alias for cmp
+cmp                                                             assembler alias for 'cmpr' and 'cmpi'
+cmpr    r1, r2              28          R       rs1 rs2         compare and set flags - see `statusregister.txt`
+cmpi    r1, imm16           29          M       rs1 imm         compare and set flags
 
 add                                                             assembler alias for 'addr' and 'addi'
 addr    rd, r1, r2          30          R       rde rs1 rs2     rd = r1 + r2
