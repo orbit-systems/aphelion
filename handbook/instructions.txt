@@ -1,12 +1,13 @@
-APHELION v0.2.2
+APHELION v0.3.0
 
 name    args                op  func    format  args -> fields  description
 
 nop                         0A          B                       does nothing
 
-int     imm8                10          B       imm             trigger interrupt imm8
-inv                         11          B                       explicitly generate invalid opcode exception (functionally equivalent to `int 3`)
-usr                         12          B                       enter user mode - throws 'no permission' exception if used in user mode
+inv                                                             alias to 'int 3' - throw invalid opcode interrupt
+int     imm8                10  0       F       imm             trigger interrupt imm8\
+usr                         10  1       F                       enter user mode - throws 'no permission' interrupt if used in user mode
+ffl                         10  2       F                       flip branch-relevant flags
 
 li      rd, imm64                                               rd = imm64, assembler expands to lli, lui, etc. as needed
 lli     rd, imm16           20  0       F       rde imm         rd[0-15] = imm16
@@ -17,18 +18,27 @@ lti     rd, imm16           20  4       F       rde imm         rd[32-47] = imm1
 ltis    rd, imm16           20  5       F       rde imm         rd = imm16 << 32    (se)
 ltui    rd, imm16           20  6       F       rde imm         rd[48-63] = imm16
 ltuis   rd, imm16           20  7       F       rde imm         rd = imm16 << 48    (se)
-lw      rd, rs, imm16       21          M       rde rs1 imm     rd = mem[rs + imm16] (word)
-lbs     rd, rs, imm16       22          M       rde rs1 imm     rd = mem[rs + imm16] (byte)   (se)
-lb      rd, rs, imm16       23          M       rde rs1 imm     rd[0-7] = mem[rs + imm16] (byte)
-sw      rd, rs, imm16       24          M       rde rs1 imm     mem[rs + imm16] = rd (word) (l. end)
-sb      rd, rs, imm16       25          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
-swp     r1, r2              26          M       rde rs1         (r1, r2) = (r2, r1)
-mov     r1, r2              27          M       rde rs1         r1 = r2
 
+lw      rd, rs, imm16       21          M       rde rs1 imm     rd = mem[rs + imm16] (word)
+lh      rd, rs, imm16       22          M       rde rs1 imm     rd = mem[rs + imm16] (halfword, 32-bit)
+lhs     rd, rs, imm16       23          M       rde rs1 imm     rd = mem[rs + imm16] (halfword, 32-bit) (se)
+lq      rd, rs, imm16       24          M       rde rs1 imm     rd = mem[rs + imm16] (quarterword, 16-bit)
+lqs     rd, rs, imm16       25          M       rde rs1 imm     rd = mem[rs + imm16] (quarterword, 16-bit) (se)
+lb      rd, rs, imm16       26          M       rde rs1 imm     rd[0-7] = mem[rs + imm16] (byte)
+lbs     rd, rs, imm16       27          M       rde rs1 imm     rd = mem[rs + imm16] (byte) (se)
+sw      rd, rs, imm16       28          M       rde rs1 imm     mem[rs + imm16] = rd (word)
+sh      rd, rs, imm16       29          M       rde rs1 imm     mem[rs + imm16] = rd (halfword, 32-bit)
+sq      rd, rs, imm16       2a          M       rde rs1 imm     mem[rs + imm16] = rd (quarterword, 16-bit)
+sb      rd, rs, imm16       2b          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
+end     r1, r2              2c          M       rde rs1         r1 <- byteswap(r2)      * convert between l. endian and b. endian
+swp     r1, r2              2d          M       rde rs1         (r1, r2) = (r2, r1)
+mov                                                             assembler alias for to 'add r1, rz, r2'
+
+
+cmpr    r1, r2              2e          R       rs1 rs2         compare and set flags - see `statusregister.txt`
+cmpi    r1, imm16           2f          M       rs1 imm         compare and set flags
 test                                                            assembler alias for cmp
 cmp                                                             assembler alias for 'cmpr' and 'cmpi'
-cmpr    r1, r2              28          R       rs1 rs2         compare and set flags - see `statusregister.txt`
-cmpi    r1, imm16           29          M       rs1 imm         compare and set flags
 
 add                                                             assembler alias for 'addr' and 'addi'
 addr    rd, r1, r2          30          R       rde rs1 rs2     rd = r1 + r2
@@ -47,7 +57,13 @@ mulr    rd, r1, r2          38          R       rde rs1 rs2     rd = r1 * r2
 muli    rd, r1, imm16       39          M       rde rs1 imm     rd = r1 * imm16 (se)
 div                                                             assembler alias for 'divr' and 'divi'
 divr    rd, r1, r2          3a          R       rde rs1 rs2     rd = r1 / r2
-divi    rd, r1, imm16       3b          M       rde rs1 imm     rd = r1 / imm16 (se)
+divi    rd, r1, imm16       3b          M       rde rs1 imm     rd = r1 / imm16
+rem                                                             assembler alias for 'remr' and 'remi'
+remr    rd, r1, r2          3c          R       rde rs1 rs2     rd = r1 % r2        (floored)
+remi    rd, r1, imm16       3d          M       rde rs1 imm     rd = r1 % imm16     (floored)
+mod                                                             assembler alias for 'modr' and 'modi'
+modr    rd, r1, r2          3e          R       rde rs1 rs2     rd = r1 %% r2       (truncated)
+modi    rd, r1, imm16       3f          M       rde rs1 imm     rd = r1 %% imm16    (truncated)
 
 and                                                             assembler alias for 'andr' and 'andi'
 andr    rd, r1, r2          40          R       rde rs1 rs2     rd = r1 & r2
@@ -87,6 +103,8 @@ retr    rs                  63          M       rs1             pc = rs
 b(cc)   label               64          B       imm             jump to label if condition is met - see `branch.txt`
 jal     label               65          J       imm             jump to label, push (pc+4)
 jalr    label, rd           66          J       imm rde         jump to label, rd = (pc+4)
+
+
 
 notes
     word -> 64 bit

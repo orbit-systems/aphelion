@@ -1,17 +1,29 @@
 instruction     func        description
 
 bra             0 0000      true
-beq             1 0001      equal
-bez             2 0010      zero
-blt             3 0011      less than
-ble             4 0100      less than or equal to
-bltu            5 0101      less than (unsigned)
-bleu            6 0110      less than or equal to (unsigned)
-bpe             7 0111      parity bit enabled (odd)
-bne             9 1001      not equal
-bnz             A 1010      not zero
-bge             B 1011      greater than or equal to
-bgt             C 1100      greater than
-bgeu            D 1101      greater than or equal to (unsigned)
-bgtu            E 1110      greater than (unsigned)
-bpd             F 1111      parity bit disabled (even)
+beq             1 0001      EQUAL
+bez             2 0010      ZERO
+blt             3 0011      LESS
+ble             4 0100      LESS || EQUAL
+bltu            5 0101      LESS_UNSIGNED
+bleu            6 0110      LESS_UNSIGNED || EQUAL
+bpe             7 0111      PARITY
+---             8 1000      [ unused ]
+---             9 1001      [ unused ]
+---             A 1010      [ unused ]
+---             B 1011      [ unused ]
+---             C 1100      [ unused ]
+---             D 1101      [ unused ]
+---             E 1110      [ unused ]
+---             F 1111      [ unused ]
+
+* ASSEMBLER MACROS
+
+name    expand      description
+bne     ffl; beq    not equal
+bnz     ffl; bez    not zero
+bge     ffl; blt    greater or equal       
+bgt     ffl; ble    greater
+bgeu    ffl; bltu   greater unsigned or equal
+bgtu    ffl; bleu   greater unsigned
+bpd     ffl; bpe    not parity
