@@ -7,9 +7,6 @@ id  bytes   loc     description
 2   8       0x810   gpu
     488     0x818   reserved
 
-
-
-
 note * all formats in this file (ex. RGBYYXX[OP]) are listed most significant byte to least significant byte. so in RGBXXYY[03], the most significant byte would be the R value.
 
 internal gpu interface

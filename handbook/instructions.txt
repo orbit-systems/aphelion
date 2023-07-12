@@ -30,8 +30,8 @@ sw      rd, rs, imm16       28          M       rde rs1 imm     mem[rs + imm16] 
 sh      rd, rs, imm16       29          M       rde rs1 imm     mem[rs + imm16] = rd (halfword, 32-bit)
 sq      rd, rs, imm16       2a          M       rde rs1 imm     mem[rs + imm16] = rd (quarterword, 16-bit)
 sb      rd, rs, imm16       2b          M       rde rs1 imm     mem[rs + imm16] = rd (byte)
-end     r1, r2              2c          M       rde rs1         r1 <- byteswap(r2)      * convert between l. endian and b. endian
-swp     r1, r2              2d          M       rde rs1         (r1, r2) = (r2, r1)
+swp     r1, r2              2c          M       rde rs1         r1 <- byteswap(r2)      * convert between l. endian and b. endian
+xch     r1, r2              2d          M       rde rs1         (r1, r2) = (r2, r1)
 mov                                                             assembler alias for to 'add r1, rz, r2'
 
 
