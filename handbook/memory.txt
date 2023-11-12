@@ -1,7 +1,0 @@
-memory map
-
-start   end         description
-
-0x0     0x7FF       interrupt vector table
-0x800   0x9FF       mmio
-0xA00   ---         RAM

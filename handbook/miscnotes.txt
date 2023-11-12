@@ -1,7 +1,0 @@
-macro idea
-	lfi rd, 0x0123456789ABCDEF
-	↓
-	li    rd, 0x0123
-	lui   rd, 0x4567
-	lti   rd, 0x89AB
-	ltui  rd, 0xCDEF
