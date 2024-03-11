@@ -1,4 +1,4 @@
-![Aphelion Logo](https://github.com/orbit-systems/aphelion/blob/main/readme-assets/aphelion64.png)
+![Aphelion Logo](https://github.com/orbit-systems/aphelion/blob/main/readme-assets/aphelion.png)
 # Aphelion
 Aphelion is an instruction set architecture built for low-bloat, high-performance 64-bit computing.
 
