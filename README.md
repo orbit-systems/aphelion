@@ -2,8 +2,6 @@
 # Aphelion
 Aphelion is a 64-bit RISC-like instruction set architecture. Aphelion aims to be a clean and featureful architecture without succumbing to paralyzing minimalism or unwieldy complexity, walking a line between CISC and RISC conventions. Aphelion is meant for high-performance native-64-bit computing while staying easy to implement.
 
-Aphelion is under active development. If you have
-
 ### Official Projects
 - [Luna - assembler](https://github.com/orbit-systems/luna)
 - [Comet - reference emulator ](https://github.com/orbit-systems/comet)
