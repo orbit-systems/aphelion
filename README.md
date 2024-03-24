@@ -10,6 +10,6 @@ Aphelion is a 64-bit RISC-like instruction set architecture. Aphelion aims to be
 ### Cool Shit
 - [Mars - low-level, Aphelion-targeted programming language](https://github.com/orbit-systems/mars)
 - [Meteor - emulator in Rust](https://github.com/orbit-systems/meteor)
-- [Asteriod - emulator in Zig](https://github.com/orbit-systems/asteroid)
+- [Asteroid - emulator in Zig](https://github.com/orbit-systems/asteroid)
 - [aphelion-util - Rust library for handling Aphelion](https://github.com/orbit-systems/aphelion-util)
 - [Kuiper - C utilities for handling Aphelion](https://github.com/orbit-systems/kuiper)
