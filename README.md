@@ -1,4 +1,4 @@
-![Aphelion Logo](https://github.com/orbit-systems/aphelion/blob/main/readme-assets/aphelion.png)
+![Aphelion Logo](https://github.com/orbit-systems/aphelion/blob/main/aphelion.png)
 # Aphelion
 Aphelion is a little-endian, 64-bit RISC-like architecture foxued on efficient, dense, data-driven execution.
 
