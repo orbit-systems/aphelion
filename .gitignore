@@ -1,0 +1,12 @@
+*.o
+*.a
+*.d
+*.exe
+
+.vscode
+build
+bin
+gmon.out
+.clangd
+.cache
+compile_commands.json
