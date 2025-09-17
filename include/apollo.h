@@ -17,11 +17,11 @@ typedef enum : u8 {
     APO_OBJ_EXECUTABLE,
 } ApoObjectKind;
 
-typedef enum : u8 {
-    APO_CMODEL_U32, // symbols are in [0, U32_MAX]
-    APO_CMODEL_I32, // symbols are in [I32_MIN, I32_MAX]
-    APO_CMODEL_ANY, // symbols can be any 64-bit value
-} ApoCodeModel;
+// typedef enum : u8 {
+//     APO_CMODEL_U32, // symbols are in [0, U32_MAX]
+//     APO_CMODEL_I32, // symbols are in [I32_MIN, I32_MAX]
+//     APO_CMODEL_ANY, // symbols can be any 64-bit value
+// } ApoCodeModel;
 
 struct ApoHeader {
     // {0xB2, 'a', 'p', 'o'}
@@ -30,7 +30,7 @@ struct ApoHeader {
     ApoObjectKind kind;
 
     // symbol index to begin execution at, if relevant.
-    u32 exec_symbol;
+    u32 entry_symbol;
 
     u32 section_count;
     u32 symbol_count;
@@ -55,7 +55,7 @@ typedef enum : u16 {
     // initialized with zeroes, doesn't actually take up data
     APO_SECFL_BLANK = 1 << 4,
     
-    // this section is considered "pinned" to its preferred address,
+    // this section is considered "pinned" to its preferred address.
     // emit an error if there are mapping conflicts.
     APO_SECFL_PINNED = 1 << 5,
 
@@ -77,8 +77,8 @@ typedef enum : u16 {
 struct ApoSectionHeader {
     ApoStringIndex name;
     ApoSectionFlags flags;
-    ApoCodeModel cmodel;
     u8 alignment;
+    // ApoCodeModel cmodel;
 
     u64 map_address;
 
@@ -92,6 +92,7 @@ struct ApoSectionHeader {
 typedef enum : u8 {
     // default align 8 bytes
     APO_RELOC_W,
+
     // default align 4 bytes
     APO_RELOC_H0,
     APO_RELOC_H1,
@@ -104,9 +105,10 @@ typedef enum : u8 {
     APO_RELOC_Q3,
 
     // default align 4 bytes
-    APO_RELOC_CALL_ANY,
-    APO_RELOC_CALL_U32,
-    APO_RELOC_CALL_I32,
+    APO_RELOC_CALL,
+
+    // default align 4 bytes
+    APO_RELOC_LI,
 
     // default align 4 bytes
     APO_RELOC_BRANCH,
@@ -139,11 +141,6 @@ typedef enum : u8 {
     APO_SYMBIND_GLOBAL,
     APO_SYMBIND_WEAK,
     APO_SYMBIND_LOCAL,
-
-    // required by a dynamic library 
-    APO_SYMBIND_DYNIMPORT,
-    // exported by THIS dynamic library
-    APO_SYMBIND_DYNEXPORT,
 } ApoSymbolBind;
 
 typedef enum: u8 {

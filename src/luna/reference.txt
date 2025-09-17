@@ -238,6 +238,8 @@ label:
     mov r1, r2
         or r1, r2, zr
 
-    reloc0_15()
-    reloc2_15()
-    reloc2_15()
+    li r1, 0xBAAD_F00D_DEAD_BEEF
+        ssi.c r1, 0xBAAD, 48
+        ssi   r1, 0xF00D, 32
+        ssi   r1, 0xDEAD, 16
+        ssi   r1, 0xBEEF, 0
