@@ -1,0 +1,39 @@
+#ifndef LUNA_H
+#define LUNA_H
+
+#include "common/type.h"
+
+typedef enum : u8 {
+    GPR_ZR = 0,
+    
+    GPR_A0, GPR_A1, GPR_A2, GPR_A3, GPR_A4, GPR_A5, 
+
+    GPR_L0, GPR_L1, GPR_L2, GPR_L3, GPR_L4, GPR_L5, GPR_L6,
+    GPR_L7, GPR_L8, GPR_L9, GPR_L10, GPR_L11, GPR_L12, GPR_L13,
+
+    GPR_T0, GPR_T1, GPR_T2, GPR_T3, GPR_T4, GPR_T5,
+    
+    GPR_TP,
+    GPR_FP,
+    GPR_SP,
+    GPR_LP,
+    GPR_IP,
+} AphelGpr;
+
+typedef enum : u8 {
+    CTRL_INT0, CTRL_INT1, CTRL_INT2, CTRL_INT3, 
+    CTRL_INT4, CTRL_INT5, CTRL_INT6, CTRL_INT7,
+    CTRL_INT8, CTRL_INT9, CTRL_INT10, CTRL_INT11,
+    CTRL_INT12, CTRL_INT13, CTRL_INT14, CTRL_INT15,
+
+    CTRL_INTIP,
+    CTRL_INTVAL,
+    CTRL_INTPTE,
+    CTRL_INTCAUSE,
+    CTRL_KPTP,
+    CTRL_UPTP,
+    CTRL_STAT,
+    CTRL_INTSTAT,
+} AphelCtrl;
+
+#endif // LUNA_H
