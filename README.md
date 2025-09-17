@@ -3,7 +3,7 @@
 Aphelion is a little-endian, 64-bit RISC-like architecture foxued on efficient, dense, data-driven execution.
 
 
-## New official tooling is currently being developed here!
+## New official tooling is currently being developed here!!
 All the links below are outdated and built for old, incompatible versions of the Aphelion ISA.
 
 ### (OLD) Official Projects
@@ -11,7 +11,7 @@ All the links below are outdated and built for old, incompatible versions of the
 - [Comet - reference emulator ](https://github.com/orbit-systems/comet)
 - [Kepler - disassembler](https://github.com/orbit-systems/kepler)
 
-### Cool Shit
+### (OLD (for now)) Cool Shit
 - [Mars - low-level, Aphelion-targeted programming language](https://github.com/orbit-systems/mars)
 - [Meteor - emulator in Rust](https://github.com/orbit-systems/meteor)
 - [Asteroid - emulator in Zig](https://github.com/orbit-systems/asteroid)

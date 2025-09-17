@@ -83,7 +83,7 @@
     cfetch.si  l0
     cfetch.sli l0
 
-// arithmetic
+// arithmetic and logic
     ssi   l0, 0xffff, 0
     ssi   l0, 0xffff, 16
     ssi   l0, 0xffff, 32
@@ -199,25 +199,35 @@ label:
     wait
     spin
     iret
-    lctrl r1, 22
-    sctrl r1, 22
+    lctrl l0, intstat
+    sctrl intstat, l0
 
 // pseudo-instructions
 
-    call lr, symbol
-        // 64-bit symbol
-        ssi lr, symbol >> 48 & 0xFFFF, 48
-        ssi lr, symbol >> 32 & 0xFFFF, 32
-        ssi lr, symbol >> 16 & 0xFFFF, 16
-        jl lr, lr, (symbol & 0xFFFF) >> 2
+    call r1, r2, symbol
+        // code model "any"
+        ssi.c r2, symbol >> 48 & 0xFFFF, 48
+        ssi r2, symbol >> 32 & 0xFFFF, 32
+        ssi r2, symbol >> 16 & 0xFFFF, 16
+        jl r1, r2, (symbol & 0xFFFF) >> 2
 
-        // 32-bit symbol
-        ssi lr, symbol >> 16 & 0xFFFF, 16
-        jl lr, lr, (symbol & 0xFFFF) >> 2
+        // code model "u32"
+        ssi.c r2, symbol >> 16 & 0xFFFF, 16
+        jl r1, r2, (symbol & 0xFFFF) >> 2
+
+        // code model "i32"
+        ssi.c r2, symbol >> 16 & 0xFFFF, 16
+        si.i r2, r2, 32, 32 
+        jl r1, r2, (symbol & 0xFFFF) >> 2
 
         // if the symbol is defined in the same text section (and is close enough),
-        // this can be futher reduced to
-        jl lr, ip, (relative_offset_in_insts)
+        // this can be futher reduced to something like this:
+        jl r1, ip, (relative_offset_in_insts)
+        // since it does not need to be relocated.
+
+    // alternative call syntax, uses 
+    call r1, symbol
+        call r1, r1, symbol
 
     ret
         jl zr, lr, 0
@@ -225,5 +235,9 @@ label:
     nop
         or zr, zr, zr
     
-    mov l0, l1
-        or l0, l1, zr
+    mov r1, r2
+        or r1, r2, zr
+
+    reloc0_15()
+    reloc2_15()
+    reloc2_15()
