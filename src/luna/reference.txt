@@ -205,17 +205,17 @@ label:
 // pseudo-instructions
 
     call r1, r2, symbol
-        // code model "any"
+        // can reach anything
         ssi.c r2, symbol >> 48 & 0xFFFF, 48
         ssi r2, symbol >> 32 & 0xFFFF, 32
         ssi r2, symbol >> 16 & 0xFFFF, 16
         jl r1, r2, (symbol & 0xFFFF) >> 2
 
-        // code model "u32"
+        // can reach anything 0 to 4GB
         ssi.c r2, symbol >> 16 & 0xFFFF, 16
         jl r1, r2, (symbol & 0xFFFF) >> 2
 
-        // code model "i32"
+        // can reac anything -2 to 2GB
         ssi.c r2, symbol >> 16 & 0xFFFF, 16
         si.i r2, r2, 32, 32 
         jl r1, r2, (symbol & 0xFFFF) >> 2

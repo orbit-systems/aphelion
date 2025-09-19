@@ -43,16 +43,16 @@ typedef enum : u16 {
     // should be loaded into program memory.
     APO_SECFL_LOAD = 1 << 0,
     
-    // should be loaded with write permissions
-    APO_SECFL_WRITE = 1 << 1,
+    // should be loaded with write permissions.
+    APO_SECFL_WRITABLE = 1 << 1,
     
-    // should be loaded with execute permissions
-    APO_SECFL_EXECUTE = 1 << 2,
+    // should be loaded with execute permissions.
+    APO_SECFL_EXECUTABLE = 1 << 2,
 
     // each thread should have a unique copy of this section.
     APO_SECFL_THREADLOCAL = 1 << 3,
     
-    // initialized with zeroes, doesn't actually take up data
+    // initialized with zeroes, doesn't actually take up data.
     APO_SECFL_BLANK = 1 << 4,
     
     // this section is considered "pinned" to its preferred address.
@@ -63,15 +63,19 @@ typedef enum : u16 {
     // sections with this flag should not be part of a section group,
     // rather the section group header should have this flag.
     APO_SECFL_COMMON = 1 << 6,
+
+    // this section cannot be removed in a "final link," even if none of its
+    // symbols are referenced.
+    APO_SECFL_VOLATILE = 1 << 7,
     
     // header of a section group.
     // ".content_size" now means how many sections are in the group.
     // section headers in a section group must be placed
     // continugously after the section header.
-    APO_SECFL_GROUP_HEADER = 1 << 7,
+    APO_SECFL_GROUP_HEADER = 1 << 8,
 
     // part of a section group.
-    APO_SECFL_GROUPED = 1 << 8,
+    APO_SECFL_GROUP_MEMBER = 1 << 9,
 } ApoSectionFlags;
 
 struct ApoSectionHeader {
@@ -116,17 +120,21 @@ typedef enum : u8 {
 
 typedef enum : u8 {
     // when calculating relocation value, subtract the current location.
-    // (adding `ip` in code should give the correct value)
+    // (with an addend of -4, adding `ip` in code should give the symbol value)
     APO_RELOCFL_RELATIVE = 1 << 0,
 
-    // this is used to suppress value truncation errors.
-    APO_RELOCFL_NOERROR = 1 << 1,
+    // instead of placing the relocation value,
+    // subtract the relocation value from what is already placed.
+    APO_RELOCFL_SUBTRACT = 1 << 1,
+
+    // suppress value truncation errors.
+    APO_RELOCFL_NOERROR = 1 << 2,
 
     // this relocation may not be aligned natively.
-    APO_RELOCFL_UNALIGNED = 1 << 2,
+    APO_RELOCFL_UNALIGNED = 1 << 3,
 
-    // linkers/loaders may relax/optimize relocations.
-    APO_RELOCFL_RELAX = 1 << 3,
+    // linkers/loaders cannot perform relaxation/optimization.
+    APO_RELOCFL_NORELAX = 1 << 4,
 } ApoRelocationFlags;
 
 struct ApoRelocation {
