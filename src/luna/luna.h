@@ -95,12 +95,12 @@ typedef enum : u8 {
     OP_UREM = OP(000, 110, C),
     OP_IREM = OP(000, 111, C),
 
-    OP_AND = OP(001, 000, C),
-    OP_OR  = OP(001, 001, C),
-    OP_NOR = OP(001, 010, C),
-    OP_XOR = OP(001, 011, C),
-    OP_EXT = OP(001, 100, C),
-    OP_DEP = OP(001, 101, C),
+    OP_AND   = OP(001, 000, C),
+    OP_OR    = OP(001, 001, C),
+    OP_NOR   = OP(001, 010, C),
+    OP_XOR   = OP(001, 011, C),
+    OP_EXT   = OP(001, 100, C),
+    OP_DEP   = OP(001, 101, C),
     OP_UMULH = OP(001, 110, C),
     OP_IMULH = OP(001, 111, C),
 
@@ -148,6 +148,9 @@ typedef struct {
 
 typedef enum : u8 {
     TOK_NEWLINE = 1,
+
+    TOK_IDENT, // identifier
+    TOK_STRING, // string literal.
 
     TOK_COMMA,
     TOK_COLON,
@@ -213,8 +216,15 @@ typedef enum : u8 {
     TOK_KW_Q1,
     TOK_KW_Q2,
     TOK_KW_Q3,
-    TOK_KW_NORELAX,
+
+    // relocation flags
     TOK_KW_NOERROR,
 } LunaTokenKind;
+
+typedef struct LunaToken {
+    const char* ptr;
+    u16 len;
+    LunaTokenKind kind;
+} LunaToken;
 
 #endif // LUNA_H

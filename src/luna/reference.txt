@@ -192,6 +192,8 @@ label:
 
     jl lr, l0, 8191
     jl lr, l0, -8192
+    jlr lr, l0, 8191
+    jlr lr, l0, -8192
 
 // system control
     syscall
@@ -204,28 +206,23 @@ label:
 
 // pseudo-instructions
 
-    call r1, r2, symbol
-        // can reach anything
+    farcall r1, r2, symbol
         ssi.c r2, symbol >> 48 & 0xFFFF, 48
         ssi r2, symbol >> 32 & 0xFFFF, 32
         ssi r2, symbol >> 16 & 0xFFFF, 16
         jl r1, r2, (symbol & 0xFFFF) >> 2
 
-        // can reach anything 0 to 4GB
+    call r1, r2, symbol
+        // can reach anything -2 to 2GB relative
         ssi.c r2, symbol >> 16 & 0xFFFF, 16
-        jl r1, r2, (symbol & 0xFFFF) >> 2
-
-        // can reac anything -2 to 2GB
-        ssi.c r2, symbol >> 16 & 0xFFFF, 16
-        si.i r2, r2, 32, 32 
-        jl r1, r2, (symbol & 0xFFFF) >> 2
+        jlr r1, r2, (symbol & 0xFFFF) >> 2
 
         // if the symbol is defined in the same text section (and is close enough),
         // this can be futher reduced to something like this:
-        jl r1, ip, (relative_offset_in_insts)
+        jlr r1, zero, (relative_offset_in_insts)
         // since it does not need to be relocated.
 
-    // alternative call syntax, uses 
+    // alternative call syntax, uses the symbol register as the link register
     call r1, symbol
         call r1, r1, symbol
 
