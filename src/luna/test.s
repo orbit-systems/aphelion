@@ -1,6 +1,5 @@
 executable 
 section "text"
-align 4
 global start:
     mov l0, lr
     call lr, increment
@@ -22,6 +21,5 @@ get_first_16:
 
 writable 
 section "data"
-align 8
 mydata:
     d64 0xBAAD_F00D_DEAD_BEEF

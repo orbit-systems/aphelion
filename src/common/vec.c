@@ -4,7 +4,7 @@
 #include "common/vec.h"
 
 _VecGeneric* _vec_new(size_t stride, size_t initial_cap) {
-    // store the vec statically so it lives after vec_new has been called, 
+    // store the vec statically so it lives after vec_new has been called,
     // long enough for it to be copied out on the caller side
     _Thread_local static _VecGeneric temp;
     _vec_init(&temp, stride, initial_cap);
@@ -22,14 +22,7 @@ void _vec_init(_VecGeneric* v, size_t stride, size_t initial_cap) {
 
 void _vec_reserve(_VecGeneric* v, size_t stride, size_t slots) {
     if (slots + v->len > v->cap) {
-        v->cap = slots + (v->cap >> 1);
-        v->at = realloc(v->at, v->cap * stride);
-    }
-}
-
-void _vec_expand_if_necessary(_VecGeneric* v, size_t stride) {
-    if (v->len + 1 > v->cap) {
-        v->cap = (v->cap * 3) / 2;
+        v->cap += slots + (v->cap >> 1);
         v->at = realloc(v->at, v->cap * stride);
     }
 }

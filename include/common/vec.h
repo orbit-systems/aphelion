@@ -29,7 +29,6 @@ _VecGeneric* _vec_new(size_t stride, size_t initial_cap);
 
 void _vec_init(_VecGeneric* v, size_t stride, size_t initial_cap);
 void _vec_reserve(_VecGeneric* v, size_t stride, size_t slots);
-void _vec_expand_if_necessary(_VecGeneric* v, size_t stride);
 void _vec_destroy(_VecGeneric* v);
 void _vec_shrink(_VecGeneric* v, size_t stride);
 
@@ -40,13 +39,14 @@ void _vec_shrink(_VecGeneric* v, size_t stride);
 #define vec_init(v, initial_cap) _vec_init((_VecGeneric*)v, vec_stride(v), initial_cap)
 
 #define vec_append(v, element) do { \
-    _vec_expand_if_necessary((_VecGeneric*)(v), vec_stride((v)));\
+    _vec_reserve((_VecGeneric*)(v), vec_stride((v)), 1);\
     (v)->at[(v)->len++] = (element); \
 } while (0)
 
-#define vec_append_many(v, elements, len) do { \
-    _vec_reserve((_VecGeneric*)(v), vec_stride((v)), (len));\
-    memcpy(&(v)->at[(v)->len], (elements), (len) * vec_stride((v))); \
+#define vec_append_many(v, elements, length) do { \
+    _vec_reserve((_VecGeneric*)(v), vec_stride((v)), (length));\
+    memcpy(&(v)->at[(v)->len], (elements), (length) * vec_stride((v))); \
+    (v)->len += (length);\
 } while (0)
 #define vec_reserve(v, num_slots) _vec_reserve((_VecGeneric*)(v), vec_stride((v)), num_slots)
 

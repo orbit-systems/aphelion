@@ -44,7 +44,8 @@ void arena_destroy(Arena* arena) {
         top = top->next;
     }
     // destroy any saved blocks below
-    for (Arena__Chunk* ch = top, *prev = ch->prev; ch != nullptr; ch = prev, prev = prev->prev) {
+    for (Arena__Chunk *ch = top, *prev = ch->prev; ch != nullptr;
+         ch = prev, prev = prev->prev) {
         free(ch);
     }
     arena->top = nullptr;

@@ -6,6 +6,11 @@ LUNA_SRC_PATHS = \
 LUNA_SRC = $(wildcard $(LUNA_SRC_PATHS))
 LUNA_OBJECTS = $(LUNA_SRC:src/%.c=build/%.o)
 
+ALL_SRC_PATHS = \
+	$(LUNA_SRC_PATHS)
+ALL_SRC = $(wildcard $(ALL_SRC_PATHS))
+
+
 CC = gcc
 LD = gcc
 
@@ -33,6 +38,11 @@ build/%.o: src/%.c
 	$(shell echo 1>&2 -e "Compiling \e[1m$<\e[0m")
 	
 	@$(CC) -c -o $@ $< -MD $(INCLUDEPATHS) $(ALLFLAGS) $(OPT)
+
+.PHONY: tidy
+tidy:
+	clang-tidy -checks='-*,readability-braces-around-statements' -fix-errors $(ALL_SRC)
+	
 
 .PHONY: luna
 luna: bin/luna

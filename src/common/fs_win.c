@@ -9,7 +9,7 @@ bool fs_real_path(const char* path, FsPath* out) {
     out->len = strlen(out->raw);
 
     // fuck backslash all my homies hate backslash
-    for_n(i, 0, out->len) {
+    for_n (i, 0, out->len) {
         if (out->raw[i] == '\\') {
             out->raw[i] = '/';
         }
@@ -21,20 +21,28 @@ bool fs_real_path(const char* path, FsPath* out) {
 FsFile* fs_open(const char* path, bool create, bool overwrite) {
     FsFile* f = malloc(sizeof(FsFile));
     if (create) {
-        f->handle = (isize) CreateFileA(
-            path, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, 
+        f->handle = (isize)CreateFileA(
+            path,
+            GENERIC_WRITE,
+            FILE_SHARE_WRITE,
+            nullptr,
             overwrite ? CREATE_ALWAYS : CREATE_NEW,
-            0, 0
+            0,
+            0
         );
     } else {
-        f->handle = (isize) CreateFileA(
-            path, GENERIC_READ, FILE_SHARE_READ, nullptr, 
+        f->handle = (isize)CreateFileA(
+            path,
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            nullptr,
             overwrite ? OPEN_ALWAYS : OPEN_EXISTING,
-            0, 0
+            0,
+            0
         );
     }
 
-    if ((void*) f->handle == INVALID_HANDLE_VALUE) {
+    if ((void*)f->handle == INVALID_HANDLE_VALUE) {
         return nullptr;
     }
 
@@ -44,16 +52,16 @@ FsFile* fs_open(const char* path, bool create, bool overwrite) {
     ULARGE_INTEGER windows_why_are_u_say_zis;
 
     windows_why_are_u_say_zis.HighPart = info.nFileIndexHigh;
-    windows_why_are_u_say_zis.LowPart  = info.nFileIndexLow;
-    f->id = (usize) windows_why_are_u_say_zis.QuadPart;
+    windows_why_are_u_say_zis.LowPart = info.nFileIndexLow;
+    f->id = (usize)windows_why_are_u_say_zis.QuadPart;
 
     windows_why_are_u_say_zis.HighPart = info.ftLastWriteTime.dwHighDateTime;
-    windows_why_are_u_say_zis.LowPart  = info.ftLastWriteTime.dwLowDateTime;
-    f->last_modified = (usize) windows_why_are_u_say_zis.QuadPart;
+    windows_why_are_u_say_zis.LowPart = info.ftLastWriteTime.dwLowDateTime;
+    f->last_modified = (usize)windows_why_are_u_say_zis.QuadPart;
 
     windows_why_are_u_say_zis.HighPart = info.nFileSizeHigh;
-    windows_why_are_u_say_zis.LowPart  = info.nFileSizeLow;
-    f->size = (usize) windows_why_are_u_say_zis.QuadPart;
+    windows_why_are_u_say_zis.LowPart = info.nFileSizeLow;
+    f->size = (usize)windows_why_are_u_say_zis.QuadPart;
 
     fs_real_path(path, &f->path);
 
@@ -110,8 +118,10 @@ Vec(string) fs_dir_contents(const char* path, Vec(string)* _contents) {
     }
 
     do {
-        if (strcmp(data.cFileName, ".") == 0) continue;
-        if (strcmp(data.cFileName, "..") == 0) continue;
+        if (strcmp(data.cFileName, ".") == 0)
+            continue;
+        if (strcmp(data.cFileName, "..") == 0)
+            continue;
         vec_append(&contents, string_clone(str(data.cFileName)));
 
     } while (FindNextFileA(search_handle, &data));
@@ -126,7 +136,7 @@ char* fs_get_current_dir() {
     char* current_dir = malloc(required + 1);
     current_dir[required] = 0;
     GetCurrentDirectoryA(required, current_dir);
-    for_n(i, 0, required) {
+    for_n (i, 0, required) {
         if (current_dir[i] == '\\') {
             current_dir[i] = '/';
         }

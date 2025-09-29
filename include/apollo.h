@@ -1,27 +1,25 @@
 #ifndef APOLLO_H
 #define APOLLO_H
 
+#include "common/str.h"
 #include "common/type.h"
+#include "common/vec.h"
 
 typedef struct ApoHeader ApoHeader;
 typedef struct ApoSectionHeader ApoSectionHeader;
 typedef struct ApoSymbol ApoSymbol;
-typedef u32 ApoStringIndex;
-#define APO_NULL_STRING 0
-#define APO_NULL_SECTION 0
-#define APO_NULL_SYMBOL 0
+typedef struct ApoRelocation ApoRelocation;
+typedef struct ApoBuilder ApoBuilder;
+typedef struct ApoBuilderSection ApoBuilderSection;
+typedef u32 ApoHandle;
+
+#define APO_NULL_HANDLE 0
 
 typedef enum : u8 {
     APO_OBJ_RELOCATABLE,
     APO_OBJ_SHARED,
     APO_OBJ_EXECUTABLE,
 } ApoObjectKind;
-
-// typedef enum : u8 {
-//     APO_CMODEL_U32, // symbols are in [0, U32_MAX]
-//     APO_CMODEL_I32, // symbols are in [I32_MIN, I32_MAX]
-//     APO_CMODEL_ANY, // symbols can be any 64-bit value
-// } ApoCodeModel;
 
 struct ApoHeader {
     // {0xB2, 'a', 'p', 'o'}
@@ -35,7 +33,7 @@ struct ApoHeader {
     u32 section_count;
     u32 symbol_count;
     u32 reloc_count;
-    u32 strings_size;
+    u32 datapool_size;
     u32 content_size;
 };
 
@@ -67,22 +65,24 @@ typedef enum : u16 {
     // this section cannot be removed in a "final link," even if none of its
     // symbols are referenced.
     APO_SECFL_VOLATILE = 1 << 7,
+
+    // sections with the same name and same section flags should be concatenated.
+    APO_SECFL_CONCATENATE = 1 << 8,
     
     // header of a section group.
     // ".content_size" now means how many sections are in the group.
     // section headers in a section group must be placed
     // continugously after the section header.
-    APO_SECFL_GROUP_HEADER = 1 << 8,
+    APO_SECFL_GROUP_HEADER = 1 << 9,
 
     // part of a section group.
-    APO_SECFL_GROUP_MEMBER = 1 << 9,
+    APO_SECFL_GROUP_MEMBER = 1 << 10,
 } ApoSectionFlags;
 
 struct ApoSectionHeader {
-    ApoStringIndex name;
+    ApoHandle name;
     ApoSectionFlags flags;
-    u8 alignment;
-    // ApoCodeModel cmodel;
+    u8 alignment_p2;
 
     u64 map_address;
 
@@ -94,53 +94,27 @@ struct ApoSectionHeader {
 };
 
 typedef enum : u8 {
-    // default align 8 bytes
+    // unaligned
+    APO_RELOC_W_UNALIGNED,
+    // align 8 bytes
     APO_RELOC_W,
 
-    // default align 4 bytes
-    APO_RELOC_H0,
-    APO_RELOC_H1,
-
-    // default align 2 bytes
-    APO_RELOC_Q0_JL, // cut off bits 0..1 for JL
-    APO_RELOC_Q0,
-    APO_RELOC_Q1,
-    APO_RELOC_Q2,
-    APO_RELOC_Q3,
-
-    // default align 4 bytes
+    // align 4 bytes
     APO_RELOC_CALL,
 
-    // default align 4 bytes
+    // align 4 bytes
+    APO_RELOC_FARCALL,
+
+    // align 4 bytes
     APO_RELOC_LI,
 
-    // default align 4 bytes
+    // align 4 bytes
     APO_RELOC_BRANCH,
 } ApoRelocationKind;
-
-typedef enum : u8 {
-    // when calculating relocation value, subtract the current location.
-    // (with an addend of -4, adding `ip` in code should give the symbol value)
-    APO_RELOCFL_RELATIVE = 1 << 0,
-
-    // instead of placing the relocation value,
-    // subtract the relocation value from what is already placed.
-    APO_RELOCFL_SUBTRACT = 1 << 1,
-
-    // suppress value truncation errors.
-    APO_RELOCFL_NOERROR = 1 << 2,
-
-    // this relocation may not be aligned natively.
-    APO_RELOCFL_UNALIGNED = 1 << 3,
-
-    // linkers/loaders cannot perform relaxation/optimization.
-    APO_RELOCFL_NORELAX = 1 << 4,
-} ApoRelocationFlags;
 
 struct ApoRelocation {
     u32 symbol;
     ApoRelocationKind kind;
-    ApoRelocationFlags flags;
     i16 addend;
     u32 offset; // offset into section where the relocation must occur
 };
@@ -152,23 +126,69 @@ typedef enum : u8 {
 } ApoSymbolBind;
 
 typedef enum: u8 {
-    // the symbol is not defined yet.
-    APO_SYMFL_UNDEFINED = 1 << 0,
-
-    // the symbol is an absolute value, not defined relative to anything.
-    // use ".offset" as an (8-byte aligned) offset into the data pool
-    APO_SYMFL_ABSOLUTE = 1 << 1,
-
-    // allow the linker to suffix the name of a symbol if symbol conflicts occur
+    // allow the linker to suffix the name of a symbol if name conflicts occur
     // when combining multiple object files together
-    APO_SYMFL_SUFFIX = 1 << 2,
+    APO_SYMFL_SUFFIX = 1 << 0,
+
+    // this symbol cannot be removed in a "final link,"
+    // even if it is not referenced.
+    APO_SYMFL_VOLATILE = 1 << 1,
+
 } ApoSymbolFlags;
 
 struct ApoSymbol {
-    ApoStringIndex name;
+    ApoHandle name;
     u32 offset;
     ApoSymbolBind bind;
     ApoSymbolFlags flags;
 };
+
+Vec_typedef(ApoBuilderSection);
+Vec_typedef(ApoSymbol);
+Vec_typedef(ApoRelocation);
+Vec_typedef(u8);
+
+/* reader/writer/builder API */
+
+struct ApoBuilder {
+    Vec(ApoBuilderSection) sections;
+    Vec(u8) datapool;
+
+    Vec(ApoSymbol) undef_symbols;
+    Vec(ApoSymbol) abs_symbols;
+};
+
+struct ApoBuilderSection {
+    ApoHandle name;
+    ApoSectionFlags flags;
+    u64 map_address;
+
+    Vec(ApoSymbol) symbols;
+    Vec(ApoRelocation) relocs;
+    Vec(u8) content;
+};
+
+/// create an ApoBuilder based on the apollo file in 'bytes'.
+// 
+ApoBuilder* apo_read(const u8* bytes, usize len);
+
+// create an ApoBuilder based on the apollo file in 'bytes'.
+// operates under the assumption that it will never be modified. 
+// operations that modify the builder created with this likely 
+// cause fatal crashes. 
+// NOTE: relies on 'bytes' as backing memory. 'bytes' should stay valid.
+ApoBuilder* apo_readonly(const u8* bytes, usize len);
+
+// create a blank ApoBuilder.
+ApoBuilder* apo_new(ApoObjectKind kind);
+
+// export an ApoBuilder to a flat apollo file.
+void apo_write(ApoBuilder* b, Vec(u8)* out);
+
+// destroy an ApoBuilder and free the memory associated with it.
+void apo_destroy(ApoBuilder* b);
+
+// destroy an ApoBuilder created with apo_readonly().
+void apo_destroy_readonly(ApoBuilder* b);
 
 #endif // APOLLO_H

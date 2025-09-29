@@ -35,51 +35,67 @@ void string_concat_buf(string buf, string a, string b) {
 }
 
 bool string_ends_with(string source, string ending) {
-    if (source.len < ending.len) return false;
+    if (source.len < ending.len) {
+        return false;
+    }
 
-    return string_eq(substring_len(source, source.len-ending.len, ending.len), ending);
+    return string_eq(
+        substring_len(source, source.len - ending.len, ending.len), ending
+    );
 }
 
 string string_alloc(size_t len) {
-    #ifdef CSTRING_COMPATIBILITY_MODE
+#ifdef CSTRING_COMPATIBILITY_MODE
     char* raw = malloc(len + 1);
-    #else
+#else
     char* raw = malloc(len);
-    #endif
+#endif
 
-    if (raw == nullptr) return NULL_STR;
+    if (raw == nullptr) {
+        return NULL_STR;
+    }
 
     memset(raw, '\0', len);
 
-    #ifdef CSTRING_COMPATIBILITY_MODE
+#ifdef CSTRING_COMPATIBILITY_MODE
     raw[len] = '\0';
-    #endif
+#endif
 
     return (string){raw, len};
-
 }
 
 int string_cmp(string a, string b) {
     // copied from odin's implementation lmfao
     int res = memcmp(a.raw, b.raw, a.len < b.len ? a.len : b.len);
-    if (res == 0 && a.len != b.len) return a.len <= b.len ? -1 : 1;
-    else if (a.len == 0 && b.len == 0) return 0;
+    if (res == 0 && a.len != b.len) {
+        return a.len <= b.len ? -1 : 1;
+    } else if (a.len == 0 && b.len == 0) {
+        return 0;
+    }
     return res;
 }
 
 bool string_eq(string a, string b) {
-    if (a.len != b.len) return false;
+    if (a.len != b.len) {
+        return false;
+    }
     for (size_t i = 0; i < a.len; ++i) {
-        if (a.raw[i] != b.raw[i]) return false;
+        if (a.raw[i] != b.raw[i]) {
+            return false;
+        }
     }
     return true;
 }
 
 char* clone_to_cstring(string str) {
-    if (is_null_str(str)) return "";
+    if (is_null_str(str)) {
+        return "";
+    }
 
     char* cstr = malloc(str.len + 1);
-    if (cstr == nullptr) return nullptr;
+    if (cstr == nullptr) {
+        return nullptr;
+    }
     memcpy(cstr, str.raw, str.len);
     cstr[str.len] = '\0';
     return cstr;
@@ -87,14 +103,17 @@ char* clone_to_cstring(string str) {
 
 string string_clone(string str) {
     string new_str = string_alloc(str.len);
-    if (memmove(new_str.raw, str.raw, str.len) != new_str.raw) return NULL_STR;
+    if (memmove(new_str.raw, str.raw, str.len) != new_str.raw) {
+        return NULL_STR;
+    }
     return new_str;
 }
 
-void printn(char* text, size_t len) {
+static void printn(char* text, size_t len) {
     size_t c = 0;
-    while (c < len && text[c] != '\0')
+    while (c < len && text[c] != '\0') {
         putchar(text[c++]);
+    }
 }
 
 void printstr(string str) {

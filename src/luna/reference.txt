@@ -206,12 +206,6 @@ label:
 
 // pseudo-instructions
 
-    farcall r1, r2, symbol
-        ssi.c r2, symbol >> 48 & 0xFFFF, 48
-        ssi r2, symbol >> 32 & 0xFFFF, 32
-        ssi r2, symbol >> 16 & 0xFFFF, 16
-        jl r1, r2, (symbol & 0xFFFF) >> 2
-
     call r1, r2, symbol
         // can reach anything -2 to 2GB relative
         ssi.c r2, symbol >> 16 & 0xFFFF, 16
@@ -225,6 +219,12 @@ label:
     // alternative call syntax, uses the symbol register as the link register
     call r1, symbol
         call r1, r1, symbol
+
+    farcall r1, r2, symbol
+        ssi.c r2, symbol >> 48 & 0xFFFF, 48
+        ssi r2, symbol >> 32 & 0xFFFF, 32
+        ssi r2, symbol >> 16 & 0xFFFF, 16
+        jl r1, r2, (symbol & 0xFFFF) >> 2
 
     ret
         jl zr, lr, 0

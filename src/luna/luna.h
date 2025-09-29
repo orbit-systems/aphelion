@@ -207,15 +207,7 @@ typedef enum : u8 {
     TOK_KW_PIN,
     TOK_KW_COMMON,
     TOK_KW_VOLATILE,
-
-    // special relocation operators
-    TOK_KW_H0,
-    TOK_KW_H1,
-
-    TOK_KW_Q0,
-    TOK_KW_Q1,
-    TOK_KW_Q2,
-    TOK_KW_Q3,
+    TOK_KW_CONCATENATE,
 
     // relocation flags
     TOK_KW_NOERROR,
