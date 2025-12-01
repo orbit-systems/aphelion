@@ -23,6 +23,7 @@
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
+#define len(a)   (sizeof(a) / sizeof(a[0]))
 
 #define for_n_eq(iterator, start, end) for (isize iterator = (start); iterator <= (end); ++iterator)
 #define for_n(iterator, start, end) for (isize iterator = (start); iterator < (end); ++iterator)

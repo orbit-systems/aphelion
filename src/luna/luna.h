@@ -2,6 +2,7 @@
 #define LUNA_H
 
 #include "common/type.h"
+#include "common/vec.h"
 
 typedef enum : u8 {
     GPR_ZR = 0,
@@ -146,77 +147,88 @@ typedef struct {
     i32 imm;
 } AphelInst;
 
+// Welcome to horrible C preprocessor!! (blame Nick)
+#define KEYWORDS_LIST                 \
+    /* yeah                         */\
+    X(INCLUDE, "include")             \
+    X(FORCEINCLUDE, "forceinclude")   \
+    /* flag configuration           */\
+    X(SET, "set")                     \
+    X(UNSET, "unset")                 \
+    /* declarations                 */\
+    X(GROUP, "group")                 \
+    X(SECTION, "section")             \
+    X(SYMBOL, "symbol")               \
+    X(EXTERN, "extern")               \
+    X(DEFINE, "define")               \
+    X(ENTRY, "entry")                 \
+    /* symbol binding               */\
+    X(GLOBAL, "global")               \
+    X(LOCAL, "local")                 \
+    X(WEAK, "weak")                   \
+    /* data                         */\
+    X(REPEAT, "repeat")               \
+    X(UNALIGNED, "unaligned")         \
+    X(ALIGN, "align")                 \
+    X(LOC, "loc")                     \
+    X(ZERO, "zero")                   \
+    X(D8, "d8")                       \
+    X(D16, "d16")                     \
+    X(D32, "d32")                     \
+    X(D64, "d64")                     \
+    X(STRING, "string")               \
+    /* section flags                */\
+    X(WRITABLE, "writable")           \
+    X(EXECUTABLE, "executable")       \
+    X(THREADLOCAL, "threadlocal")     \
+    X(BLANK, "blank")                 \
+    X(PIN, "pin")                     \
+    X(COMMON, "common")               \
+    X(VOLATILE, "volatile")           \
+    X(CONCATENATE, "concatenate")     \
+    /* relocation flags             */\
+    X(NOERROR, "noerror")
+
 typedef enum : u8 {
-    TOK_NEWLINE = 1,
+    TOK_ERROR = 0, // Explicit error/invalid kind
+    TOK_NEWLINE = '\n',
+
+    TOK_OP,
+    TOK_NUM,
+    TOK_FLOAT,
+    TOK_DOUBLE,
 
     TOK_IDENT, // identifier
     TOK_STRING, // string literal.
 
-    TOK_COMMA,
-    TOK_COLON,
-    TOK_PLUS,
-    TOK_MINUS,
-    TOK_MUL,
-    TOK_DIV,
+    TOK_COMMA = ',', // ascii values are used for easy comparison
+    TOK_PERIOD = '.',
+    TOK_COLON = ':',
+    TOK_PLUS = '+',
+    TOK_MINUS = '-',
+    TOK_MUL = '*',
+    TOK_DIV = '/',
 
-    TOK_OPEN_PAREN,
-    TOK_CLOSE_PAREN,
-    TOK_OPEN_BRACKET,
-    TOK_CLOSE_BRACKET,
-    TOK_OPEN_BRACE,
-    TOK_CLOSE_BRACE,
+    TOK_OPEN_PAREN = '(',
+    TOK_CLOSE_PAREN = ')',
+    TOK_OPEN_BRACKET = '[',
+    TOK_CLOSE_BRACKET = ']',
+    TOK_OPEN_BRACE = '{',
+    TOK_CLOSE_BRACE = '}',
 
-    // yeah
-    TOK_KW_INCLUDE,
-    TOK_KW_FORCEINCLUDE,
-
-    // flag configuration
-    TOK_KW_SET,
-    TOK_KW_UNSET,
-
-    // declarations
-    TOK_KW_GROUP,
-    TOK_KW_SECTION,
-    TOK_KW_SYMBOL,
-    TOK_KW_EXTERN,
-    TOK_KW_DEFINE,
-    TOK_KW_ENTRY,
-
-    // symbol binding
-    TOK_KW_GLOBAL,
-    TOK_KW_LOCAL,
-    TOK_KW_WEAK,
-
-    // data
-    TOK_KW_REPEAT,
-    TOK_KW_UNALIGNED,
-    TOK_KW_ALIGN,
-    TOK_KW_LOC,
-    TOK_KW_ZERO,
-    TOK_KW_D8,
-    TOK_KW_D16,
-    TOK_KW_D32,
-    TOK_KW_D64,
-    TOK_KW_STRING,
-
-    // section flags
-    TOK_KW_WRITABLE,
-    TOK_KW_EXECUTABLE,
-    TOK_KW_THREADLOCAL,
-    TOK_KW_BLANK,
-    TOK_KW_PIN,
-    TOK_KW_COMMON,
-    TOK_KW_VOLATILE,
-    TOK_KW_CONCATENATE,
-
-    // relocation flags
-    TOK_KW_NOERROR,
+    // Horrible c preprocessor magic
+    #define X(name, str) TOK_KW_##name,
+    KEYWORDS_LIST
+    #undef X
 } LunaTokenKind;
 
 typedef struct LunaToken {
     const char* ptr;
     u16 len;
     LunaTokenKind kind;
+    void *data;
 } LunaToken;
+
+Vec_typedef(LunaToken);
 
 #endif // LUNA_H

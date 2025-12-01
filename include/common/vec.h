@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common/arena.h"
+
 #define Vec(type) _Vec_##type
 #define VecPtr(type) _VecPtr_##type
 #define Vec_typedef(type) typedef struct Vec(type) { \
@@ -50,6 +52,7 @@ void _vec_shrink(_VecGeneric* v, size_t stride);
 } while (0)
 #define vec_reserve(v, num_slots) _vec_reserve((_VecGeneric*)(v), vec_stride((v)), num_slots)
 
+#define vec_top(v) ((v)->at[(v)->len - 1])
 #define vec_pop(v) ((v)->at[--(v)->len])
 #define vec_pop_front(v) ((v)->at[--(v)->len])
 
