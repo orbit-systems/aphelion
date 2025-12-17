@@ -1,13 +1,19 @@
-#define _GNU_SOURCE
-
 #include "common/fs.h"
 
-#ifdef OS_LINUX
+#if defined(OS_UNIX)
 
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+
+#if defined(OS_MACOS)
+    #define STAT_MTIME_SEC(st)  ((st).st_mtimespec.tv_sec)
+    #define STAT_MTIME_NSEC(st) ((st).st_mtimespec.tv_nsec)
+#else
+    #define STAT_MTIME_SEC(st)  ((st).st_mtim.tv_sec)
+    #define STAT_MTIME_NSEC(st) ((st).st_mtim.tv_nsec)
+#endif
 
 bool fs_real_path(const char* path, FsPath* out) {
     if (!realpath(path, out->raw)) {
@@ -39,8 +45,8 @@ FsFile* fs_open(const char* path, bool create, bool overwrite) {
     f->size = info.st_size;
     // convert to microseconds, that's easier and more reliable to deal with in
     // 64 bits
-    f->last_modified = ((usize)info.st_mtim.tv_sec * 1000000) +
-                       (usize)info.st_mtim.tv_nsec / 1000;
+    f->last_modified = ((usize)STAT_MTIME_SEC(info) * 1000000) +
+                       (usize)STAT_MTIME_NSEC(info) / 1000;
     fs_real_path(path, &f->path);
     return f;
 }

@@ -2,6 +2,8 @@
 #define ORBIT_STRING_H
 
 #include <stdlib.h>
+#include "common/portability.h"
+#include "common/type.h"
 
 // strings and string-related utils.
 

@@ -3,15 +3,16 @@
 #include <stdio.h>
 
 #include "common/util.h"
+#include "common/portability.h"
 #include "common/arena.h"
 
 #define ARENA_CHUNK_DATA_SIZE 32768
-typedef struct Arena__Chunk {
+struct Arena__Chunk {
     Arena__Chunk* prev;
     Arena__Chunk* next;
     usize used;
     u8 data[ARENA_CHUNK_DATA_SIZE];
-} Arena__Chunk;
+};
 
 // assume align is a power of two
 static inline uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {

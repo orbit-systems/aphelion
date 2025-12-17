@@ -6,16 +6,15 @@
 #include "type.h"
 #include "str.h"
 #include "vec.h"
-#include "util.h"
+#include "portability.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #if defined(OS_WINDOWS)
-    #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
-#elif defined(OS_LINUX)
+#elif defined(OS_UNIX)
     #include <limits.h>
 #else
     #error "buh"
