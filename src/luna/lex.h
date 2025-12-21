@@ -2,81 +2,88 @@
 #define LUNA_LEX_H
 
 #include "common/type.h"
+#include "luna.h"
+
+#define LUNA_KEYWORDS \
+    /* content inclusion */ \
+    KW(INCLUDE, "include") \
+    KW(FORCEINCLUDE, "forceinclude") \
+    /* declarations */\
+    KW(SECTION, "section") \
+    KW(GROUP,   "group") \
+    KW(SYMBOL,  "symbol") \
+    KW(EXTERN,  "extern") \
+    KW(DEFINE,  "define") \
+    KW(LOC,     "loc") \
+    /* symbol modifiers */ \
+    KW(ENTRY, "entry") \
+    /* symbol binding */ \
+    KW(GLOBAL, "global") \
+    KW(LOCAL,  "local") \
+    KW(WEAK,   "weak") \
+    /* data modifiers */ \
+    KW(REPEAT,    "repeat") \
+    KW(UNALIGNED, "unaligned") \
+    /* data */ \
+    KW(ALIGN,  "align") \
+    KW(ZERO,   "zero") \
+    KW(BYTE,   "byte") \
+    KW(QWORD,  "qword") \
+    KW(HWORD,  "hword") \
+    KW(WORD,   "word") \
+    KW(STRING, "string") \
+    /* section flags */ \
+    KW(UNMAPPED,    "unmapped") \
+    KW(WRITABLE,    "writable") \
+    KW(EXECUTABLE,  "executable") \
+    KW(THREADLOCAL, "threadlocal") \
+    KW(BLANK,       "blank") \
+    KW(PINNED,      "pinned") \
+    KW(COMMON,      "common") \
+    KW(NONVOLATILE, "nonvolatile") \
+    KW(CONCATENATE, "concatenate") \
 
 typedef enum : u8 {
     TOK_INVALID = 0,
 
-    TOK_NEWLINE,
+    TOK_EOF,     /// End of file.
 
-    TOK_IDENT,  /// Identifier of any kind.
-    TOK_STRING, /// String literal
+    TOK_IDENT,   /// Identifier.
 
-    TOK_INST,     /// Instruction name
-    TOK_GPR,      /// General-purpose register name
-    TOK_CTRL_REG, /// Control register name
+    TOK_STR_LIT,  /// String literal.
+    TOK_CHAR_LIT, /// Character literal.
+    TOK_NUM_LIT,  /// Numeric literal.
 
-    TOK_COMMA,
-    TOK_COLON,
+    TOK_INST,    /// Instruction name.
+    TOK_GPR,     /// General-purpose register name.
+    TOK_CTRL,    /// Control register name.
 
-    TOK_PLUS,
-    TOK_MINUS,
-    TOK_MUL,
-    TOK_DIV,
-    TOK_MOD,
-    TOK_AND,
-    TOK_OR,
-    TOK_TILDE,
+    TOK_NEWLINE = '\n',
 
-    TOK_OPEN_PAREN,
-    TOK_CLOSE_PAREN,
-    TOK_OPEN_BRACKET,
-    TOK_CLOSE_BRACKET,
-    TOK_OPEN_BRACE,
-    TOK_CLOSE_BRACE,
+    TOK_OPEN_PAREN    = '(',
+    TOK_CLOSE_PAREN   = ')',
+    TOK_OPEN_BRACKET  = '[',
+    TOK_CLOSE_BRACKET = ']',
+    TOK_OPEN_BRACE    = '{',
+    TOK_CLOSE_BRACE   = '}',
 
-    // content inclusion
-    TOK_KW_INCLUDE,
-    TOK_KW_FORCEINCLUDE,
+    TOK_COMMA = ',',
+    TOK_COLON = ':',
+    TOK_EQ    = '=',
 
-    // declarations
-    TOK_KW_SECTION,
-    TOK_KW_GROUP,
-    TOK_KW_SYMBOL,
-    TOK_KW_EXTERN,
-    TOK_KW_DEFINE,
+    TOK_PLUS  = '+',
+    TOK_MINUS = '-',
+    TOK_MUL   = '*',
+    TOK_DIV   = '/',
+    TOK_MOD   = '%',
+    TOK_AND   = '&',
+    TOK_OR    = '|',
+    TOK_TILDE = '~',
 
-    // symbol modifiers
-    TOK_KW_ENTRY,
+    #define KW(variant, name) TOK_KW_##variant,
+        LUNA_KEYWORDS
+    #undef KW
 
-    // symbol binding
-    TOK_KW_GLOBAL,
-    TOK_KW_LOCAL,
-    TOK_KW_WEAK,
-
-    // data modifiers
-    TOK_KW_REPEAT,
-    TOK_KW_UNALIGNED,
-
-    // data
-    TOK_KW_ALIGN,
-    TOK_KW_LOC,
-    TOK_KW_ZERO,
-    TOK_KW_BYTE,
-    TOK_KW_QWORD,
-    TOK_KW_HWORD,
-    TOK_KW_WORD,
-    TOK_KW_STRING,
-
-    // section flags
-    TOK_KW_UNMAPPED,
-    TOK_KW_WRITABLE,
-    TOK_KW_EXECUTABLE,
-    TOK_KW_THREADLOCAL,
-    TOK_KW_BLANK,
-    TOK_KW_PINNED,
-    TOK_KW_COMMON,
-    TOK_KW_NONVOLATILE,
-    TOK_KW_CONCATENATE,
 } LunaTokenKind;
 
 #ifdef HOST_POINTER_48_BITS
@@ -86,8 +93,8 @@ typedef enum : u8 {
     typedef struct LunaToken {
         /// The token's kind. (LunaTokenKind)
         u64 kind : 8;
-        /// Subtype, if applicable. Opcode, GPR, control register, etc.
-        u64 subtype : 8;
+        /// Subkind, if applicable. Inst name, GPR, control register, etc.
+        u64 subkind : 8;
         /// First 48 bits of a pointer to the first character in the text.
         i64 raw : 48;
     } LunaToken;
@@ -106,12 +113,182 @@ typedef enum : u8 {
     } LunaToken;
 #endif
 
+
+#define INST_NAMES \
+    INST(LW,  "lw") \
+    INST(LH,  "lh") \
+    INST(LQ,  "lq") \
+    INST(LB,  "lb") \
+    INST(LLW, "llw") \
+    INST(LLH, "llh") \
+    INST(LLQ, "llq") \
+    INST(LLB, "llb") \
+    \
+    INST(SW,  "sw") \
+    INST(SH,  "sh") \
+    INST(SQ,  "sq") \
+    INST(SB,  "sb") \
+    INST(SCW, "scw") \
+    INST(SCH, "sch") \
+    INST(SCQ, "scq") \
+    INST(SCB, "scb") \
+    \
+    INST(FENCE_S,  "fence.s") \
+    INST(FENCE_L,  "fence.l") \
+    INST(FENCE_SL, "fence.sl") \
+    \
+    INST(CINVAL_BLOCK,   "cinval.block") \
+    INST(CINVAL_PAGE,    "cinval.page") \
+    INST(CINVAL_ALL,     "cinval.all") \
+    INST(CINVAL_I_BLOCK, "cinval.i.block") \
+    INST(CINVAL_I_PAGE,  "cinval.i.page") \
+    INST(CINVAL_I_ALL,   "cinval.i.all") \
+    INST(CINVAL_D_BLOCK, "cinval.d.block") \
+    INST(CINVAL_D_PAGE,  "cinval.d.page") \
+    INST(CINVAL_D_ALL,   "cinval.d.all") \
+    \
+    INST(CFETCH_S,   "cfetch.s") \
+    INST(CFETCH_L,   "cfetch.l") \
+    INST(CFETCH_I,   "cfetch.i") \
+    INST(CFETCH_SL,  "cfetch.sl") \
+    INST(CFETCH_LI,  "cfetch.li") \
+    INST(CFETCH_SI,  "cfetch.si") \
+    INST(CFETCH_SLI, "cfetch.sli") \
+    \
+    INST(SSI,   "ssi") \
+    INST(SSI_C, "ssi.c") \
+    \
+    INST(ADD,   "add") \
+    INST(SUB,   "sub") \
+    INST(MUL,   "mul") \
+    INST(UMULH, "umulh") \
+    INST(IMULH, "imulh") \
+    INST(UDIV,  "udiv") \
+    INST(IDIV,  "idiv") \
+    INST(UREM,  "urem") \
+    INST(IREM,  "irem") \
+    \
+    INST(ADDI,  "addi") \
+    INST(SUBI,  "subi") \
+    INST(MULI,  "muli") \
+    INST(UDIVI, "udivi") \
+    INST(IDIVI, "idivi") \
+    INST(UREMI, "uremi") \
+    INST(IREMI, "iremi") \
+    \
+    INST(AND, "and") \
+    INST(OR,  "or") \
+    INST(NOR, "nor") \
+    INST(XOR, "xor") \
+    \
+    INST(ANDI, "andi") \
+    INST(ORI,  "ori") \
+    INST(NORI, "nori") \
+    INST(XORI, "xori") \
+    \
+    INST(SL,   "sl") \
+    INST(USR,  "usr") \
+    INST(ISR,  "isr") \
+    INST(SI_U, "si.u") \
+    INST(SI_I, "si.i") \
+    INST(CB,   "cb") \
+    INST(ROR,  "ror") \
+    INST(ROL,  "rol") \
+    \
+    INST(REV,     "rev") \
+    INST(REV_H,   "rev.h") \
+    INST(REV_Q,   "rev.q") \
+    INST(REV_B,   "rev.b") \
+    INST(REV_BIT, "rev.bit") \
+    \
+    INST(CSB, "csb") \
+    INST(CLZ, "clz") \
+    INST(CTZ, "ctz") \
+    INST(EXT, "ext") \
+    INST(DEP, "dep") \
+    \
+    INST(SEQ,  "seq") \
+    INST(SULT, "sult") \
+    INST(SILT, "silt") \
+    INST(SULE, "sule") \
+    INST(SILE, "sile") \
+    \
+    INST(SEQI,  "seqi") \
+    INST(SULTI, "sulti") \
+    INST(SILTI, "silti") \
+    INST(SULEI, "sulei") \
+    INST(SILEI, "silei") \
+    \
+    INST(BZ, "bz") \
+    INST(BN, "bn") \
+    \
+    INST(JL,  "jl") \
+    INST(JLR, "jlr") \
+    \
+    INST(SYSCALL,  "syscall") \
+    INST(BREAKPT,  "breakpt") \
+    INST(WAIT,  "wait") \
+    INST(SPIN,  "spin") \
+    INST(IRET,  "iret") \
+    INST(LCTRL,  "lctrl") \
+    INST(SCTRL,  "sctrl") \
+    \
+    /* Psuedo-instructions are prefixed with P_ */ \
+    INST(P_CALL,    "call") \
+    INST(P_ABSCALL, "abscall") \
+    INST(P_RET,     "ret") \
+    INST(P_NOP,     "nop") \
+    INST(P_MOV,     "mov") \
+    INST(P_LI,      "li") \
+
+/// Every kind of instruction name accepted by the assembler.
+/// This includes instructions with configuration annotations,
+/// Pseudo-instructions, etc.
+/// \note THIS IS DIFFERENT FROM `AphelOpcode`.
+typedef enum : u8 {
+    INST__INVALID = 0,
+
+    #define INST(variant, name) INST_##variant,
+        INST_NAMES
+    #undef INST
+
+    INST__COUNT
+} InstName;
+
+extern const char* const inst_name_string[INST__COUNT];
+
 /// Return the pointer to the character a token `t` starts at.
 static inline const char* token_start(LunaToken t) {
     return (const char*)(isize)t.raw;
 }
 
-/// Mnemonic/name for an opcode. If an opcode is not present, gives `nullptr`.
-extern const char* const op_mnemonic[256];
+/// A lexer for making tokens from text.
+typedef struct Lexer {
+    /// Current byte the lexer is processing.
+    usize cursor;
+
+    /// Reference to `current_file`s source text.
+    /// \note Owned by the `SourceFile`, which is owned by the `LunaInstance` object.
+    string source;
+
+    /// ID of current file the lexer is operating on.
+    SourceFileId current_file;
+
+    /// List of tokens generated from the source text.
+    Vec(LunaToken) tokens;
+
+    /// The assembler instance this lexer was spawned from.
+    LunaInstance* luna;
+} Lexer;
+
+/// Create a lexer on source file `file` attached to luna instance `luna`.
+Lexer lexer_new(LunaInstance* luna, SourceFileId file);
+
+/// Destroy lexer `l` and return its token list.
+Vec(LunaToken) lexer_destroy_to_tokens(Lexer* l);
+
+/// Scan lexer `l`'s source text for the next token.
+/// \return Whether a new token can be generated from a subsequent call.
+bool lexer_next_token(Lexer* l);
 
 #endif // LUNA_LEX_H

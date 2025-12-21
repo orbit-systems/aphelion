@@ -137,12 +137,12 @@
     sl   l0, l1, l2, 63
     sl   l0, l1, 63
     sl   l0, l1, l2
-    isr  l0, l1, l2, 63
-    isr  l0, l1, 63
-    isr  l0, l1, l2
     usr  l0, l1, l2, 63
     usr  l0, l1, 63
     usr  l0, l1, l2
+    isr  l0, l1, l2, 63
+    isr  l0, l1, 63
+    isr  l0, l1, l2
     si.u l0, l1, 63, 63
     si.i l0, l1, 63, 63
     cb   l0, l1, 63, 63

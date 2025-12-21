@@ -39,7 +39,7 @@ build/%.o: src/%.c
 .PHONY: luna
 luna: bin/luna
 bin/luna:  $(LUNA_OBJECTS)
-	@$(LD) $(LDFLAGS) $(MARS_OBJECTS) -o bin/luna -lm
+	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm
 
 .PHONY: clean
 clean:

@@ -35,7 +35,9 @@ typedef struct VecHeader {
 /// Width of the elements of a vector.
 #define vec_stride(vec) sizeof(*(vec))
 /// This vector's `VecHeader`.
-#define vec_header(vec) ((VecHeader*)((char*)vec - sizeof(VecHeader)))
+#define vec_header(vec) ((VecHeader*)((char*)(vec) - sizeof(VecHeader)))
+/// Get the pointer to a vec's elements from the header.
+#define vec_elems_from_header(header) ((void*)((char*)(header) + sizeof(VecHeader)))
 /// This vector's length.
 #define vec_len(vec) vec_header(vec)->len
 /// This vector's capacity.
