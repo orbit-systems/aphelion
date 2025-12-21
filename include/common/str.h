@@ -5,10 +5,6 @@
 
 // strings and string-related utils.
 
-// #define CSTRING_COMPATIBILITY_MODE
-// allocates an extra character for null termination outside of the string bounds.
-// probably recommended if you interface a lot with standard C APIs and dont want clone_to_cstring allocations everywhere.
-
 typedef struct string {
     char*  raw;
     size_t len;
@@ -26,7 +22,7 @@ typedef struct string {
 #define is_within(haystack, needle) (((haystack).raw <= (needle).raw) && ((haystack).raw + (haystack).len >= (needle).raw + (needle).len))
 #define substring(str, start, end) ((string){(str).raw + (start), (end) - (start)})
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
-#define str(cstring) ((string){(char*)(cstring), strlen((cstring))})
+#define string_wrap(cstring) ((string){(char*)(cstring), strlen((cstring))})
 #define strlit(cstring) ((string){(char*)cstring, sizeof(cstring)-1})
 
 char*  clone_to_cstring(string str); // this allocates

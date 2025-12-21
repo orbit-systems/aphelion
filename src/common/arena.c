@@ -44,8 +44,7 @@ void arena_destroy(Arena* arena) {
         top = top->next;
     }
     // destroy any saved blocks below
-    for (Arena__Chunk *ch = top, *prev = ch->prev; ch != nullptr;
-         ch = prev, prev = prev->prev) {
+    for (Arena__Chunk* ch = top, *prev = ch->prev; ch != nullptr; ch = prev, prev = prev->prev) {
         free(ch);
     }
     arena->top = nullptr;
@@ -83,4 +82,54 @@ ArenaState arena_save(Arena* arena) {
 void arena_restore(Arena* arena, ArenaState save) {
     arena->top = save.top;
     arena->top->used = save.used;
+}
+
+string arena_strcat(Arena* arena, string a, string b, bool nul) {
+    usize len = a.len + b.len;
+    char* str = arena_alloc(arena, len + (usize)nul, 1);
+
+    memcpy(str, a.raw, a.len);
+    memcpy(str + a.len, b.raw, b.len);
+    if (nul) {
+        str[len] = 0;
+    }
+
+    return string_make(str, len);
+}
+
+string arena_strcat3(Arena* arena, string a, string b, string c, bool nul) {
+    usize len = a.len + b.len + c.len;
+    char* str = arena_alloc(arena, len + (usize)nul, 1);
+
+    memcpy(str, a.raw, a.len);
+    memcpy(str + a.len, b.raw, b.len);
+    memcpy(str + a.len + b.len, c.raw, c.len);
+    if (nul) {
+        str[len] = 0;
+    }
+
+    return string_make(str, len);
+}
+
+const char* arena_cstring(Arena* arena, string a) {
+    char* str = arena_alloc(arena, a.len + 1, 1);
+    memcpy(str, a.raw, a.len);
+    str[a.len] = 0;
+
+    return str;
+}
+
+string arena_strdup(Arena* arena, string a) {
+    char* str = arena_alloc(arena, a.len, 1);
+    memcpy(str, a.raw, a.len);
+
+    return string_make(str, a.len);
+}
+
+const char* arena_cstrdup(Arena* arena, const char* s) {
+    usize len = strlen(s);
+    char* str = arena_alloc(arena, len + 1, 1);
+    strcpy(str, s);
+    
+    return s;
 }

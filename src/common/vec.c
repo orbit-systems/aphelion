@@ -3,39 +3,46 @@
 
 #include "common/vec.h"
 
-_VecGeneric* _vec_new(size_t stride, size_t initial_cap) {
-    // store the vec statically so it lives after vec_new has been called,
-    // long enough for it to be copied out on the caller side
-    _Thread_local static _VecGeneric temp;
-    _vec_init(&temp, stride, initial_cap);
-    return &temp;
-}
+#define WEAK __attribute((weak))
 
-void _vec_init(_VecGeneric* v, size_t stride, size_t initial_cap) {
+WEAK Vec(void) _vec_new(size_t stride, size_t initial_cap) {
     if (initial_cap < 2) {
         initial_cap = 2;
     }
-    v->at = malloc(stride * initial_cap);
-    v->cap = initial_cap;
-    v->len = 0;
+    Vec(void) vec = (char*)malloc(sizeof(VecHeader) + stride * initial_cap) + sizeof(VecHeader);
+    vec_cap(vec) = initial_cap;
+    vec_len(vec) = 0;
+
+    return vec;
 }
 
-void _vec_reserve(_VecGeneric* v, size_t stride, size_t slots) {
-    if (slots + v->len > v->cap) {
-        v->cap += slots + (v->cap >> 1);
-        v->at = realloc(v->at, v->cap * stride);
+WEAK void _vec_reserve(Vec(void)* v, size_t stride, size_t slots) {
+    if (slots + vec_len(*v) > vec_cap(*v)) {
+        vec_cap(*v) = slots + (vec_cap(*v) >> 1);
+        *v = realloc(vec_header(*v), sizeof(VecHeader) + vec_cap(*v) * stride);
     }
 }
 
-void _vec_destroy(_VecGeneric* v) {
-    free(v->at);
-    *v = (_VecGeneric){0};
+WEAK void _vec_reserve1(Vec(void)* v, size_t stride) {
+    if (vec_len(*v) + 1 > vec_cap(*v)) {
+        vec_cap(*v) = (vec_cap(*v) * 3) / 2;
+        *v = realloc(vec_header(*v), sizeof(VecHeader) + vec_cap(*v) * stride);
+    }
 }
 
-void _vec_shrink(_VecGeneric* v, size_t stride) {
-    if (v->len == v->cap) {
-        return;
-    }
-    v->at = realloc(v->at, v->len * stride);
-    v->cap = v->len;
+WEAK void _vec_shrink(Vec(void)* v, size_t stride) {
+    
 }
+
+WEAK void _vec_destroy(Vec(void)* v) {
+    free(vec_header(*v));
+    *v = nullptr;
+}
+
+// WEAK void _vec_shrink(_VecGeneric* v, size_t stride) {
+//     if (v->len == v->cap) {
+//         return;
+//     }
+//     v->at = realloc(v->at, v->len * stride);
+//     v->cap = v->len;
+// }

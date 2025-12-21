@@ -1,6 +1,8 @@
 #ifndef ORBIT_UTIL_H
 #define ORBIT_UTIL_H
 
+#include <stdio.h>
+
 #if defined(_WIN32)
     #define OS_WINDOWS
 #elif defined(__linux__)
@@ -10,11 +12,11 @@
 #endif
 
 #define TODO(msg, ...) do {\
-    printf("\x1b[36m\x1b[1mTODO\x1b[0m in %s() at %s:%d -> "msg"\n", (__func__), (__FILE__), (__LINE__) __VA_OPT__(,) __VA_ARGS__); \
+    printf("\x1b[36m\x1b[1mTODO\x1b[0m in %s() at %s:%d -> " msg "\n", (__func__), (__FILE__), (__LINE__) __VA_OPT__(,) __VA_ARGS__); \
     exit(EXIT_FAILURE);} while (0)
 
 #define CRASH(msg, ...) do {\
-    printf("\x1b[31m\x1b[1mCRASH\x1b[0m in %s() at %s:%d -> "msg"\n", (__func__), (__FILE__), (__LINE__) __VA_OPT__(,) __VA_ARGS__); \
+    printf("\x1b[31m\x1b[1mCRASH\x1b[0m in %s() at %s:%d -> " msg "\n", (__func__), (__FILE__), (__LINE__) __VA_OPT__(,) __VA_ARGS__); \
     exit(EXIT_FAILURE);} while (0)
 
 #define UNREACHABLE do { \

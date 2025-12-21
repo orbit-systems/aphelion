@@ -1,86 +1,93 @@
 #ifndef APOLLO_H
 #define APOLLO_H
 
-#include "common/str.h"
 #include "common/type.h"
-#include "common/vec.h"
 
 typedef struct ApoHeader ApoHeader;
 typedef struct ApoSectionHeader ApoSectionHeader;
 typedef struct ApoSymbol ApoSymbol;
 typedef struct ApoRelocation ApoRelocation;
-typedef struct ApoBuilder ApoBuilder;
-typedef struct ApoBuilderSection ApoBuilderSection;
-typedef u32 ApoHandle;
 
-#define APO_NULL_HANDLE 0
+#define APO_NULL_SYMBOL_INDEX 0
 
+/// Kinds of object file.
 typedef enum : u8 {
-    APO_OBJ_RELOCATABLE,
-    APO_OBJ_SHARED,
-    APO_OBJ_EXECUTABLE,
+    /// Static object code.
+    APO_OBJ_STATIC = 0,
+    /// A shared library.
+    APO_OBJ_SHARED = 1,
+    /// An executable program.
+    APO_OBJ_EXECUTABLE = 2,
 } ApoObjectKind;
 
 struct ApoHeader {
-    // {0xB2, 'a', 'p', 'o'}
+    /// Four bytes at the beginning of the object file, 
+    /// {0xB2, 'a', 'p', 'o'}
     u8 magic[4];
 
+    /// Kind of object file described.
     ApoObjectKind kind;
 
-    // symbol index to begin execution at, if relevant.
+    /// Symbol index to begin execution at, if `.kind == APO_OBJ_EXECUTABLE`. 
     u32 entry_symbol;
 
+    /// Number of sections in the section table.
     u32 section_count;
+    
+    /// Number of symbols in the symbol table.
     u32 symbol_count;
+    
+    /// Number of relocations in the relocation table.
     u32 reloc_count;
-    u32 datapool_size;
+    
+    /// Size of the section contents pool.
     u32 content_size;
+
+    /// Size of the data pool.
+    u32 data_pool_size;
 };
 
 typedef enum : u16 {
-    // should be loaded into program memory.
-    APO_SECFL_LOAD = 1 << 0,
+    /// This section should not be loaded into program memory.
+    APO_SECFL_UNMAPPED = 1 << 0,
     
-    // should be loaded with write permissions.
+    /// This section should be loaded with write permissions.
     APO_SECFL_WRITABLE = 1 << 1,
     
-    // should be loaded with execute permissions.
+    /// This section should be loaded with execute permissions.
     APO_SECFL_EXECUTABLE = 1 << 2,
 
-    // each thread should have a unique copy of this section.
+    /// Each thread should have a unique copy of this section.
     APO_SECFL_THREADLOCAL = 1 << 3,
     
-    // initialized with zeroes, doesn't actually take up data.
+    /// This section is initialized with zeroes and doesn't actually take up data in the file.
     APO_SECFL_BLANK = 1 << 4,
     
-    // this section is considered "pinned" to its preferred address.
-    // emit an error if there are mapping conflicts.
+    /// This section is considered "pinned" to its `.map_address`.
+    /// Emit an error if there are mapping conflicts.
     APO_SECFL_PINNED = 1 << 5,
 
-    // can be replaced by another section with the same name.
-    // sections with this flag should not be part of a section group,
-    // rather the section group header should have this flag.
+    /// This section (or group) can be replaced by another section with the same name.
+    /// Common sections may not be part of a section group.
     APO_SECFL_COMMON = 1 << 6,
 
-    // this section cannot be removed in a "final link," even if none of its
-    // symbols are referenced.
-    APO_SECFL_VOLATILE = 1 << 7,
+    /// This section may be removed in a "final link" if none of its symbols are referenced.
+    APO_SECFL_NONVOLATILE = 1 << 7,
 
-    // sections with the same name and same section flags should be concatenated.
+    /// This section should be concatenated with sections with the same name and same section flags.
     APO_SECFL_CONCATENATE = 1 << 8,
     
-    // header of a section group.
-    // ".content_size" now means how many sections are in the group.
-    // section headers in a section group must be placed
-    // continugously after the section header.
+    /// This section is the header of a section group.
+    /// ".content_size" now means how many sections are in the group.
+    /// Section headers in a section group must be placed contiguously after the section header.
     APO_SECFL_GROUP_HEADER = 1 << 9,
 
-    // part of a section group.
+    /// Part of a section group.
     APO_SECFL_GROUP_MEMBER = 1 << 10,
 } ApoSectionFlags;
 
 struct ApoSectionHeader {
-    ApoHandle name;
+    u32 name;
     ApoSectionFlags flags;
     u8 alignment_p2;
 
@@ -94,21 +101,22 @@ struct ApoSectionHeader {
 };
 
 typedef enum : u8 {
-    // unaligned
-    APO_RELOC_W_UNALIGNED,
-    // align 8 bytes
-    APO_RELOC_W,
+    /// Insert an absolute symbol word. (width 8, align 8)
+    APO_RELOC_WORD,
 
-    // align 4 bytes
+    /// Insert an absolute symbol word. (width 8, align 1)
+    APO_RELOC_WORD_UNALIGNED,
+
+    /// Insert a relative address for a 32-bit relative call. (width 8, align 4)
     APO_RELOC_CALL,
 
-    // align 4 bytes
-    APO_RELOC_FARCALL,
+    /// Insert an absolute address for a 64-bit absolute call. (width 16, align 4)
+    APO_RELOC_ABSCALL,
 
-    // align 4 bytes
+    // Insert an absolute address for loading into a register. (width 16, align 4)
     APO_RELOC_LI,
 
-    // align 4 bytes
+    // Insert an relative address for a branch instruction (width 4, align 4)
     APO_RELOC_BRANCH,
 } ApoRelocationKind;
 
@@ -125,70 +133,10 @@ typedef enum : u8 {
     APO_SYMBIND_LOCAL,
 } ApoSymbolBind;
 
-typedef enum: u8 {
-    // allow the linker to suffix the name of a symbol if name conflicts occur
-    // when combining multiple object files together
-    APO_SYMFL_SUFFIX = 1 << 0,
-
-    // this symbol cannot be removed in a "final link,"
-    // even if it is not referenced.
-    APO_SYMFL_VOLATILE = 1 << 1,
-
-} ApoSymbolFlags;
-
 struct ApoSymbol {
-    ApoHandle name;
+    // index of the symbol name
+    u32 name;
     u32 offset;
     ApoSymbolBind bind;
-    ApoSymbolFlags flags;
 };
-
-Vec_typedef(ApoBuilderSection);
-Vec_typedef(ApoSymbol);
-Vec_typedef(ApoRelocation);
-Vec_typedef(u8);
-
-/* reader/writer/builder API */
-
-struct ApoBuilder {
-    Vec(ApoBuilderSection) sections;
-    Vec(u8) datapool;
-
-    Vec(ApoSymbol) undef_symbols;
-    Vec(ApoSymbol) abs_symbols;
-};
-
-struct ApoBuilderSection {
-    ApoHandle name;
-    ApoSectionFlags flags;
-    u64 map_address;
-
-    Vec(ApoSymbol) symbols;
-    Vec(ApoRelocation) relocs;
-    Vec(u8) content;
-};
-
-/// create an ApoBuilder based on the apollo file in 'bytes'.
-// 
-ApoBuilder* apo_read(const u8* bytes, usize len);
-
-// create an ApoBuilder based on the apollo file in 'bytes'.
-// operates under the assumption that it will never be modified. 
-// operations that modify the builder created with this likely 
-// cause fatal crashes. 
-// NOTE: relies on 'bytes' as backing memory. 'bytes' should stay valid.
-ApoBuilder* apo_readonly(const u8* bytes, usize len);
-
-// create a blank ApoBuilder.
-ApoBuilder* apo_new(ApoObjectKind kind);
-
-// export an ApoBuilder to a flat apollo file.
-void apo_write(ApoBuilder* b, Vec(u8)* out);
-
-// destroy an ApoBuilder and free the memory associated with it.
-void apo_destroy(ApoBuilder* b);
-
-// destroy an ApoBuilder created with apo_readonly().
-void apo_destroy_readonly(ApoBuilder* b);
-
 #endif // APOLLO_H

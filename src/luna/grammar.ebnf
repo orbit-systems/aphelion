@@ -1,0 +1,139 @@
+gpr = 
+    | "zr" 
+    | "a0" | "a1" | "a2" | "a3" | "a4" | "a5"
+    | "l0" | "l1" | "l2" | "l3" | "l4" | "l5" | "l6"
+    | "l7" | "l8" | "l9" | "l10" | "l11" | "l12" | "l13"
+    | "t0" | "t1" | "t2" | "t3" | "t4" | "t5"
+    | "tp" | "fp" | "sp" | "lp" | "ip"
+    ;
+
+ctrl =
+    | "int0" | "int1" | "int2" | "int3" | "int4" | "int5" 
+    | "int6" | "int7" | "int8" | "int9" | "int10" | "int11" 
+    | "int12" | "int13" | "int14" | "int15" 
+    | "intip"
+    | "intval"
+    | "intpte"
+    | "intcause"
+    | "kptp"
+    | "uptp"
+    | "stat"
+    | "intstat"
+    ;
+nl = "\n";
+
+memory =
+    | "[" gpr "]"
+    | "[" gpr "+" gpr "]"
+    | "[" gpr "+" gpr "+" expr "]"
+    | "[" gpr "+" expr "]"
+    ;
+
+oper_binary = 
+    | "+" | "-" | "*" | "/" | "%"
+    | "&" | "|" | "~"
+    ;
+
+expr =
+    | expr oper_binary expr
+    | expr_unary
+    ;
+
+expr_unary = 
+    | oper_unary expr_unary
+    | expr_atom
+    ;
+
+oper_unary =
+    | "-" | "~"
+    ;
+
+expr_atom =
+    | "(" expr ")"
+    | char_literal
+    | int_literal
+    ;
+
+symbol = ["."] (string_literal | identifier);
+
+relocation = symbol ["+" expr];
+
+inst_operand = 
+    | gpr
+    | ctrl
+    | expr
+    | relocation
+    ;
+
+inst = inst_mnemonic [inst_operand {"," inst_operand}] nl;
+
+data_modifier =
+    | "unaligned"
+    | "repeat" expr
+    ;
+
+data_operand = 
+    | expr
+    | relocation
+    ;
+
+data_item = 
+    | "align" expr
+    | "loc" expr
+    | "byte" data_operand
+    | "hword" data_operand
+    | "word" data_operand
+    | "string" string
+    ;
+data = {data_modifier} data_item nl;
+
+symbol_modifier = "entry";
+
+symbol_binding = 
+    | "global"
+    | "local"
+    | "weak"
+    ;
+
+label_decl = {symbol_modifier} [symbol_binding] ["."] symbol ":" nl;
+
+section_element = 
+    | inst
+    | data
+    | label_decl
+    ;
+
+section_flag = 
+    | "unmapped"
+    | "writable"
+    | "executable"
+    | "threadlocal"
+    | "blank"
+    | "pinned"
+    | "common"
+    | "nonvolatile"
+    | "concatenate"
+    ;
+
+section_header = {section_flag} "section" string_literal nl;
+section_decl = section_header {section_element};
+
+(* potentially more to be added here in the future *)
+group_flag = "common";
+
+group_decl = {group_flag} "group" string_literal "{" {section_decl} "}" nl;
+
+symbol_decl = {symbol_modifier} [symbol_binding] "symbol" nl;
+
+extern_decl = "extern" symbol nl;
+
+define_decl = "define" symbol (symbol | expr) nl;
+
+decl = 
+    | section_decl
+    | group_decl
+    | symbol_decl
+    | extern_decl
+    | define_decl
+
+file = {decl};

@@ -3,7 +3,14 @@
 
 #include "common/type.h"
 
-typedef enum : u8 {
+// TODO: place this in common somewhere
+#if __STDC_HOSTED__ && (defined(__x86_64__) || defined(__aarch64__))
+    /// Pointers are sign-extended from 48-bits.
+    #define HOST_POINTER_48_BITS
+#endif
+
+/// Aphelion general-purpose register (GPR)
+typedef enum AphelGpr : u8 {
     GPR_ZR = 0,
     
     GPR_A0, GPR_A1, GPR_A2, GPR_A3, GPR_A4, GPR_A5, 
@@ -20,7 +27,8 @@ typedef enum : u8 {
     GPR_IP,
 } AphelGpr;
 
-typedef enum : u8 {
+/// Aphelion control register.
+typedef enum AphelCtrl : u8 {
     CTRL_INT0, CTRL_INT1, CTRL_INT2, CTRL_INT3, 
     CTRL_INT4, CTRL_INT5, CTRL_INT6, CTRL_INT7,
     CTRL_INT8, CTRL_INT9, CTRL_INT10, CTRL_INT11,
@@ -36,6 +44,7 @@ typedef enum : u8 {
     CTRL_INTSTAT,
 } AphelCtrl;
 
+/// Aphelion instruction format.
 typedef enum : u8 {
     FMT_A = 0,
     FMT_B = 1,
@@ -43,6 +52,7 @@ typedef enum : u8 {
 } AphelFmt;
 
 #define OP(major, minor, fmt) ((0b##major << 5) + (0b##minor << 2) + FMT_##fmt)
+// Instruction opcode.
 typedef enum : u8 {
     OP_SSI = OP(010, 000, A),
 
@@ -136,8 +146,12 @@ typedef enum : u8 {
 } AphelOpcode;
 #undef OP
 
-#define FMT_FROM_OP(opcode) (AphelFmt)((opcode) & 0b11)
+/// Get the instruction format associated with AphelOpcode `opcode`.
+static inline AphelFmt fmt_from_op(AphelOpcode opcode) {
+    return (AphelFmt)((opcode) & 0b11);
+}
 
+/// An 'assembled' but unencoded Aphelion instruction.
 typedef struct {
     AphelOpcode op;
     AphelGpr r1;
@@ -145,78 +159,5 @@ typedef struct {
     AphelGpr r3;
     i32 imm;
 } AphelInst;
-
-typedef enum : u8 {
-    TOK_NEWLINE = 1,
-
-    TOK_IDENT, // identifier
-    TOK_STRING, // string literal.
-
-    TOK_COMMA,
-    TOK_COLON,
-    TOK_PLUS,
-    TOK_MINUS,
-    TOK_MUL,
-    TOK_DIV,
-
-    TOK_OPEN_PAREN,
-    TOK_CLOSE_PAREN,
-    TOK_OPEN_BRACKET,
-    TOK_CLOSE_BRACKET,
-    TOK_OPEN_BRACE,
-    TOK_CLOSE_BRACE,
-
-    // yeah
-    TOK_KW_INCLUDE,
-    TOK_KW_FORCEINCLUDE,
-
-    // flag configuration
-    TOK_KW_SET,
-    TOK_KW_UNSET,
-
-    // declarations
-    TOK_KW_GROUP,
-    TOK_KW_SECTION,
-    TOK_KW_SYMBOL,
-    TOK_KW_EXTERN,
-    TOK_KW_DEFINE,
-    TOK_KW_ENTRY,
-
-    // symbol binding
-    TOK_KW_GLOBAL,
-    TOK_KW_LOCAL,
-    TOK_KW_WEAK,
-
-    // data
-    TOK_KW_REPEAT,
-    TOK_KW_UNALIGNED,
-    TOK_KW_ALIGN,
-    TOK_KW_LOC,
-    TOK_KW_ZERO,
-    TOK_KW_D8,
-    TOK_KW_D16,
-    TOK_KW_D32,
-    TOK_KW_D64,
-    TOK_KW_STRING,
-
-    // section flags
-    TOK_KW_WRITABLE,
-    TOK_KW_EXECUTABLE,
-    TOK_KW_THREADLOCAL,
-    TOK_KW_BLANK,
-    TOK_KW_PIN,
-    TOK_KW_COMMON,
-    TOK_KW_VOLATILE,
-    TOK_KW_CONCATENATE,
-
-    // relocation flags
-    TOK_KW_NOERROR,
-} LunaTokenKind;
-
-typedef struct LunaToken {
-    const char* ptr;
-    u16 len;
-    LunaTokenKind kind;
-} LunaToken;
 
 #endif // LUNA_H

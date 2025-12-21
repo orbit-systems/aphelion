@@ -220,7 +220,7 @@ label:
     call r1, symbol
         call r1, r1, symbol
 
-    farcall r1, r2, symbol
+    abscall r1, r2, symbol
         ssi.c r2, symbol >> 48 & 0xFFFF, 48
         ssi r2, symbol >> 32 & 0xFFFF, 32
         ssi r2, symbol >> 16 & 0xFFFF, 16

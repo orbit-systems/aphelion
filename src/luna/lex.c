@@ -1,6 +1,6 @@
 #include "luna.h"
 
-const char* op_mnemonic[256] = {
+const char* const op_mnemonic[256] = {
     [OP_SSI] = "ssi",
 
     [OP_FENCE] = "fence",

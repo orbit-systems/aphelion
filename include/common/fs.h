@@ -18,7 +18,7 @@
 #elif defined(OS_LINUX)
     #include <limits.h>
 #else
-    #error "buh"
+    #error "Unsupported OS. Go harass sandwichman about it."
 #endif
 
 typedef struct FsPath {
@@ -35,19 +35,19 @@ typedef struct FsFile {
     FsPath path;
 } FsFile;
 
-#define fs_from_path(pathptr) (string){.len = (pathptr)->len, .raw = (pathptr)->raw}
+#define fs_strref_from_path(pathptr) (string){.len = (pathptr)->len, .raw = (pathptr)->raw}
 
 bool fs_real_path(const char* path, FsPath* out);
 FsFile* fs_open(const char* path, bool create, bool overwrite);
 usize fs_read(FsFile* f, void* buf, usize len);
 string fs_read_entire(FsFile* f);
+usize fs_write(FsFile* f, void* buf, usize len);
 void fs_close(FsFile* f);
 void fs_destroy(FsFile* f);
 
 char* fs_get_current_dir();
 bool fs_set_current_dir(const char* dir);
 
-Vec_typedef(string);
 // returns contents. if contents == nullptr, return a newly allocated vec.
 Vec(string) fs_dir_contents(const char* path, Vec(string)* contents);
 

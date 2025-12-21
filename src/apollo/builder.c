@@ -1,8 +1,6 @@
 #include "apollo.h"
 #include "common/vec.h"
 
-// ApoBuilder* apo_read(const u8* bytes, usize len)
-
 ApoBuilder* apo_new(ApoObjectKind kind) {
     ApoBuilder* b = malloc(sizeof(*b));
     memset(b, 0, sizeof(*b));
@@ -59,7 +57,7 @@ ApoHandle apo_new_section(ApoBuilder* b, ApoHandle name, ApoSectionFlags flags, 
     return sh;
 }
 
-ApoHandle apo_new_symbol(ApoBuilder* b, ApoHandle section, ApoHandle name, ApoSymbolBind bind, ApoSymbolFlags flags, u32 offset) {
+ApoHandle apo_new_symbol(ApoBuilder* b, ApoHandle section, ApoHandle name, ApoSymbolBind bind, u32 offset) {
     ApoBuilderSection* s = section_ptr(b, section);
     
     ApoHandle symh = s->symbols.len;
@@ -70,12 +68,11 @@ ApoHandle apo_new_symbol(ApoBuilder* b, ApoHandle section, ApoHandle name, ApoSy
     sym->name = name;
     sym->offset = offset;
     sym->bind = bind;
-    sym->flags = flags;
 
     return symh;
 }
 
-ApoHandle apo_new_undef_symbol(ApoBuilder* b, ApoHandle name, ApoSymbolBind bind, ApoSymbolFlags flags) {
+ApoHandle apo_new_undef_symbol(ApoBuilder* b, ApoHandle name, ApoSymbolBind bind) {
     
     ApoHandle symh = b->undef_symbols.len;
     vec_append(&b->undef_symbols, (ApoSymbol){0});
@@ -84,7 +81,6 @@ ApoHandle apo_new_undef_symbol(ApoBuilder* b, ApoHandle name, ApoSymbolBind bind
 
     sym->name = name;
     sym->bind = bind;
-    sym->flags = flags;
 
     return symh;
 }

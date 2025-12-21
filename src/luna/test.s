@@ -1,5 +1,5 @@
-executable 
-section "text"
+executable section "text"
+
 global start:
     mov l0, lr
     call lr, increment
@@ -15,11 +15,6 @@ increment:
     sw [t0], ti
     ret
 
-get_first_16:
-    ssi.c a0, noerror q0 mydata, 0
-    ret
-
-writable 
-section "data"
+writable section "data"
 mydata:
     d64 0xBAAD_F00D_DEAD_BEEF

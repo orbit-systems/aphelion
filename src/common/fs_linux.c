@@ -1,3 +1,4 @@
+#include <string.h>
 #define _GNU_SOURCE
 
 #include "common/fs.h"
@@ -10,9 +11,7 @@
 #include <sys/stat.h>
 
 bool fs_real_path(const char* path, FsPath* out) {
-    if (!realpath(path, out->raw)) {
-        return true;
-    }
+    if (!realpath(path, out->raw)) return true;
     out->len = strlen(out->raw);
     return true;
 }
@@ -28,29 +27,29 @@ FsFile* fs_open(const char* path, bool create, bool overwrite) {
     } else {
         f->handle = open(path, O_RDONLY);
     }
-
-    if (f->handle == -1) {
-        return nullptr;
-    }
+    
+    if (f->handle == -1) return nullptr;
 
     struct stat info;
     fstat(f->handle, &info);
     f->id = info.st_ino;
     f->size = info.st_size;
-    // convert to microseconds, that's easier and more reliable to deal with in
-    // 64 bits
-    f->last_modified = ((usize)info.st_mtim.tv_sec * 1000000) +
-                       (usize)info.st_mtim.tv_nsec / 1000;
+    // convert to microseconds, that's easier and more reliable to deal with in 64 bits
+    f->last_modified = ((usize)info.st_mtim.tv_sec * 1000000) + (usize)info.st_mtim.tv_nsec / 1000;
     fs_real_path(path, &f->path);
     return f;
 }
 
+usize fs_write(FsFile* f, void* buf, usize len) {
+    isize num_written = write(f->handle, buf, len);
+    if (num_written == -1) return 0;
+    return (usize) num_written;
+}
+
 usize fs_read(FsFile* f, void* buf, usize len) {
     isize num_read = read(f->handle, buf, len);
-    if (num_read == -1) {
-        return 0;
-    }
-    return num_read;
+    if (num_read == -1) return 0;
+    return (usize) num_read;
 }
 
 string fs_read_entire(FsFile* f) {
@@ -91,7 +90,7 @@ bool fs_set_current_dir(const char* dir) {
 }
 
 // returns contents. if contents == nullptr, return a newly allocated vec.
-Vec(string) fs_dir_contents(const char* path, Vec(string) * _contents) {
+Vec(string) fs_dir_contents(const char* path, Vec(string)* _contents) {
     DIR* d = opendir(path);
 
     Vec(string) contents = {0};
@@ -100,16 +99,12 @@ Vec(string) fs_dir_contents(const char* path, Vec(string) * _contents) {
     } else {
         contents = *_contents;
     }
-
+    
     struct dirent* dirent;
     while ((dirent = readdir(d)) != nullptr) {
-        if (strcmp(dirent->d_name, ".") == 0) {
-            continue;
-        }
-        if (strcmp(dirent->d_name, "..") == 0) {
-            continue;
-        }
-        vec_append(&contents, string_clone(str(dirent->d_name)));
+        if (strcmp(dirent->d_name, ".") == 0) continue;
+        if (strcmp(dirent->d_name, "..") == 0) continue;
+        vec_append(&contents, string_clone(string_wrap(dirent->d_name)));
     }
 
     closedir(d);
