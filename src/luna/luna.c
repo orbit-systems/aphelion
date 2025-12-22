@@ -30,7 +30,7 @@ SourceFileId luna_load_file(LunaInstance* luna, string path) {
     }
 
     SourceFile srcfile = {
-        .source = fs_read_entire(file),
+        .source = fs_read_entire(file, true),
         .path = arena_strdup(&luna->permanent, (string){
             .len = file->path.len,
             .raw = file->path.raw,

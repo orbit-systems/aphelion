@@ -52,9 +52,15 @@ usize fs_read(FsFile* f, void* buf, usize len) {
     return (usize) num_read;
 }
 
-string fs_read_entire(FsFile* f) {
-    string s = string_alloc(f->size);
+string fs_read_entire(FsFile* f, bool nullterm) {
+    string s = {
+        .raw = malloc(f->size + (nullterm ? 1 : 0)),
+        .len = f->size,
+    };
     read(f->handle, s.raw, s.len);
+    if (nullterm) {
+        s.raw[s.len] = '\0';
+    }
     return s;
 }
 void fs_close(FsFile* f) {

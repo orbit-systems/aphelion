@@ -67,11 +67,17 @@ usize fs_read(FsFile* f, void* buf, usize len) {
     return num_read;
 }
 
-string fs_read_entire(FsFile* f) {
-    string buf = string_alloc(f->size);
+string fs_read_entire(FsFile* f, bool nullterm) {
+    string s = {
+        .raw = malloc(f->size + (nullterm ? 1 : 0)),
+        .len = f->size,
+    };
     DWORD num_read;
-    ReadFile((HANDLE)f->handle, buf.raw, buf.len, &num_read, nullptr);
-    return buf;
+    ReadFile((HANDLE)f->handle, s.raw, s.len, &num_read, nullptr);
+    if (nullterm) {
+        s.raw[s.len] = '\0';
+    }
+    return s;
 }
 
 void fs_close(FsFile* f) {

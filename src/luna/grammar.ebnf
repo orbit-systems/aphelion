@@ -22,13 +22,6 @@ ctrl =
     ;
 nl = "\n";
 
-memory =
-    | "[" gpr "]"
-    | "[" gpr "+" gpr "]"
-    | "[" gpr "+" gpr "+" expr "]"
-    | "[" gpr "+" expr "]"
-    ;
-
 oper_binary = 
     | "+" | "-" | "*" | "/" | "%"
     | "&" | "|" | "~"
@@ -58,11 +51,20 @@ symbol = (string_literal | identifier);
 
 relocation = symbol ["+" expr];
 
+memory =
+    | "[" gpr "]"
+    | "[" gpr "+" gpr "]"
+    | "[" gpr "+" gpr "+" expr "]"
+    | "[" gpr "+" expr "]"
+    ;
+
+
 inst_operand = 
     | gpr
     | ctrl
     | expr
     | relocation
+    | memory
     ;
 
 inst = inst_name [inst_operand {"," inst_operand}] nl;
@@ -119,12 +121,9 @@ section_header = {section_flag} "section" string_literal nl;
 section_decl = section_header {section_element};
 
 (* potentially more to be added here in the future *)
-group_flag = "common";
-group_decl = {group_flag} "group" string_literal "{" {section_decl} "}" nl;
+group_decl = {section_flag} "group" string_literal "{" {section_decl} "}" nl;
 
 symbol_decl = {symbol_modifier} [symbol_binding] "symbol" nl;
-
-extern_decl = "extern" symbol nl;
 
 define_decl = "define" symbol (symbol | expr) nl;
 
@@ -132,7 +131,6 @@ decl =
     | section_decl
     | group_decl
     | symbol_decl
-    | extern_decl
     | define_decl
 
 file = {decl};

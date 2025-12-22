@@ -1,4 +1,4 @@
-// loads
+executable section "text"
     lw l0, [l1 + l2 + 511]
     lw l0, [l1 + 511]
     lw l0, [l1 + l2]
@@ -33,7 +33,6 @@
     llb l0, [l1 + l2]
     llb l0, [l1]
 
-// stores
     sw l0, [l1 + l2 + 511]
     sw l0, [l1 + 511]
     sw l0, [l1 + l2]
@@ -60,7 +59,6 @@
     scb l2, l0, [l1 + 511]
     scb l2, l0, [l1]
 
-// misc memory
     fence.s
     fence.l
     fence.sl
@@ -83,7 +81,6 @@
     cfetch.si  l0
     cfetch.sli l0
 
-// arithmetic and logic
     ssi   l0, 0xffff, 0
     ssi   l0, 0xffff, 16
     ssi   l0, 0xffff, 32
@@ -166,7 +163,6 @@
     ext l0, l1, l2
     dep l0, l1, l2
 
-// comparison
     seq  l0, l1, l2
     sult l0, l1, l2
     silt l0, l1, l2
@@ -181,21 +177,19 @@
     silei l0, l1, 8191
     silei l0, l1, -8192
 
-// branches
 label:
-    bz r0, label
-    bz r0, -262144
-    bz r0, 262143
-    bn r0, label
-    bn r0, -262144
-    bn r0, 262143
+    bz l0, label
+    bz l0, -262144
+    bz l0, 262143
+    bn l0, label
+    bn l0, -262144
+    bn l0, 262143
 
-    jl lr, l0, 8191
-    jl lr, l0, -8192
-    jlr lr, l0, 8191
-    jlr lr, l0, -8192
+    jl l1, l0, 8191
+    jl l1, l0, -8192
+    jlr l1, l0, 8191
+    jlr l1, l0, -8192
 
-// system control
     syscall
     breakpt
     wait
@@ -204,43 +198,12 @@ label:
     lctrl l0, intstat
     sctrl intstat, l0
 
-// pseudo-instructions
+    call l1, l2, label
+    call l1, label
 
-    call r1, r2, symbol
-        // can reach anything -2 to 2GB relative
-        ssi.c r2, symbol >> 16 & 0xFFFF, 16
-        jlr r1, r2, (symbol & 0xFFFF) >> 2
-
-        // if the symbol is defined in the same text section (and is close enough),
-        // this can be futher reduced to something like this:
-        jlr r1, zero, (relative_offset_in_insts)
-        // since it does not need to be relocated.
-
-    // alternative call syntax, uses the symbol register as the link register
-    call r1, symbol
-        call r1, r1, symbol
-
-    abscall r1, r2, symbol
-        ssi.c r2, symbol >> 48 & 0xFFFF, 48
-        ssi r2, symbol >> 32 & 0xFFFF, 32
-        ssi r2, symbol >> 16 & 0xFFFF, 16
-        jl r1, r2, (symbol & 0xFFFF) >> 2
-
-    // alternative call syntax, uses the symbol register as the link register
-    abscall r1, symbol
-        abscall r1, r1, symbol
+    abscall l1, l2, label
 
     ret
-        jl zr, lr, 0
-    
     nop
-        or zr, zr, zr
-    
-    mov r1, r2
-        or r1, r2, zr
-
-    li r1, 0xBAAD_F00D_DEAD_BEEF
-        ssi.c r1, 0xBAAD, 48
-        ssi   r1, 0xF00D, 32
-        ssi   r1, 0xDEAD, 16
-        ssi   r1, 0xBEEF, 0
+    mov l1, l2
+    li l1, 0xBAAD_F00D_DEAD_BEEF

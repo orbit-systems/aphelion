@@ -20,7 +20,7 @@ Lexer lexer_new(LunaInstance* luna, SourceFileId file) {
     Lexer l = {
         .current_file = file,
         .cursor = 0,
-        .tokens = vec_new(LunaToken, 256),
+        .tokens = vec_new(Token, 256),
         .source = luna->files[file._].source,
         .luna = luna,
     };
@@ -28,8 +28,8 @@ Lexer lexer_new(LunaInstance* luna, SourceFileId file) {
     return l;
 }
 
-Vec(LunaToken) lexer_destroy_to_tokens(Lexer* l) {
-    Vec(LunaToken) ts = l->tokens;
+Vec(Token) lexer_destroy_to_tokens(Lexer* l) {
+    Vec(Token) ts = l->tokens;
     *l = (Lexer){};
     return ts;
 }
@@ -84,8 +84,8 @@ static void skip_whitespace(Lexer* l) {
 /// Add a token to lexer `l`'s token buffer.
 /// Returns a pointer to the token added that will be
 /// valid until the next `add_token` call.
-static LunaToken* add_token(Lexer* l, LunaTokenKind k) {
-    LunaToken t = {
+static Token* add_token(Lexer* l, TokenKind k) {
+    Token t = {
         .kind = k,
         .subkind = 0,
         .raw = (i64)&l->source.raw[l->cursor],
@@ -93,13 +93,13 @@ static LunaToken* add_token(Lexer* l, LunaTokenKind k) {
 
     vec_append(&l->tokens, t);
 
-    // return &l->tokens[vec_len(l->tokens) - 1];
-    return nullptr;
+    return &l->tokens[vec_len(l->tokens) - 1];
+    // return nullptr;
 }
 
 /// Add an EOF token to lexer `l`'s token buffer.
 static void add_eof_token(Lexer* l) {
-    LunaToken t = {
+    Token t = {
         .kind = TOK_EOF,
         .subkind = 0,
         .raw = (i64)&l->source.raw[l->source.len - 1],
@@ -135,31 +135,38 @@ static bool is_numeric_middle(char c) {
     }
 }
 
-static void categorize_ident(const char* start, usize length, LunaToken* t) {
+static Token categorize_ident(const char* start, usize length) {
+
     string span = {
         .len = length,
         .raw = (char*) start,
     };
 
+    Token t = {
+        .raw = (isize)start
+    };
+
     // TODO this is... bad. replace this with a hashmap.
 
-    #define GPR(variant, name) if (string_eq(span, strlit(name))) { t->kind = TOK_GPR; t->subkind = GPR_##variant; return; }
+    #define GPR(variant, name) if (string_eq(span, strlit(name))) { t.kind = TOK_GPR; t.subkind = GPR_##variant; return t; }
         APHEL_GPRS
     #undef GPR
 
-    #define CTRL(variant, name) if (string_eq(span, strlit(name))) { t->kind = TOK_CTRL; t->subkind = CTRL_##variant; return; }
+    #define CTRL(variant, name) if (string_eq(span, strlit(name))) { t.kind = TOK_CTRL; t.subkind = CTRL_##variant; return t; }
         APHEL_CTRLS
     #undef CTRL
 
-    #define INST(variant, name) if (string_eq(span, strlit(name))) { t->kind = TOK_INST; t->subkind = INST_##variant; return; }
+    #define INST(variant, name) if (string_eq(span, strlit(name))) { t.kind = TOK_INST; t.subkind = INST_##variant; return t; }
         INST_NAMES
     #undef INST
     
-    #define KW(variant, name) if (string_eq(span, strlit(name))) { t->kind = TOK_KW_##variant; return; }
+    #define KW(variant, name) if (string_eq(span, strlit(name))) { t.kind = TOK_KW_##variant; return t; }
         LUNA_KEYWORDS
-    #undef CTRL
+    #undef KW
 
-    t->kind = TOK_IDENT;
+    t.kind = TOK_IDENT;
+    t.subkind = 0;
+    return t;
 }
 
 /// Scan lexer `l`'s source text for the next token.
@@ -199,7 +206,7 @@ bool lexer_next_token(Lexer* l) {
     // NOTE: may contain incorrect escape characters.
     //       we'll emit errors about that when its value is calculated.
     case '\"': {
-        LunaToken* t = add_token(l, TOK_STR_LIT);
+        Token* t = add_token(l, TOK_STR_LIT);
         bool escape = false;
 
         advance(l);
@@ -212,6 +219,9 @@ bool lexer_next_token(Lexer* l) {
                 escape = false;
             } else {
                 escape = current(l) == '\\';
+                if (escape) {
+                    t->subkind = TOK_STR_HAS_ESCAPE;
+                }
             }
             advance(l);
 
@@ -227,7 +237,8 @@ bool lexer_next_token(Lexer* l) {
     // NOTE: may contain incorrect escape characters.
     //       we'll emit errors about that when its value is calculated.
     case '\'': {
-        LunaToken* t = add_token(l, TOK_STR_LIT);
+        Token* t = add_token(l, TOK_STR_LIT);
+        t->subkind = 0;
         bool escape = false;
 
         advance(l);
@@ -241,6 +252,9 @@ bool lexer_next_token(Lexer* l) {
             } else {
                 escape = current(l) == '\\';
             }
+            if (escape) {
+                t->subkind = TOK_STR_HAS_ESCAPE;
+            }
             advance(l);
 
             if (is_eof(l)) {
@@ -252,7 +266,7 @@ bool lexer_next_token(Lexer* l) {
     }
 
     // numeric literals
-    // NOTE: digits in here might not be in the correct.
+    // NOTE: digits in here might not be correct.
     //       we'll emit errors about that when its value is calculated.
     case '0' ... '9':
         add_token(l, TOK_NUM_LIT);
@@ -262,12 +276,12 @@ bool lexer_next_token(Lexer* l) {
         }
         break;
 
-    // identifiers/keywords
+    // identifiers and keywords
     case '.':
     case '_':
     case 'a' ... 'z':
     case 'A' ... 'Z': {
-        LunaToken* t = add_token(l, TOK_IDENT);
+        Token* t = add_token(l, TOK_IDENT);
         // scan forward
         usize start = l->cursor;
         while (!is_eof(l) && is_ident_middle(current(l))) {
@@ -275,7 +289,7 @@ bool lexer_next_token(Lexer* l) {
         }
         usize length = l->cursor - start;
 
-        // categorize_ident(token_start(*t), length, t);
+        *t = categorize_ident(token_start(*t), length);
     } break;
     default:
         TODO("encountered unhandled character '%c'", current(l));
@@ -283,3 +297,42 @@ bool lexer_next_token(Lexer* l) {
 
     return true;
 }
+
+const char* const token_kind_name[] = {
+    [TOK_INVALID] = "<invalid>",
+    [TOK_EOF] = "end of file",
+    [TOK_IDENT] = "identifier",
+    [TOK_STR_LIT] = "string literal",
+    [TOK_CHAR_LIT] = "character",
+    [TOK_NUM_LIT] = "integer",
+    [TOK_INST] = "instruction",
+    [TOK_GPR] = "GPR",
+    [TOK_CTRL] = "control register",
+
+    [TOK_NEWLINE] = "newline",
+
+    [TOK_OPEN_PAREN]    = "(",
+    [TOK_CLOSE_PAREN]   = ")",
+    [TOK_OPEN_BRACKET]  = "[",
+    [TOK_CLOSE_BRACKET] = "]",
+    [TOK_OPEN_BRACE]    = "{",
+    [TOK_CLOSE_BRACE]   = "}",
+
+    [TOK_COMMA] = ",",
+    [TOK_COLON] = ":",
+    [TOK_EQ]    = "=",
+
+    [TOK_PLUS]  = "+",
+    [TOK_MINUS] = "-",
+    [TOK_MUL]   = "*",
+    [TOK_DIV]   = "/",
+    [TOK_MOD]   = "%",
+    [TOK_AND]   = "&",
+    [TOK_OR]    = "|",
+    [TOK_TILDE] = "~",
+
+    
+    #define KW(variant, name) [TOK_KW_##variant] = name,
+        LUNA_KEYWORDS
+    #undef KW
+};
