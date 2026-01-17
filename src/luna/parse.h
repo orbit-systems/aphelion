@@ -1,15 +1,116 @@
 #ifndef LUNA_PARSE_H
 #define LUNA_PARSE_H
 
-#include "common/str.h"
 #include "common/strmap.h"
-#include "common/util.h"
 
 #include "luna.h"
 #include "lex.h"
 #include "aphelion.h"
 
 #include "apollo/apollo.h"
+#include <strings.h>
+
+typedef enum : u8 {
+    ELEM_INST_INVALID = 0,
+    ELEM_INST__BEGIN = 1,
+    // import InstName here
+    
+    ELEM_INST__END = INST__COUNT - 1,
+
+    ELEM_ALIGN,
+    ELEM_ZERO,
+    ELEM_BYTE,
+    ELEM_QWORD,
+    ELEM_HWORD,
+    // next element contains the word value.
+    ELEM_WORD,
+    // next element contains the pointer to the string's contents
+    ELEM_STRING,
+
+    // Label definition.
+    ELEM_LABEL,
+
+    // Sublabel (.x:) definition.
+    // ELEM_SUBLABEL,
+    
+    // A symbol reference.
+    // ELEM_SYMREF,
+
+    // An expression to evaluate after the first pass
+    // and then use as an argument to element preceding it.
+    ELEM_IMM_EXPR,
+} SectionElemKind;
+
+typedef enum : u8 {
+    SYMREF_WORD,
+    SYMREF_WORD_UNALIGNED,
+    SYMREF_CALL,
+    SYMREF_FARCALL,
+    SYMREF_LI,
+
+    SYMREF_BRANCH,
+} SymRefKind;
+
+typedef union SectionElement {
+    SectionElemKind kind;
+    struct {
+        InstName name;
+        AphelGpr r1;
+        AphelGpr r2;
+        AphelGpr r3;
+        i32 imm;
+    } inst;
+
+    struct {
+        SectionElemKind _kind;
+        u8 alignment_p2;
+    } align;
+
+    struct {
+        SectionElemKind _kind;
+        u32 len;
+    } zero;
+
+    struct {
+        SectionElemKind _kind;
+        u8 value;
+    } byte;
+
+    struct {
+        SectionElemKind _kind;
+        u16 value;
+    } qword;
+
+    struct {
+        SectionElemKind _kind;
+        u32 value;
+    } hword;
+
+    u64 supp_word;
+
+    struct {
+        SectionElemKind _kind;
+        u32 length;
+    } string;
+    char* supp_string;
+
+    struct {
+        SectionElemKind _kind;
+        u32 symbol_index;
+    } label;
+
+    // struct {
+    //     SectionElemKind _kind;
+    //     SymRefKind refkind;
+    //     i16 addend;
+    //     u32 symbol_index;
+    // } symref;
+
+    struct {
+        SectionElemKind _kind;
+        u32 index;
+    } expr;
+} SectionElement;
 
 typedef struct Section {
     /// Section name.
@@ -23,31 +124,59 @@ typedef struct Section {
 
     ApoSectionFlags flags;
 
-    u64 map_address;
+    u64 address;
 
     union {
-        Vec(u8) bytes;
+        Vec(SectionElement) elements;
         u32 group_len;
     };
 } Section;
 
 typedef enum : u8 {
-    SYM_LOCAL = 0,
+    SYM_UNDEFINED = 0,
+    SYM_LOCAL,
     SYM_GLOBAL,
     SYM_WEAK,
-    SYM_UNDEFINED,
 } SymbolBind;
 
 typedef struct Symbol {
     const char* name;
     u16 name_len;
+    SymbolBind bind;
+    u32 section_def;
+    u32 section_offset;
 } Symbol;
 
-typedef struct SubLabel {
-    const char* name;
-    u16 name_len;
-    u32 parent_label;
-} SubLabel;
+typedef enum : u8 {
+    CEXPR_VALUE,
+    CEXPR_SYMBOL_REF,
+    
+    CEXPR_NEG,
+    CEXPR_NOT,
+
+    CEXPR_ADD,
+    CEXPR_SUB,
+    CEXPR_MUL,
+    CEXPR_DIV,
+    CEXPR_REM,
+    
+    CEXPR_AND,
+    CEXPR_OR,
+} ComplexExprKind;
+
+typedef struct ComplexExpr {
+    ComplexExprKind kind;
+    u32 token_index;
+    union {
+        u64 value;
+        u32 symbol_ref;
+        u32 un;
+        struct {
+            u32 lhs;
+            u32 rhs;
+        } bin;
+    };
+} ComplexExpr;
 
 typedef struct Parser {
     LunaInstance* luna;
@@ -62,8 +191,11 @@ typedef struct Parser {
 
     Section* current_section_group;
     Section* current_section;
+    u32 current_section_index;
 
     u64 address;
+
+    Vec(ComplexExpr) exprs;
 
     StrMap symbol_indexes;
     Vec(Symbol) symbols;

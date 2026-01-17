@@ -28,7 +28,7 @@ struct ApoHeader {
     /// Kind of object file described.
     ApoObjectKind kind;
 
-    /// Symbol index to begin execution at, if `.kind == APO_OBJ_EXECUTABLE`. 
+    /// Symbol index to begin execution at, if applicable. 
     u32 entry_symbol;
 
     /// Number of sections in the section table.
@@ -111,13 +111,10 @@ typedef enum : u8 {
     APO_RELOC_CALL,
 
     /// Insert an absolute address for a 64-bit absolute call. (width 16, align 4)
-    APO_RELOC_ABSCALL,
+    APO_RELOC_FARCALL,
 
     // Insert an absolute address for loading into a register. (width 16, align 4)
     APO_RELOC_LI,
-
-    // Insert an relative address for a branch instruction (width 4, align 4)
-    APO_RELOC_BRANCH,
 } ApoRelocationKind;
 
 struct ApoRelocation {

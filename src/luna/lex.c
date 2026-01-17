@@ -181,6 +181,10 @@ bool lexer_next_token(Lexer* l) {
     switch (current(l)) {
     // misc symbols
     case '\n':
+        l->cursor--;
+        add_token(l, '\n');
+        advance_n(l, 2);
+        break;
     case '(':
     case ')':
     case '[':
@@ -306,7 +310,7 @@ const char* const token_kind_name[] = {
     [TOK_CHAR_LIT] = "character",
     [TOK_NUM_LIT] = "integer",
     [TOK_INST] = "instruction",
-    [TOK_GPR] = "GPR",
+    [TOK_GPR] = "register",
     [TOK_CTRL] = "control register",
 
     [TOK_NEWLINE] = "newline",
@@ -326,12 +330,11 @@ const char* const token_kind_name[] = {
     [TOK_MINUS] = "-",
     [TOK_MUL]   = "*",
     [TOK_DIV]   = "/",
-    [TOK_MOD]   = "%",
+    [TOK_REM]   = "%",
     [TOK_AND]   = "&",
     [TOK_OR]    = "|",
     [TOK_TILDE] = "~",
 
-    
     #define KW(variant, name) [TOK_KW_##variant] = name,
         LUNA_KEYWORDS
     #undef KW

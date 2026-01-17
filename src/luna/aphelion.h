@@ -60,13 +60,15 @@ typedef enum : u8 {
 } AphelFmt;
 
 #define OP(major, minor, fmt) ((0b##major << 5) + (0b##minor << 2) + FMT_##fmt)
-// Instruction opcode.
+/// Instruction opcode / first byte. 
+/// \note includes format info.
 typedef enum : u8 {
     OP_SSI = OP(010, 000, A),
 
     OP_FENCE  = OP(100, 000, A),
     OP_CINVAL = OP(100, 001, A),
     OP_CFETCH = OP(100, 010, A),
+    OP_JLR    = OP(100, 100, A),
     OP_JL     = OP(100, 101, A),
     OP_BZ     = OP(100, 110, A),
     OP_BN     = OP(100, 111, A),

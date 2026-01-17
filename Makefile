@@ -13,7 +13,7 @@ ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -std=gnu23 -fwrapv -fno-strict-aliasing
 WARNINGS = \
 	-Wall -Wimplicit-fallthrough -Wmaybe-uninitialized \
-	-Wno-override-init -Wno-enum-compare -Wno-unused -Wno-enum-conversion -Wno-discarded-qualifiers -Wno-strict-aliasing
+	-Wno-enum-compare -Wno-unused -Wno-enum-conversion -Wno-discarded-qualifiers
 ALLFLAGS = $(CFLAGS) $(WARNINGS)
 OPT = -g3 -O0
 

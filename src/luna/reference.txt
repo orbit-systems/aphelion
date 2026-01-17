@@ -111,14 +111,6 @@
     urem  l0, l1, l2, 511
     irem  l0, l1, l2
     irem  l0, l1, l2, 511
-    
-    addi  l0, l1, 16383
-    subi  l0, l1, 16383
-    muli  l0, l1, 16383
-    udivi l0, l1, 16383
-    idivi l0, l1, 16383
-    uremi l0, l1, 16383
-    iremi l0, l1, 16383
 
     and l0, l1, l2
     and l0, l1, l2, 511
@@ -128,6 +120,14 @@
     nor l0, l1, l2, 511
     xor l0, l1, l2
     xor l0, l1, l2, 511
+    
+    addi  l0, l1, 16383
+    subi  l0, l1, 16383
+    muli  l0, l1, 16383
+    udivi l0, l1, 16383
+    idivi l0, l1, 16383
+    uremi l0, l1, 16383
+    iremi l0, l1, 16383
 
     andi l0, l1, 16383
     ori  l0, l1, 16383
@@ -190,8 +190,10 @@ label:
     bn r0, -262144
     bn r0, 262143
 
+    jl lr, l0
     jl lr, l0, 8191
     jl lr, l0, -8192
+    jlr lr, l0
     jlr lr, l0, 8191
     jlr lr, l0, -8192
 
@@ -206,36 +208,38 @@ label:
 
 // pseudo-instructions
 
-    call r1, r2, symbol
-        // can reach anything -2 to 2GB relative
-        ssi.c r2, symbol >> 16 & 0xFFFF, 16
-        jlr r1, r2, (symbol & 0xFFFF) >> 2
+    call - chooses between scall and rcall based on context
 
-        // if the symbol is defined in the same text section (and is close enough),
-        // this can be futher reduced to something like this:
-        jlr r1, zero, (relative_offset_in_insts)
-        // since it does not need to be relocated.
+    scall r1, symbol
+        // if the symbol is defined in the same text section (and is less than +-32764 bytes away):
+        jlr r1, zr, offsetof symbol >> 2
+        // `rcall` does not produce relocations.
+
+    rcall r1, r2, symbol
+        // can reach anything -2 to 2GB relative
+        ssi.c r2, offsetof symbol >> 16 & 0xFFFF, 16
+        jlr r1, r2, (offsetof symbol & 0xFFFF) >> 2
 
     // alternative call syntax, uses the symbol register as the link register
-    call r1, symbol
+    rcall r1, symbol
         call r1, r1, symbol
 
-    abscall r1, r2, symbol
+    fcall r1, r2, symbol
         ssi.c r2, symbol >> 48 & 0xFFFF, 48
         ssi r2, symbol >> 32 & 0xFFFF, 32
         ssi r2, symbol >> 16 & 0xFFFF, 16
         jl r1, r2, (symbol & 0xFFFF) >> 2
 
     // alternative call syntax, uses the symbol register as the link register
-    abscall r1, symbol
-        abscall r1, r1, symbol
+    fcall r1, symbol
+        fcall r1, r1, symbol
 
     ret
         jl zr, lr, 0
-    
+
     nop
         or zr, zr, zr
-    
+
     mov r1, r2
         or r1, r2, zr
 

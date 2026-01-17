@@ -12,7 +12,6 @@
     KW(SECTION, "section") \
     KW(GROUP,   "group") \
     KW(SYMBOL,  "symbol") \
-    KW(EXTERN,  "extern") \
     KW(DEFINE,  "define") \
     KW(LOC,     "loc") \
     /* symbol modifiers */ \
@@ -82,7 +81,7 @@ typedef enum : u8 {
     TOK_MINUS = '-',
     TOK_MUL   = '*',
     TOK_DIV   = '/',
-    TOK_MOD   = '%',
+    TOK_REM   = '%',
     TOK_AND   = '&',
     TOK_OR    = '|',
     TOK_TILDE = '~',
@@ -178,6 +177,11 @@ extern const char* const token_kind_name[];
     INST(UREM,  "urem") \
     INST(IREM,  "irem") \
     \
+    INST(AND, "and") \
+    INST(OR,  "or") \
+    INST(NOR, "nor") \
+    INST(XOR, "xor") \
+    \
     INST(ADDI,  "addi") \
     INST(SUBI,  "subi") \
     INST(MULI,  "muli") \
@@ -185,11 +189,6 @@ extern const char* const token_kind_name[];
     INST(IDIVI, "idivi") \
     INST(UREMI, "uremi") \
     INST(IREMI, "iremi") \
-    \
-    INST(AND, "and") \
-    INST(OR,  "or") \
-    INST(NOR, "nor") \
-    INST(XOR, "xor") \
     \
     INST(ANDI, "andi") \
     INST(ORI,  "ori") \
@@ -245,7 +244,9 @@ extern const char* const token_kind_name[];
     \
     /* Psuedo-instructions are prefixed with P_ */ \
     INST(P_CALL,    "call") \
-    INST(P_ABSCALL, "abscall") \
+    INST(P_SCALL,   "scall") \
+    INST(P_RCALL,   "rcall") \
+    INST(P_FCALL,   "fcall") \
     INST(P_RET,     "ret") \
     INST(P_NOP,     "nop") \
     INST(P_MOV,     "mov") \

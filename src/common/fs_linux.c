@@ -20,9 +20,9 @@ FsFile* fs_open(const char* path, bool create, bool overwrite) {
     FsFile* f = malloc(sizeof(FsFile));
     if (create) {
         if (overwrite) {
-            f->handle = open(path, O_WRONLY | O_CREAT);
+            f->handle = open(path, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
         } else {
-            f->handle = open(path, O_WRONLY);
+            f->handle = open(path, O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
         }
     } else {
         f->handle = open(path, O_RDONLY);

@@ -202,6 +202,7 @@ label:
     call l1, label
 
     abscall l1, l2, label
+    abscall l1, label
 
     ret
     nop

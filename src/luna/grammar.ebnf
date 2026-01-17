@@ -117,15 +117,19 @@ section_flag =
     | "concatenate"
     ;
 
-section_header = {section_flag} "section" string_literal nl;
+section_spec = 
+    | "align" expr
+    ;
+
+section_header = {section_flag} "section" string_literal {section_spec} nl;
 section_decl = section_header {section_element};
 
 (* potentially more to be added here in the future *)
 group_decl = {section_flag} "group" string_literal "{" {section_decl} "}" nl;
 
-symbol_decl = {symbol_modifier} [symbol_binding] "symbol" nl;
+symbol_decl = {symbol_modifier} [symbol_binding] "symbol" symbol "=" (expr) nl;
 
-define_decl = "define" symbol (symbol | expr) nl;
+define_decl = "define" symbol "=" (symbol | expr) nl;
 
 decl = 
     | section_decl
