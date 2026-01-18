@@ -203,6 +203,10 @@ static AphelOpcode inst_name_to_opcode[256] = {
 };
 
 static void parse_instruction(Parser* p);
+static inline u32 parse_expr(Parser* p);
+
+/// parse an expression that must be constant on the first pass of the assembler
+static u64 parse_const_expr(Parser* p);
 
 static inline void advance(Parser* p) {
     p->cursor += 1;
@@ -311,6 +315,30 @@ static usize compute_ident_len(const char* start) {
     return len;
 }
 
+[[gnu::const]]
+static ComplexExpr* cexpr(Parser* p, u32 index) {
+    return &p->exprs[index];
+}
+
+[[gnu::const]]
+static i64 int_in_bits(i64 n, usize bits) {
+    return ((n << (64 - bits)) >> (64 - bits));
+}
+
+[[gnu::const]]
+static u64 uint_in_bits(u64 n, usize bits) {
+    return ((n << (64 - bits)) >> (64 - bits));
+}
+
+static u32 cexpr_create(Parser* p, ComplexExprKind kind) {
+    u32 index = vec_len(p->exprs);
+    _vec_reserve1((void**)&p->exprs, vec_stride(p->exprs));
+    cexpr(p, index)->kind = kind;
+    cexpr(p, index)->token_index = p->cursor;
+    vec_len(p->exprs) += 1;
+    return index;
+}
+
 static void parse_label_or_symbol(Parser* p) {
     // label       = {symbol_modifier} [symbol_binding] symbol ":" nl
     // symbol_decl = {symbol_modifier} [symbol_binding] "symbol" nl;
@@ -367,7 +395,6 @@ static void parse_label_or_symbol(Parser* p) {
     }
     sym->bind = bind;
     sym->section_def = p->current_section_index;
-    sym->section_offset = p->address - p->current_section->address;
 
     SectionElement label = { .label = {
         ._kind = ELEM_LABEL,
@@ -376,6 +403,87 @@ static void parse_label_or_symbol(Parser* p) {
 
     vec_append(&p->current_section->elements, label);
 }
+
+static void parse_directive_align(Parser* p) {
+    expect_advance(p, TOK_KW_ALIGN);
+    WRAP_SPAN(span, u64 value = parse_const_expr(p));
+    expect_advance(p, TOK_NEWLINE);
+
+    if (!is_pow_2(value)) {
+        parse_error(p, span.start, "%llu is not a power of two", value);
+    }
+
+    if (value > (1ull << p->current_section->alignment_p2)) {
+        parse_warn(p, span.start, "%llu is greater than section alignment", value);
+    }
+    
+    SectionElement align = { .align = {
+        ._kind = ELEM_ALIGN,
+        .alignment_p2 = __builtin_ctzll(value),
+    }};
+
+    vec_append(&p->current_section->elements, align);
+}
+
+static void parse_directive_string(Parser* p) {
+    expect_advance(p, TOK_KW_STRING);
+    string contents = parse_strlit_contents(p);
+    expect_advance(p, TOK_NEWLINE);
+
+    SectionElement string_1 = { .string = {
+        ._kind = ELEM_STRING,
+        .length = contents.len,
+    }};
+    SectionElement string_2 = {
+        .supp_string = contents.raw,
+    };
+
+    vec_append(&p->current_section->elements, string_1);
+    vec_append(&p->current_section->elements, string_2);
+}
+
+// static void parse_directive_data(Parser* p) {
+//     TokenKind kind = p->current.kind;
+
+//     SectionElement value;
+//     value.kind = ELEM_WORD;
+//     usize value_bits = 64;
+
+//     switch (kind) {
+//     case TOK_KW_BYTE:
+//         value_bits = 8;
+//         value.kind = ELEM_BYTE;
+//         break;
+//     case TOK_KW_QWORD:
+//         value_bits = 16;
+//         value.kind = ELEM_QWORD;
+//         break;
+//     case TOK_KW_HWORD:
+//         value_bits = 32;
+//         value.kind = ELEM_HWORD;
+//         break;
+//     default:
+//         break;
+//     }
+
+//     advance(p);
+//     u32 expr_index = parse_expr(p);
+//     u64 expr_val = 0;
+
+//     if (cexpr(p, expr_index)->kind == CEXPR_VALUE) {
+//         // extract the constant value and encode it directly
+//         expr_val = cexpr(p, expr_index)->value;
+//         if (expr_val != int_in_bits(expr_val, value_bits)) {
+//             parse_warn(p, cexpr(p, expr_index)->token_index, 
+//                 "constant expression is truncated to %d", 
+//                 int_in_bits(value_bits, 9)
+//             );
+//         }
+//     } else {
+//         // imm_expr_elem.kind = ELEM_IMM_EXPR;
+//         // imm_expr_elem.expr.index = imm_expr;
+//     }
+// }
 
 static bool parse_sec_element(Parser* p) {
 
@@ -396,7 +504,12 @@ static bool parse_sec_element(Parser* p) {
     case TOK_IDENT:
         parse_label_or_symbol(p);
         return true;
-        
+    case TOK_KW_ALIGN:
+        parse_directive_align(p);
+        return true;
+    case TOK_KW_STRING:
+        parse_directive_string(p);
+        return true;
     default:
         return false;
     }
@@ -485,22 +598,6 @@ static u64 parse_numeric_literal(Parser* p) {
         }
     }
     return value;
-}
-
-// #define CEXPR(p, index) (&(p)->exprs[index])
-
-[[gnu::const]]
-static ComplexExpr* cexpr(Parser* p, u32 index) {
-    return &p->exprs[index];
-}
-
-static u32 cexpr_create(Parser* p, ComplexExprKind kind) {
-    u32 index = vec_len(p->exprs);
-    _vec_reserve1((void**)&p->exprs, vec_stride(p->exprs));
-    cexpr(p, index)->kind = kind;
-    cexpr(p, index)->token_index = p->cursor;
-    vec_len(p->exprs) += 1;
-    return index;
 }
 
 /// Parses an expression and returns an index into `p->exprs`
@@ -762,19 +859,6 @@ static u64 parse_const_expr(Parser* p) {
     return expr->value;
 }
 
-// SectionElement expr_into_symref(Parser* p, u32 expr_index) {
-//     // expression must be one of:
-//     //  symbol
-
-//     ComplexExpr* top = cexpr(p, expr_index);
-
-//     switch (top->kind) {
-//     case CEXPR_SYMBOL_REF:
-        
-//     }
-
-// }
-
 /// An operand representing a memory location, like `[r1 + r2 + imm]`
 typedef struct MemOperand {
     AphelGpr r1;
@@ -828,16 +912,7 @@ static AphelGpr parse_operand_gpr(Parser* p) {
     return reg;
 }
 
-static i64 int_in_bits(i64 n, usize bits) {
-    return ((n << (64 - bits)) >> (64 - bits));
-}
-
-static u64 uint_in_bits(u64 n, usize bits) {
-    return ((n << (64 - bits)) >> (64 - bits));
-}
-
-static void parse_arith_rr(Parser* p) 
-{
+static void parse_arith_rr(Parser* p) {
     Token inst = p->current;
 
     expect_advance(p, TOK_INST);
@@ -857,7 +932,7 @@ static void parse_arith_rr(Parser* p)
 
         if (cexpr(p, imm_expr)->kind == CEXPR_VALUE) {
             // extract the constant value and encode it directly
-            u64 imm = cexpr(p, imm_expr)->value;
+            imm = cexpr(p, imm_expr)->value;
             if (inst_name_imm_signed[inst.subkind]) {
                 if (imm != int_in_bits(imm, 9)) {
                     parse_warn(p, err_token, 
@@ -894,6 +969,46 @@ static void parse_arith_rr(Parser* p)
     }
 }
 
+static void parse_branch(Parser* p) {
+    Token inst = p->current;
+
+    expect_advance(p, TOK_INST);
+    
+    WRAP_SPAN(span, AphelGpr r1 = parse_operand_gpr(p));
+    expect_advance(p, TOK_COMMA);
+
+    u32 imm_expr = parse_expr(p);
+    i64 imm = 0;
+
+    SectionElement imm_expr_elem = {0};
+    if (cexpr(p, imm_expr)->kind == CEXPR_VALUE) {
+        // extract the constant value and encode it directly
+        imm = cexpr(p, imm_expr)->value;
+        if (imm != int_in_bits(imm, 19)) {
+            parse_warn(p, span.start, 
+                "constant expression is truncated to %d", 
+                int_in_bits(imm, 19)
+            );
+        }
+    } else {
+        imm_expr_elem.kind = ELEM_IMM_EXPR;
+        imm_expr_elem.expr.index = imm_expr;
+    }
+
+    expect_advance(p, TOK_NEWLINE);
+
+    SectionElement elem = {.inst = {
+        .name = inst.subkind,
+        .r1 = r1,
+        .imm = imm,
+    }};
+    vec_append(&p->current_section->elements, elem);
+
+    if (imm_expr_elem.kind != 0) {
+        vec_append(&p->current_section->elements, imm_expr_elem);
+    }
+}
+
 static void parse_instruction(Parser* p) {
     Token inst = p->current;
 
@@ -901,6 +1016,10 @@ static void parse_instruction(Parser* p) {
     case INST_ADD ... INST_XOR:
         // inst gpr, gpr, gpr [, imm]
         parse_arith_rr(p);
+        break;
+    case INST_BZ:
+    case INST_BN:
+        parse_branch(p);
         break;
     default:
         parse_error(p, p->cursor, "expected instruction");
@@ -939,7 +1058,6 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
         .name_len = section_name.len,
         .alignment_p2 = __builtin_ctzll(alignment),
         .flags = flags,
-        .address = p->address,
         .elements = vec_new(SectionElement, 64),
     };
 
@@ -1017,7 +1135,6 @@ Parser parser_new(LunaInstance* luna, Vec(Token) tokens) {
         .current_section = nullptr,
         .current_section_group = nullptr,
         .luna = luna,
-        .address = 0,
         .symbols = vec_new(Symbol, 256),
         .exprs = vec_new(ComplexExpr, 256),
     };
@@ -1036,14 +1153,22 @@ Parser parser_new(LunaInstance* luna, Vec(Token) tokens) {
     return p;
 }
 
-void parse_file(Parser* p) {
+Object parse_tokenbuf(Parser* p) {
+    Object obj;
     while (true) {
         switch (p->current.kind) {
+        case TOK_EOF:
+            obj = (Object){
+                .tokens = p->tokens,
+                .sections = p->sections,
+                .exprs = p->exprs,
+                .symbol_indexes = p->symbol_indexes,
+                .symbols = p->symbols,
+            };
+            return obj;
         case TOK_NEWLINE:
             advance(p);
             continue;
-        case TOK_EOF:
-            return;
         case TOK_KW_UNMAPPED:
         case TOK_KW_WRITABLE:
         case TOK_KW_EXECUTABLE:

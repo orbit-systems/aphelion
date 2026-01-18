@@ -92,3 +92,9 @@ const char* const op_name[256] = {
     [OP_SCQ] = "scq",
     [OP_SCB] = "scb",
 };
+
+const char* const gpr_name[32] = {
+    #define GPR(variant, name) [GPR_##variant] = name,
+        APHEL_GPRS
+    #undef GPR
+};

@@ -33,23 +33,20 @@ typedef enum : u8 {
     // Sublabel (.x:) definition.
     // ELEM_SUBLABEL,
     
-    // A symbol reference.
-    // ELEM_SYMREF,
-
     // An expression to evaluate after the first pass
     // and then use as an argument to element preceding it.
     ELEM_IMM_EXPR,
 } SectionElemKind;
 
-typedef enum : u8 {
-    SYMREF_WORD,
-    SYMREF_WORD_UNALIGNED,
-    SYMREF_CALL,
-    SYMREF_FARCALL,
-    SYMREF_LI,
+// typedef enum : u8 {
+//     SYMREF_WORD,
+//     SYMREF_WORD_UNALIGNED,
+//     SYMREF_CALL,
+//     SYMREF_FARCALL,
+//     SYMREF_LI,
 
-    SYMREF_BRANCH,
-} SymRefKind;
+//     SYMREF_BRANCH,
+// } SymRefKind;
 
 typedef union SectionElement {
     SectionElemKind kind;
@@ -124,6 +121,7 @@ typedef struct Section {
 
     ApoSectionFlags flags;
 
+    bool address_specified;
     u64 address;
 
     union {
@@ -193,8 +191,6 @@ typedef struct Parser {
     Section* current_section;
     u32 current_section_index;
 
-    u64 address;
-
     Vec(ComplexExpr) exprs;
 
     StrMap symbol_indexes;
@@ -203,7 +199,17 @@ typedef struct Parser {
     // Vec(SubLabel) sub_labels;
 } Parser;
 
+typedef struct Object {
+    Vec(Token) tokens;
+    Vec(Section*) sections;
+    Vec(ComplexExpr) exprs;
+    StrMap symbol_indexes;
+    Vec(Symbol) symbols;
+} Object;
+
 Parser parser_new(LunaInstance* luna, Vec(Token) tokens);
-void parse_file(Parser* p);
+Object parse_tokenbuf(Parser* p);
+
+void object_debug(const Object* o);
 
 #endif // LUNA_PARSE_H

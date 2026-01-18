@@ -170,7 +170,10 @@ typedef struct {
     i32 imm;
 } AphelInst;
 
-/// Name/name for an opcode. If an opcode is not present, gives `nullptr`.
+/// Name for an opcode. If an opcode is not present, gives `nullptr`.
 extern const char* const op_name[256];
+
+/// Name for a GPR.
+extern const char* const gpr_name[32];
 
 #endif // APHELION_H

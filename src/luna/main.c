@@ -32,7 +32,9 @@ int main() {
     Vec(Token) tokens = lexer_destroy_to_tokens(&lex);
 
     Parser p = parser_new(luna, tokens);
-    parse_file(&p);
+    Object o = parse_tokenbuf(&p);
+
+    object_debug(&o);
 
     // Vec(u8) bin = export_flat_binary(p.sections, vec_len(p.sections));
 
