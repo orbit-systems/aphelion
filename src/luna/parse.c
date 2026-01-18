@@ -1071,7 +1071,7 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
     while (parse_sec_element(p)) {}
 }
 
-void parse_section_or_group(Parser* p) {
+void parse_section_flags(Parser* p) {
     // collect flags
     ApoSectionFlags flags = 0;
     while (true) {
@@ -1115,11 +1115,8 @@ void parse_section_or_group(Parser* p) {
         case TOK_KW_SECTION:
             parse_section(p, flags);
             return;
-        case TOK_KW_GROUP:
-            parse_error(p, p->cursor, "todo: parse section groups");
-            UNREACHABLE;
         default:
-            parse_error(p, p->cursor, "expected a section or section group");
+            parse_error(p, p->cursor, "expected a section");
             UNREACHABLE;
         }
     }
@@ -1133,7 +1130,6 @@ Parser parser_new(LunaInstance* luna, Vec(Token) tokens) {
         .sections = vec_new(Section*, 16),
         .current_section_index = 0,
         .current_section = nullptr,
-        .current_section_group = nullptr,
         .luna = luna,
         .symbols = vec_new(Symbol, 256),
         .exprs = vec_new(ComplexExpr, 256),
@@ -1177,13 +1173,13 @@ Object parse_tokenbuf(Parser* p) {
         case TOK_KW_COMMON:
         case TOK_KW_NONVOLATILE:
         case TOK_KW_CONCATENATE:
-            parse_section_or_group(p);
+            parse_section_flags(p);
             break;
         case TOK_KW_SECTION:
             parse_section(p, 0);
             break;
         default:
-            parse_error(p, p->cursor, "expected section, group, or declaration");
+            parse_error(p, p->cursor, "expected section or declaration");
         }
     }
 }

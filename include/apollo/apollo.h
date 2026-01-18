@@ -67,8 +67,7 @@ typedef enum : u16 {
     /// Emit an error if there are mapping conflicts.
     APO_SECFL_PINNED = 1 << 5,
 
-    /// This section (or group) can be replaced by another section with the same name.
-    /// Common sections may not be part of a section group.
+    /// This section can be replaced by another section with the same name.
     APO_SECFL_COMMON = 1 << 6,
 
     /// This section may be removed in a "final link" if none of its symbols are referenced.
@@ -76,14 +75,6 @@ typedef enum : u16 {
 
     /// This section should be concatenated with sections with the same name and same section flags.
     APO_SECFL_CONCATENATE = 1 << 8,
-    
-    /// This section is the header of a section group.
-    /// ".content_size" now means how many sections are in the group.
-    /// Section headers in a section group must be placed contiguously after the section header.
-    APO_SECFL_GROUP_HEADER = 1 << 9,
-
-    /// Part of a section group.
-    APO_SECFL_GROUP_MEMBER = 1 << 10,
 } ApoSectionFlags;
 
 struct ApoSectionHeader {
@@ -98,6 +89,10 @@ struct ApoSectionHeader {
 
     u32 content_start;
     u32 content_size;
+
+    /// if non-zero, this section should only be included
+    /// if its parent is included.
+    u32 parent;
 };
 
 typedef enum : u8 {

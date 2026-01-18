@@ -124,10 +124,7 @@ typedef struct Section {
     bool address_specified;
     u64 address;
 
-    union {
-        Vec(SectionElement) elements;
-        u32 group_len;
-    };
+    Vec(SectionElement) elements;
 } Section;
 
 typedef enum : u8 {
@@ -187,7 +184,6 @@ typedef struct Parser {
 
     Vec(Section*) sections;
 
-    Section* current_section_group;
     Section* current_section;
     u32 current_section_index;
 

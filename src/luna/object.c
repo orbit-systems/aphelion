@@ -165,3 +165,15 @@ void object_debug(const Object* o) {
         }
     }
 }
+
+static u64 section_trace_pessimistic(Section* section, u64 starting_pos) {
+    
+}
+
+void object_trace_pessimistic(Object* o) {
+    u64 address = 0;
+    for_n(i, 0, vec_len(o->sections)) {
+        Section* section = o->sections[i];
+        
+    }
+}
