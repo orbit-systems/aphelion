@@ -10,7 +10,6 @@
     KW(FORCEINCLUDE, "forceinclude") \
     /* declarations */\
     KW(SECTION, "section") \
-    KW(GROUP,   "group") \
     KW(SYMBOL,  "symbol") \
     KW(DEFINE,  "define") \
     KW(LOC,     "loc") \
@@ -40,7 +39,7 @@
     KW(PINNED,      "pinned") \
     KW(COMMON,      "common") \
     KW(NONVOLATILE, "nonvolatile") \
-    KW(CONCATENATE, "concatenate") \
+    KW(UNIQUE,      "unique") \
 
 typedef enum : u8 {
     TOK_INVALID = 0,
@@ -49,11 +48,11 @@ typedef enum : u8 {
 
     TOK_IDENT, /// Identifier.
 
-    /// String literal. If contains escape sequences, 
+    /// String literal. If contains escape sequences,
     /// its subtype is TOK_STR_HAS_ESCAPE.
     TOK_STR_LIT,
 
-    /// Character literal. If contains escape sequences, 
+    /// Character literal. If contains escape sequences,
     /// its subtype is TOK_STR_HAS_ESCAPE.
     TOK_CHAR_LIT,
 
@@ -142,9 +141,9 @@ extern const char* const token_kind_name[];
     INST(SCQ, "scq") \
     INST(SCB, "scb") \
     \
+    INST(FENCE,    "fence") \
     INST(FENCE_S,  "fence.s") \
     INST(FENCE_L,  "fence.l") \
-    INST(FENCE_SL, "fence.sl") \
     \
     INST(CINVAL_BLOCK,   "cinval.block") \
     INST(CINVAL_PAGE,    "cinval.page") \
@@ -156,13 +155,13 @@ extern const char* const token_kind_name[];
     INST(CINVAL_D_PAGE,  "cinval.d.page") \
     INST(CINVAL_D_ALL,   "cinval.d.all") \
     \
-    INST(CFETCH_S,   "cfetch.s") \
     INST(CFETCH_L,   "cfetch.l") \
+    INST(CFETCH_S,   "cfetch.s") \
     INST(CFETCH_I,   "cfetch.i") \
-    INST(CFETCH_SL,  "cfetch.sl") \
+    INST(CFETCH_LS,  "cfetch.ls") \
     INST(CFETCH_LI,  "cfetch.li") \
     INST(CFETCH_SI,  "cfetch.si") \
-    INST(CFETCH_SLI, "cfetch.sli") \
+    INST(CFETCH_LSI, "cfetch.lsi") \
     \
     INST(SSI,   "ssi") \
     INST(SSI_C, "ssi.c") \

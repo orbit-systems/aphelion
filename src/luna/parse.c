@@ -5,6 +5,7 @@
 
 #include "parse.h"
 #include "aphelion.h"
+#include "apollo/apollo.h"
 #include "common/strmap.h"
 #include "common/util.h"
 #include "common/vec.h"
@@ -37,13 +38,13 @@ static SourceFileId find_source_from_ptr(Vec(SourceFile) files, const char* s) {
 static void parse_error__internal(Parser* p, ReportKind severity, const char* begin, string msg) {
 
     SourceFileId fileid = find_source_from_ptr(
-        p->luna->files, 
+        p->luna->files,
         begin
     );
     SourceFile file = p->luna->files[fileid._];
 
     Report* r = report_new(severity, msg, &p->luna->files);
-    
+
     usize span_start = begin - file.source.raw;
     usize span_end = span_start + 1;
 
@@ -57,34 +58,6 @@ static void parse_error__internal(Parser* p, ReportKind severity, const char* be
     }
 }
 
-
-static u32 encode_fmt_a(AphelOpcode op, AphelGpr r1, u32 imm19) {
-    u32 bits = 0;
-    bits |= (u32)op;
-    bits |= r1 << 8;
-    bits |= imm19 << 13;
-    return bits;
-}
-
-static u32 encode_fmt_b(AphelOpcode op, AphelGpr r1, AphelGpr r2, u32 imm14) {
-    u32 bits = 0;
-    bits |= op;
-    bits |= r1 << 8;
-    bits |= r2 << 13;
-    bits |= imm14 << 18;
-    return bits;
-}
-
-static u32 encode_fmt_c(AphelOpcode op, AphelGpr r1, AphelGpr r2, AphelGpr r3, u32 imm9) {
-    u32 bits = 0;
-    bits |= op;
-    bits |= r1 << 8;
-    bits |= r2 << 13;
-    bits |= r3 << 18;
-    bits |= imm9 << 23;
-    return bits;
-}
-
 const bool inst_name_imm_signed[INST__COUNT] = {
     [INST_SSI_C] = true,
     [INST_MUL] = true,
@@ -94,6 +67,9 @@ const bool inst_name_imm_signed[INST__COUNT] = {
     [INST_IREM] = true,
     [INST_IDIVI] = true,
     [INST_IREMI] = true,
+    [INST_SEQ] = true,
+    [INST_SILT] = true,
+    [INST_SILE] = true,
     [INST_SEQI] = true,
     [INST_SILTI] = true,
     [INST_SILEI] = true,
@@ -122,11 +98,11 @@ static AphelOpcode inst_name_to_opcode[256] = {
     [INST_SCQ] = OP_SCQ,
     [INST_SCB] = OP_SCB,
 
-    [INST_FENCE_S ... INST_FENCE_SL] = OP_FENCE,
+    [INST_FENCE ... INST_FENCE_L] = OP_FENCE,
 
     [INST_CINVAL_BLOCK ... INST_CINVAL_D_ALL] = OP_CINVAL,
 
-    [INST_CFETCH_S ... INST_CFETCH_SLI] = OP_CFETCH,
+    [INST_CFETCH_L ... INST_CFETCH_LSI] = OP_CFETCH,
 
     [INST_SSI ... INST_SSI_C] = OP_SSI,
 
@@ -139,7 +115,7 @@ static AphelOpcode inst_name_to_opcode[256] = {
     [INST_IDIV] = OP_IDIV,
     [INST_UREM] = OP_UREM,
     [INST_IREM] = OP_IREM,
-    
+
     [INST_ADDI] = OP_ADDI,
     [INST_SUBI] = OP_SUBI,
     [INST_MULI] = OP_MULI,
@@ -216,7 +192,7 @@ static inline void advance(Parser* p) {
 static inline void expect_kind(Parser* p, TokenKind kind) {
     if_unlikely (p->current.kind != kind) {
         // TODO("expected token kind %d", kind);
-        parse_error(p, p->cursor, "expected %s, got %s", 
+        parse_error(p, p->cursor, "expected %s, got %s",
             token_kind_name[kind],
             token_kind_name[p->current.kind]
         );
@@ -231,7 +207,7 @@ static inline void expect_advance(Parser* p, TokenKind kind) {
 // returns -1 if cannot be found.
 static isize symbol_find(Parser* p, string ident) {
     void* index = strmap_get(&p->symbol_indexes, ident);
-    
+
     if (index != STRMAP_NOT_FOUND) {
         return (isize) index;
     }
@@ -242,11 +218,11 @@ static isize symbol_find(Parser* p, string ident) {
 // returns index into symbol table
 static usize symbol_find_or_create_undef(Parser* p, string ident) {
     void* index = strmap_get(&p->symbol_indexes, ident);
-    
+
     if (index != STRMAP_NOT_FOUND) {
         return (isize) index;
     }
-    
+
     assert(ident.len <= UINT16_MAX);
 
     // CREATEAEEEEEEEEEEE
@@ -265,10 +241,10 @@ static usize symbol_find_or_create_undef(Parser* p, string ident) {
     return new_index;
 }
 
-typedef struct TokenSpan {
-    usize start;
-    usize end;
-} TokenSpan;
+static void element_add(Parser* p, SectionElement e, u32 token_index) {
+    vec_append(&p->current_section->elements, e);
+    vec_append(&p->current_section->elem_tokens, token_index);
+}
 
 #define WRAP_SPAN(span, stmt) TokenSpan span = {p->cursor, 0}; stmt; span.end = p->cursor
 
@@ -315,17 +291,14 @@ static usize compute_ident_len(const char* start) {
     return len;
 }
 
-[[gnu::const]]
 static ComplexExpr* cexpr(Parser* p, u32 index) {
     return &p->exprs[index];
 }
 
-[[gnu::const]]
 static i64 int_in_bits(i64 n, usize bits) {
     return ((n << (64 - bits)) >> (64 - bits));
 }
 
-[[gnu::const]]
 static u64 uint_in_bits(u64 n, usize bits) {
     return ((n << (64 - bits)) >> (64 - bits));
 }
@@ -368,7 +341,7 @@ static void parse_label_or_symbol(Parser* p) {
         break;
     }
 
-    usize ident_err_index = p->cursor;
+    usize ident_index = p->cursor;
     string ident;
     switch (p->current.kind) {
     case TOK_KW_SYMBOL:
@@ -385,13 +358,13 @@ static void parse_label_or_symbol(Parser* p) {
     expect_advance(p, TOK_COLON);
 
     if (ident.len > UINT16_MAX) {
-        parse_error(p, ident_err_index, "symbol too long (max %d)", UINT16_MAX);
+        parse_error(p, ident_index, "symbol too long (max %d)", UINT16_MAX);
     }
 
     usize sym_index = symbol_find_or_create_undef(p, ident);
     Symbol* sym = &p->symbols[sym_index];
     if (sym->bind != SYM_UNDEFINED) {
-        parse_error(p, ident_err_index, "symbol is already defined", UINT16_MAX);
+        parse_error(p, ident_index, "symbol is already defined", UINT16_MAX);
     }
     sym->bind = bind;
     sym->section_def = p->current_section_index;
@@ -401,7 +374,7 @@ static void parse_label_or_symbol(Parser* p) {
         .symbol_index = sym_index,
     }};
 
-    vec_append(&p->current_section->elements, label);
+    element_add(p, label, ident_index);
 }
 
 static void parse_directive_align(Parser* p) {
@@ -416,18 +389,18 @@ static void parse_directive_align(Parser* p) {
     if (value > (1ull << p->current_section->alignment_p2)) {
         parse_warn(p, span.start, "%llu is greater than section alignment", value);
     }
-    
+
     SectionElement align = { .align = {
         ._kind = ELEM_ALIGN,
         .alignment_p2 = __builtin_ctzll(value),
     }};
 
-    vec_append(&p->current_section->elements, align);
+    element_add(p, align, span.start - 1);
 }
 
 static void parse_directive_string(Parser* p) {
     expect_advance(p, TOK_KW_STRING);
-    string contents = parse_strlit_contents(p);
+    WRAP_SPAN(span, string contents = parse_strlit_contents(p));
     expect_advance(p, TOK_NEWLINE);
 
     SectionElement string_1 = { .string = {
@@ -438,8 +411,8 @@ static void parse_directive_string(Parser* p) {
         .supp_string = contents.raw,
     };
 
-    vec_append(&p->current_section->elements, string_1);
-    vec_append(&p->current_section->elements, string_2);
+    element_add(p, string_1, span.start);
+    element_add(p, string_2, span.start);
 }
 
 // static void parse_directive_data(Parser* p) {
@@ -474,13 +447,13 @@ static void parse_directive_string(Parser* p) {
 //         // extract the constant value and encode it directly
 //         expr_val = cexpr(p, expr_index)->value;
 //         if (expr_val != int_in_bits(expr_val, value_bits)) {
-//             parse_warn(p, cexpr(p, expr_index)->token_index, 
-//                 "constant expression is truncated to %d", 
+//             parse_warn(p, cexpr(p, expr_index)->token_index,
+//                 "constant expression is truncated to %d",
 //                 int_in_bits(value_bits, 9)
 //             );
 //         }
 //     } else {
-//         // imm_expr_elem.kind = ELEM_IMM_EXPR;
+//         // imm_expr_elem.kind = ELEM_EXPR;
 //         // imm_expr_elem.expr.index = imm_expr;
 //     }
 // }
@@ -531,7 +504,7 @@ static bool is_numeric_middle(char c) {
 static u64 parse_numeric_literal(Parser* p) {
     const char* begin = token_start(p->current);
     advance(p);
-    
+
     if (!is_numeric_middle(begin[1])) {
         return begin[0] - '0';
     }
@@ -584,7 +557,7 @@ static u64 parse_numeric_literal(Parser* p) {
         default:
             c_value = 100000;
         }
-        
+
         if_unlikely (c_value > base) {
             parse_error_at_ptr(p, &begin[i], "invalid base %d digit", base);
         }
@@ -592,7 +565,7 @@ static u64 parse_numeric_literal(Parser* p) {
         if_unlikely (ckd_mul(&value, value, base)) {
             parse_error_at_ptr(p, &begin[i], "numeric literal is too large", begin[1]);
         }
-        
+
         if_unlikely (ckd_add(&value, value, c_value)) {
             parse_error_at_ptr(p, &begin[i], "numeric literal is too large", begin[1]);
         }
@@ -647,7 +620,7 @@ static u32 parse_unary(Parser* p) {
         return parse_unary(p);
     case TOK_MINUS: {
         u32 token_index = p->cursor;
-        
+
         advance(p);
         u32 index = parse_unary(p);
         ComplexExpr* inner = cexpr(p, index);
@@ -665,7 +638,7 @@ static u32 parse_unary(Parser* p) {
     }
     case TOK_TILDE: {
         u32 token_index = p->cursor;
-        
+
         advance(p);
         u32 index = parse_unary(p);
         ComplexExpr* inner = cexpr(p, index);
@@ -718,8 +691,8 @@ static u32 parse_binary(Parser* p, isize precedence) {
         ComplexExpr* lhs_expr = cexpr(p, lhs);
         ComplexExpr* rhs_expr = cexpr(p, rhs);
 
-        bool can_const_eval = 
-            cexpr(p, lhs)->kind == CEXPR_VALUE && 
+        bool can_const_eval =
+            cexpr(p, lhs)->kind == CEXPR_VALUE &&
             cexpr(p, rhs)->kind == CEXPR_VALUE
         ;
 
@@ -823,6 +796,7 @@ static u32 parse_binary(Parser* p, isize precedence) {
             TODO("invalid operator");
         }
 
+        cexpr(p, lhs)->token_index = op_index;
 
         // recycle expression space
         if (can_const_eval) {
@@ -874,7 +848,7 @@ typedef struct MemOperand {
 /// \param no_r2 if true, forms with `r2` provided are invalid.
 static MemOperand parse_mem_operand(Parser* p, bool no_r2) {
     expect_advance(p, TOK_OPEN_BRACKET);
-    
+
     MemOperand mem = {
         .r1 = GPR_ZR,
         .r2 = GPR_ZR,
@@ -914,6 +888,7 @@ static AphelGpr parse_operand_gpr(Parser* p) {
 
 static void parse_arith_rr(Parser* p) {
     Token inst = p->current;
+    usize inst_start_token = p->cursor;
 
     expect_advance(p, TOK_INST);
 
@@ -925,9 +900,9 @@ static void parse_arith_rr(Parser* p) {
 
     i64 imm = 0;
     SectionElement imm_expr_elem = {0};
+    usize expr_start_token = p->cursor;
     if (p->current.kind == TOK_COMMA) {
         advance(p);
-        usize err_token = p->cursor;
         u32 imm_expr = parse_expr(p);
 
         if (cexpr(p, imm_expr)->kind == CEXPR_VALUE) {
@@ -935,21 +910,21 @@ static void parse_arith_rr(Parser* p) {
             imm = cexpr(p, imm_expr)->value;
             if (inst_name_imm_signed[inst.subkind]) {
                 if (imm != int_in_bits(imm, 9)) {
-                    parse_warn(p, err_token, 
-                        "constant expression is truncated to %d", 
+                    parse_warn(p, expr_start_token,
+                        "constant expression is truncated to %d",
                         int_in_bits(imm, 9)
                     );
                 }
             } else {
                 if (imm != uint_in_bits(imm, 9)) {
-                    parse_warn(p, err_token, 
-                        "constant expression is truncated to %u", 
+                    parse_warn(p, expr_start_token,
+                        "constant expression is truncated to %u",
                         uint_in_bits(imm, 9)
                     );
                 }
             }
         } else {
-            imm_expr_elem.kind = ELEM_IMM_EXPR;
+            imm_expr_elem.kind = ELEM_EXPR;
             imm_expr_elem.expr.index = imm_expr;
         }
     }
@@ -962,37 +937,42 @@ static void parse_arith_rr(Parser* p) {
         .r3 = r3,
         .imm = imm,
     }};
-    vec_append(&p->current_section->elements, elem);
+
+    element_add(p, elem, inst_start_token);
 
     if (imm_expr_elem.kind != 0) {
-        vec_append(&p->current_section->elements, imm_expr_elem);
+        element_add(p, imm_expr_elem, expr_start_token);
     }
 }
 
 static void parse_branch(Parser* p) {
     Token inst = p->current;
+    usize inst_start_token = p->cursor;
 
     expect_advance(p, TOK_INST);
-    
-    WRAP_SPAN(span, AphelGpr r1 = parse_operand_gpr(p));
+
+    AphelGpr r1 = parse_operand_gpr(p);
     expect_advance(p, TOK_COMMA);
 
     u32 imm_expr = parse_expr(p);
     i64 imm = 0;
 
     SectionElement imm_expr_elem = {0};
+    usize expr_start_token = p->cursor;
     if (cexpr(p, imm_expr)->kind == CEXPR_VALUE) {
         // extract the constant value and encode it directly
         imm = cexpr(p, imm_expr)->value;
         if (imm != int_in_bits(imm, 19)) {
-            parse_warn(p, span.start, 
-                "constant expression is truncated to %d", 
+            parse_warn(p, expr_start_token,
+                "constant expression is truncated to %d",
                 int_in_bits(imm, 19)
             );
         }
     } else {
-        imm_expr_elem.kind = ELEM_IMM_EXPR;
+        imm_expr_elem.kind = ELEM_EXPR;
         imm_expr_elem.expr.index = imm_expr;
+        // element_add(p, imm_expr_elem, expr_start_token);
+        // vec_append(&p->current_section->elements, imm_expr_elem);
     }
 
     expect_advance(p, TOK_NEWLINE);
@@ -1002,10 +982,10 @@ static void parse_branch(Parser* p) {
         .r1 = r1,
         .imm = imm,
     }};
-    vec_append(&p->current_section->elements, elem);
+    element_add(p, elem, inst_start_token);
 
     if (imm_expr_elem.kind != 0) {
-        vec_append(&p->current_section->elements, imm_expr_elem);
+        element_add(p, imm_expr_elem, expr_start_token);
     }
 }
 
@@ -1032,6 +1012,7 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
     expect_advance(p, TOK_KW_SECTION);
     string section_name = parse_strlit_contents(p);
 
+    // default alignment
     u64 alignment = 8;
 
     while (true) {
@@ -1041,7 +1022,10 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
             usize index = p->cursor;
             alignment = parse_const_expr(p);
             if (!is_pow_2(alignment)) {
-                parse_error(p, index, "section align is not a power of two");
+                parse_error(p, index, "section alignment is not a power of two");
+            }
+            if (alignment < 8) {
+                parse_warn(p, index, "section alignment is less than the default (8)");
             }
             continue;
         } else {
@@ -1059,6 +1043,7 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
         .alignment_p2 = __builtin_ctzll(alignment),
         .flags = flags,
         .elements = vec_new(SectionElement, 64),
+        .elem_tokens = vec_new(u32, 64),
     };
 
     if (p->current_section != nullptr) {
@@ -1069,6 +1054,13 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
     p->current_section = section;
 
     while (parse_sec_element(p)) {}
+
+    // add skip element at the end so that significant elements can safely
+    // query for an expression placed after it
+    element_add(p, (SectionElement){
+        .kind = ELEM_SKIP,
+    }, p->cursor);
+
 }
 
 void parse_section_flags(Parser* p) {
@@ -1108,8 +1100,8 @@ void parse_section_flags(Parser* p) {
             flags |= APO_SECFL_NONVOLATILE;
             advance(p);
             break;
-        case TOK_KW_CONCATENATE:
-            flags |= APO_SECFL_CONCATENATE;
+        case TOK_KW_UNIQUE:
+            flags |= APO_SECFL_UNIQUE;
             advance(p);
             break;
         case TOK_KW_SECTION:
@@ -1160,6 +1152,7 @@ Object parse_tokenbuf(Parser* p) {
                 .exprs = p->exprs,
                 .symbol_indexes = p->symbol_indexes,
                 .symbols = p->symbols,
+                .luna = p->luna,
             };
             return obj;
         case TOK_NEWLINE:
@@ -1172,7 +1165,7 @@ Object parse_tokenbuf(Parser* p) {
         case TOK_KW_PINNED:
         case TOK_KW_COMMON:
         case TOK_KW_NONVOLATILE:
-        case TOK_KW_CONCATENATE:
+        case TOK_KW_UNIQUE:
             parse_section_flags(p);
             break;
         case TOK_KW_SECTION:

@@ -1,14 +1,14 @@
-executable writable section "text" align 8
-    add a0, a0, a1, mystring.end - mystring
-    add a0, a0, a1
-    add a0, a0, a1
-    bz l1, label
-    add a0, a0, a1
-    
-global label:
-    add a0, a0, a1
-    bz l1, label
+executable writable section "text" align 4
+    global label1:
+        sub l0, l0, zr, mystring.end - mystring
+        bz l1, label2
+        add a0, a0, a1
 
-mystring:
-    string "hello!"
-mystring.end:
+    label2:
+        add a0, a0, a1
+        bz l1, label1
+
+section "data"
+    mystring:
+        string "hello!"
+    mystring.end:

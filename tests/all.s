@@ -179,14 +179,12 @@ executable section "text"
 
 label:
     bz l0, label
-    bz l0, -262144
-    bz l0, 262143
     bn l0, label
-    bn l0, -262144
-    bn l0, 262143
 
+    jl l1, l0
     jl l1, l0, 8191
     jl l1, l0, -8192
+    jlr l1, l0
     jlr l1, l0, 8191
     jlr l1, l0, -8192
 

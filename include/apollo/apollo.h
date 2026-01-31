@@ -21,25 +21,25 @@ typedef enum : u8 {
 } ApoObjectKind;
 
 struct ApoHeader {
-    /// Four bytes at the beginning of the object file, 
+    /// Four bytes at the beginning of the object file,
     /// {0xB2, 'a', 'p', 'o'}
     u8 magic[4];
 
     /// Kind of object file described.
     ApoObjectKind kind;
 
-    /// Symbol index to begin execution at, if applicable. 
+    /// Symbol index to begin execution at, if applicable.
     u32 entry_symbol;
 
     /// Number of sections in the section table.
     u32 section_count;
-    
+
     /// Number of symbols in the symbol table.
     u32 symbol_count;
-    
+
     /// Number of relocations in the relocation table.
     u32 reloc_count;
-    
+
     /// Size of the section contents pool.
     u32 content_size;
 
@@ -50,31 +50,31 @@ struct ApoHeader {
 typedef enum : u16 {
     /// This section should not be loaded into program memory.
     APO_SECFL_UNMAPPED = 1 << 0,
-    
+
     /// This section should be loaded with write permissions.
     APO_SECFL_WRITABLE = 1 << 1,
-    
+
     /// This section should be loaded with execute permissions.
     APO_SECFL_EXECUTABLE = 1 << 2,
 
     /// Each thread should have a unique copy of this section.
     APO_SECFL_THREADLOCAL = 1 << 3,
-    
+
     /// This section is initialized with zeroes and doesn't actually take up data in the file.
     APO_SECFL_BLANK = 1 << 4,
-    
+
     /// This section is considered "pinned" to its `.map_address`.
     /// Emit an error if there are mapping conflicts.
     APO_SECFL_PINNED = 1 << 5,
 
+    /// This section may be removed in a "final link" if no symbol defined in it is referenced.
+    APO_SECFL_NONVOLATILE = 1 << 6,
+
     /// This section can be replaced by another section with the same name.
-    APO_SECFL_COMMON = 1 << 6,
+    APO_SECFL_COMMON = 1 << 7,
 
-    /// This section may be removed in a "final link" if none of its symbols are referenced.
-    APO_SECFL_NONVOLATILE = 1 << 7,
-
-    /// This section should be concatenated with sections with the same name and same section flags.
-    APO_SECFL_CONCATENATE = 1 << 8,
+    /// This section shall not be concatenated with sections with the same name and same section flags.
+    APO_SECFL_UNIQUE = 1 << 8,
 } ApoSectionFlags;
 
 struct ApoSectionHeader {
@@ -103,10 +103,10 @@ typedef enum : u8 {
     APO_RELOC_WORD_UNALIGNED,
 
     /// Insert a relative address for a 32-bit relative call. (width 8, align 4)
-    APO_RELOC_CALL,
+    APO_RELOC_RCALL,
 
     /// Insert an absolute address for a 64-bit absolute call. (width 16, align 4)
-    APO_RELOC_FARCALL,
+    APO_RELOC_FCALL,
 
     // Insert an absolute address for loading into a register. (width 16, align 4)
     APO_RELOC_LI,

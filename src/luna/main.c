@@ -6,19 +6,19 @@
 #include "parse.h"
 #include "export.h"
 
-static void print_bin_fmt_a(u32 bits) {
-    u32 imm9 = bits >> 23;
-    u32 r3 = (bits >> 18) & 0b11111;
-    u32 r2 = (bits >> 13) & 0b11111;
-    u32 r1 = (bits >> 8) & 0b11111;
-    u32 opcode = (bits >> 2) & 0b111111;
-    u32 fmt = bits & 0b11;
+// static void print_bin_fmt_a(u32 bits) {
+//     u32 imm9 = bits >> 23;
+//     u32 r3 = (bits >> 18) & 0b11111;
+//     u32 r2 = (bits >> 13) & 0b11111;
+//     u32 r1 = (bits >> 8) & 0b11111;
+//     u32 opcode = (bits >> 2) & 0b111111;
+//     u32 fmt = bits & 0b11;
 
-    printf("%09b %05b %05b %05b %06b %02b",
-        imm9,
-        r3, r2, r1, opcode, fmt
-    );
-}
+//     printf("%09b %05b %05b %05b %06b %02b",
+//         imm9,
+//         r3, r2, r1, opcode, fmt
+//     );
+// }
 
 int main() {
     LunaInstance* luna = luna_new();
@@ -34,7 +34,10 @@ int main() {
     Parser p = parser_new(luna, tokens);
     Object o = parse_tokenbuf(&p);
 
-    object_debug(&o);
+    object_trace(&o);
+    object_dbgprint(&o);
+
+    string data = export_flat_binary(&o);
 
     // Vec(u8) bin = export_flat_binary(p.sections, vec_len(p.sections));
 

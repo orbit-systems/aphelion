@@ -3,6 +3,6 @@
 
 #include "parse.h"
 
-Vec(u8) export_flat_binary(Section** sections, usize len);
+string export_flat_binary(const Object* o);
 
 #endif // LUNA_EXPORT_H

@@ -14,7 +14,7 @@ typedef enum : u8 {
     ELEM_INST_INVALID = 0,
     ELEM_INST__BEGIN = 1,
     // import InstName here
-    
+
     ELEM_INST__END = INST__COUNT - 1,
 
     ELEM_ALIGN,
@@ -32,21 +32,24 @@ typedef enum : u8 {
 
     // Sublabel (.x:) definition.
     // ELEM_SUBLABEL,
-    
-    // An expression to evaluate after the first pass
-    // and then use as an argument to element preceding it.
-    ELEM_IMM_EXPR,
+
+    /// An expression to evaluate after the first pass
+    /// and then use as an argument to element preceding it.
+    ELEM_EXPR,
+
+    /// Doesn't do anything.
+    ELEM_SKIP,
 } SectionElemKind;
 
-// typedef enum : u8 {
-//     SYMREF_WORD,
-//     SYMREF_WORD_UNALIGNED,
-//     SYMREF_CALL,
-//     SYMREF_FARCALL,
-//     SYMREF_LI,
+typedef enum : u8 {
+    RELOC_WORD,
+    RELOC_WORD_UNALIGNED,
+    RELOC_CALL,
+    RELOC_FARCALL,
+    RELOC_LI,
 
-//     SYMREF_BRANCH,
-// } SymRefKind;
+    RELOC_BRANCH,
+} RelocKind;
 
 typedef union SectionElement {
     SectionElemKind kind;
@@ -96,13 +99,6 @@ typedef union SectionElement {
         u32 symbol_index;
     } label;
 
-    // struct {
-    //     SectionElemKind _kind;
-    //     SymRefKind refkind;
-    //     i16 addend;
-    //     u32 symbol_index;
-    // } symref;
-
     struct {
         SectionElemKind _kind;
         u32 index;
@@ -123,8 +119,10 @@ typedef struct Section {
 
     bool address_specified;
     u64 address;
+    u32 bytesize;
 
     Vec(SectionElement) elements;
+    Vec(u32) elem_tokens; // this information is stored separately since it is only used in error reporting.
 } Section;
 
 typedef enum : u8 {
@@ -145,7 +143,7 @@ typedef struct Symbol {
 typedef enum : u8 {
     CEXPR_VALUE,
     CEXPR_SYMBOL_REF,
-    
+
     CEXPR_NEG,
     CEXPR_NOT,
 
@@ -154,7 +152,7 @@ typedef enum : u8 {
     CEXPR_MUL,
     CEXPR_DIV,
     CEXPR_REM,
-    
+
     CEXPR_AND,
     CEXPR_OR,
 } ComplexExprKind;
@@ -196,6 +194,7 @@ typedef struct Parser {
 } Parser;
 
 typedef struct Object {
+    LunaInstance* luna;
     Vec(Token) tokens;
     Vec(Section*) sections;
     Vec(ComplexExpr) exprs;
@@ -203,9 +202,27 @@ typedef struct Object {
     Vec(Symbol) symbols;
 } Object;
 
+#define ORIGIN_CONSTANT 0xFFFF'FFFF'FFFF'FFFF
+
+typedef struct ExprValue {
+    u64 value;
+    u64 origin;
+} ExprValue;
+
+#define EXPR_CONST(v) (ExprValue){v, ORIGIN_CONSTANT}
+#define EXPR_W_ORIGIN(v, o) (ExprValue){v, o}
+
+ExprValue evaluate_expr(const Object* restrict o, u32 expr_index);
+
 Parser parser_new(LunaInstance* luna, Vec(Token) tokens);
 Object parse_tokenbuf(Parser* p);
 
-void object_debug(const Object* o);
+void object_dbgprint(const Object* o);
+void object_trace(Object* o);
+
+typedef struct TokenSpan {
+    usize start;
+    usize end;
+} TokenSpan;
 
 #endif // LUNA_PARSE_H
