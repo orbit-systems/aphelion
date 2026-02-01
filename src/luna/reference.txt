@@ -87,7 +87,6 @@
     cfetch.sli l0
 
 // arithmetic and logic
-    // i'm open to modifying this
     ssi   l0, 0xffff, 0
     ssi   l0, 0xffff, 16
     ssi   l0, 0xffff, 32
@@ -192,11 +191,9 @@ label:
     bn r0, label
 
     jl lr, l0
-    jl lr, l0, 8191
-    jl lr, l0, -8192
+    jl lr, l0, 16383
     jlr lr, l0
-    jlr lr, l0, 8191
-    jlr lr, l0, -8192
+    jlr lr, l0, 16383
 
 // system control
     syscall

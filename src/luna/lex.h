@@ -233,23 +233,21 @@ extern const char* const token_kind_name[];
     INST(JL,  "jl") \
     INST(JLR, "jlr") \
     \
-    INST(SYSCALL,  "syscall") \
-    INST(BREAKPT,  "breakpt") \
-    INST(WAIT,  "wait") \
-    INST(SPIN,  "spin") \
-    INST(IRET,  "iret") \
-    INST(LCTRL,  "lctrl") \
-    INST(SCTRL,  "sctrl") \
+    INST(SYSCALL, "syscall") \
+    INST(BREAKPT, "breakpt") \
+    INST(WAIT,    "wait") \
+    INST(SPIN,    "spin") \
+    INST(IRET,    "iret") \
+    INST(LCTRL,   "lctrl") \
+    INST(SCTRL,   "sctrl") \
     \
     /* Psuedo-instructions are prefixed with P_ */ \
     INST(P_CALL,    "call") \
-    INST(P_SCALL,   "scall") \
-    INST(P_RCALL,   "rcall") \
     INST(P_FCALL,   "fcall") \
+    INST(P_LI,      "li") \
     INST(P_RET,     "ret") \
     INST(P_NOP,     "nop") \
     INST(P_MOV,     "mov") \
-    INST(P_LI,      "li") \
 
 /// Every kind of instruction name accepted by the assembler.
 /// This includes instructions with configuration annotations,

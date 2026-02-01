@@ -7,6 +7,7 @@ const char* const op_name[256] = {
     [OP_CINVAL] = "cinval",
     [OP_CFETCH] = "cfetch",
     [OP_JL] = "jl",
+    [OP_JLR] = "jlr",
     [OP_BZ] = "bz",
     [OP_BN] = "bn",
 

@@ -19,6 +19,7 @@
 //         r3, r2, r1, opcode, fmt
 //     );
 // }
+//
 
 int main() {
     LunaInstance* luna = luna_new();
@@ -38,6 +39,10 @@ int main() {
     object_dbgprint(&o);
 
     string data = export_flat_binary(&o);
+
+    FsFile* outfile = fs_open("out.bin", true, true);
+    fs_write(outfile, data.raw, data.len);
+    fs_destroy(outfile);
 
     // Vec(u8) bin = export_flat_binary(p.sections, vec_len(p.sections));
 

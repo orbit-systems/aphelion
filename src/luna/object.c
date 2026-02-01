@@ -306,7 +306,6 @@ static uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {
 static u64 inst_size(InstName instname) {
     switch (instname) {
     case INST_P_CALL:
-    case INST_P_RCALL:
         return 8;
     case INST_P_FCALL:
         return 16;

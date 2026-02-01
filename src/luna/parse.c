@@ -3,12 +3,15 @@
 #include <stdlib.h>
 #include <stdckdint.h>
 
-#include "parse.h"
-#include "aphelion.h"
-#include "apollo/apollo.h"
+
+#include "common/portability.h"
 #include "common/strmap.h"
 #include "common/util.h"
 #include "common/vec.h"
+
+#include "parse.h"
+#include "aphelion.h"
+#include "apollo/apollo.h"
 #include "lex.h"
 #include "luna.h"
 #include "reporting.h"
@@ -75,8 +78,6 @@ const bool inst_name_imm_signed[INST__COUNT] = {
     [INST_SILEI] = true,
     [INST_BZ] = true,
     [INST_BN] = true,
-    [INST_JL] = true,
-    [INST_JLR] = true,
 };
 
 static AphelOpcode inst_name_to_opcode[256] = {

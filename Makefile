@@ -1,6 +1,10 @@
+BUILD_DIR = build
+
+# libcommon config
+export COMMON_OUT_DIR=../$(BUILD_DIR)
+
 LUNA_SRC_PATHS = \
 	src/luna/*.c \
-	src/common/*.c \
 
 LUNA_SRC = $(wildcard $(LUNA_SRC_PATHS))
 LUNA_OBJECTS = $(LUNA_SRC:src/%.c=build/%.o)
@@ -8,7 +12,7 @@ LUNA_OBJECTS = $(LUNA_SRC:src/%.c=build/%.o)
 CC = gcc
 LD = gcc
 
-INCLUDEPATHS = -Iinclude/
+INCLUDEPATHS = -Iinclude/ -Icommon/include/
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -std=gnu23 -fwrapv -fno-strict-aliasing
 WARNINGS = \
@@ -28,9 +32,12 @@ ifdef ASAN_ENABLE
 	LDFLAGS += $(ASANFLAGS)
 endif
 
-
 .PHONY: all
 all: luna
+
+bin/libcommon.a:
+	$(MAKE) -C common
+	cp $(BUILD_DIR)/libcommon.a bin/libcommon.a
 
 build/%.o: src/%.c
 	$(shell echo 1>&2 -e "Compiling $<")
@@ -38,14 +45,14 @@ build/%.o: src/%.c
 
 .PHONY: luna
 luna: bin/luna
-bin/luna:  $(LUNA_OBJECTS)
-	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm
+bin/luna:  $(LUNA_OBJECTS) bin/libcommon.a
+	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm -Lbin -lcommon
 
 .PHONY: clean
 clean:
-	@rm -rf build/
+	@rm -rf $(BUILD_DIR)/
 	@rm -rf bin/
-	@mkdir build/
+	@mkdir $(BUILD_DIR)/
 	@mkdir bin/
 	@mkdir -p $(dir $(LUNA_OBJECTS))
 
