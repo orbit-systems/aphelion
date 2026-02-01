@@ -9,12 +9,12 @@ LUNA_SRC_PATHS = \
 LUNA_SRC = $(wildcard $(LUNA_SRC_PATHS))
 LUNA_OBJECTS = $(LUNA_SRC:src/%.c=build/%.o)
 
-CC = gcc
-LD = gcc
+CC ?= gcc
+LD ?= gcc
 
 INCLUDEPATHS = -Iinclude/ -Icommon/include/
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -std=gnu23 -fwrapv -fno-strict-aliasing
+CFLAGS = -std=gnu2x -fwrapv -fno-strict-aliasing
 WARNINGS = \
 	-Wall -Wimplicit-fallthrough -Wmaybe-uninitialized \
 	-Wno-enum-compare -Wno-unused -Wno-enum-conversion -Wno-discarded-qualifiers
@@ -40,6 +40,7 @@ bin/libcommon.a:
 	cp $(BUILD_DIR)/libcommon.a bin/libcommon.a
 
 build/%.o: src/%.c
+	echo $(CC)
 	$(shell echo 1>&2 -e "Compiling $<")
 	@$(CC) -c -o $@ $< -MD $(INCLUDEPATHS) $(ALLFLAGS) $(OPT)
 
