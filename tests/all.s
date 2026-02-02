@@ -33,31 +33,31 @@ executable section "text"
     llb l0, [l1 + l2]
     llb l0, [l1]
 
-    sw l0, [l1 + l2 + 511]
-    sw l0, [l1 + 511]
-    sw l0, [l1 + l2]
-    sw l0, [l1]
-    sh l0, [l1 + l2 + 511]
-    sh l0, [l1 + 511]
-    sh l0, [l1 + l2]
-    sh l0, [l1]
-    sq l0, [l1 + l2 + 511]
-    sq l0, [l1 + 511]
-    sq l0, [l1 + l2]
-    sq l0, [l1]
-    sb l0, [l1 + l2 + 511]
-    sb l0, [l1 + 511]
-    sb l0, [l1 + l2]
-    sb l0, [l1]
+    sw [l1 + l2 + 511], l0
+    sw [l1 + 511], l0
+    sw [l1 + l2], l0
+    sw [l1], l0
+    sh [l1 + l2 + 511], l0
+    sh [l1 + 511], l0
+    sh [l1 + l2], l0
+    sh [l1], l0
+    sq [l1 + l2 + 511], l0
+    sq [l1 + 511], l0
+    sq [l1 + l2], l0
+    sq [l1], l0
+    sb [l1 + l2 + 511], l0
+    sb [l1 + 511], l0
+    sb [l1 + l2], l0
+    sb [l1], l0
 
-    scw l2, l0, [l1 + 511]
-    scw l2, l0, [l1]
-    sch l2, l0, [l1 + 511]
-    sch l2, l0, [l1]
-    scq l2, l0, [l1 + 511]
-    scq l2, l0, [l1]
-    scb l2, l0, [l1 + 511]
-    scb l2, l0, [l1]
+    scw l2, [l1 + 511], l0
+    scw l2, [l1], l0
+    sch l2, [l1 + 511], l0
+    sch l2, [l1], l0
+    scq l2, [l1 + 511], l0
+    scq l2, [l1], l0
+    scb l2, [l1 + 511], l0
+    scb l2, [l1], l0
 
     fence.s
     fence.l
