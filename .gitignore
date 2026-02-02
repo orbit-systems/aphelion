@@ -10,3 +10,5 @@ bin
 gmon.out
 .cache
 compile_commands.json
+config.mk
+config.def.mk

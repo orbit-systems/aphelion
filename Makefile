@@ -32,6 +32,9 @@ ifdef ASAN_ENABLE
 	LDFLAGS += $(ASANFLAGS)
 endif
 
+#include configuration file, if present
+-include config.mk
+
 .PHONY: all
 all: luna
 
@@ -56,10 +59,10 @@ clean:
 	@mkdir bin/
 	@mkdir -p $(dir $(LUNA_OBJECTS))
 
--include $(LUNA_OBJECTS:.o=.d)
-
 # generate compile commands with bear if u got it!!!
 # very good highly recommended ʕ·ᴥ·ʔ
 .PHONY: bear-gen-cc
 bear-gen-cc: clean
 	bear -- $(MAKE) all
+
+-include $(LUNA_OBJECTS:.o=.d)
