@@ -108,7 +108,7 @@ executable section "text"
     urem  l0, l1, l2, 511
     irem  l0, l1, l2
     irem  l0, l1, l2, 511
-    
+
     addi  l0, l1, 16383
     subi  l0, l1, 16383
     muli  l0, l1, 16383
@@ -198,9 +198,11 @@ label:
 
     call l1, l2, label
     call l1, label
+    call label
 
-    abscall l1, l2, label
-    abscall l1, label
+    fcall l1, l2, label
+    fcall l1, label
+    fcall label
 
     ret
     nop

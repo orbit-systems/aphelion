@@ -41,7 +41,7 @@ static AphelOpcode instname_opcode[INST__COUNT] = {
     [INST_LLH] = OP_LLH,
     [INST_LLQ] = OP_LLQ,
     [INST_LLB] = OP_LLB,
-    
+
     [INST_SW] = OP_SW,
     [INST_SH] = OP_SH,
     [INST_SQ] = OP_SQ,
@@ -81,7 +81,7 @@ static AphelOpcode instname_opcode[INST__COUNT] = {
     [INST_IDIVI] = OP_IDIVI,
     [INST_UREMI] = OP_UREMI,
     [INST_IREMI] = OP_IREMI,
-    
+
     [INST_ANDI] = OP_ANDI,
     [INST_ORI]  = OP_ORI,
     [INST_NORI] = OP_NORI,
@@ -131,14 +131,13 @@ static AphelOpcode instname_opcode[INST__COUNT] = {
 };
 
 static i64 handle_expr(const Object* o, InstName instname, u64 addr, u32 expr_index) {
-    
+
     i64 value = evaluate_expr(o, expr_index).value;
-    // printf("imm from expr: %u\n", imm);
 
     switch (instname) {
     case INST_BZ:
     case INST_BN:
-        return value - addr - 4;
+        return (value - addr - 4) >> 2;
     default:
         return value;
     }
@@ -163,24 +162,24 @@ static u32 encode_inst_elem(const Object* o, u64 addr, SectionElement inst, Sect
     switch (fmt) {
     case FMT_A:
         data = encode_fmt_a(
-            opcode, 
-            inst.inst.r1, 
+            opcode,
+            inst.inst.r1,
             imm
         );
         break;
     case FMT_B:
         data = encode_fmt_b(
-            opcode, 
-            inst.inst.r1, 
-            inst.inst.r2, 
+            opcode,
+            inst.inst.r1,
+            inst.inst.r2,
             imm
         );
         break;
     case FMT_C:
         data = encode_fmt_c(
-            opcode, 
-            inst.inst.r1, 
-            inst.inst.r2, 
+            opcode,
+            inst.inst.r1,
+            inst.inst.r2,
             inst.inst.r3,
             imm
         );
@@ -259,7 +258,7 @@ string export_flat_binary(const Object* o) {
             case ELEM_INST__BEGIN ... ELEM_INST__END:{
                 u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
                 *(u32*)to_write = data;
-                
+
                 offset += 4;
                 break;
             }
