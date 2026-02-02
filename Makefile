@@ -10,7 +10,7 @@ LUNA_SRC = $(wildcard $(LUNA_SRC_PATHS))
 LUNA_OBJECTS = $(LUNA_SRC:src/%.c=build/%.o)
 
 CC ?= gcc
-LD ?= gcc
+LD = $(CC)
 
 INCLUDEPATHS = -Iinclude/ -Icommon/include/
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
@@ -40,14 +40,13 @@ bin/libcommon.a:
 	cp $(BUILD_DIR)/libcommon.a bin/libcommon.a
 
 build/%.o: src/%.c
-	echo $(CC)
 	$(shell echo 1>&2 -e "Compiling $<")
 	@$(CC) -c -o $@ $< -MD $(INCLUDEPATHS) $(ALLFLAGS) $(OPT)
 
 .PHONY: luna
 luna: bin/luna
 bin/luna:  $(LUNA_OBJECTS) bin/libcommon.a
-	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm -Lbin -lcommon
+	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm -lc -Lbin -lcommon
 
 .PHONY: clean
 clean:
@@ -59,7 +58,7 @@ clean:
 
 -include $(LUNA_OBJECTS:.o=.d)
 
-# generate compile commands with bear if u got it!!! 
+# generate compile commands with bear if u got it!!!
 # very good highly recommended ʕ·ᴥ·ʔ
 .PHONY: bear-gen-cc
 bear-gen-cc: clean
