@@ -336,11 +336,8 @@ void object_dbgprint(const Object* o) {
                 case RELOC_LI:
                     printf("Load Imm.    ");
                     break;
-                case RELOC_BRANCH:
-                    printf("Branch       ");
-                    break;
                 default:
-                    TODO("Implement");
+                    UNREACHABLE;
             }
             printf("%-*.*s  %-4x\n", sym_len, sym->name_len, sym->name, r->addend);
         }
@@ -487,11 +484,21 @@ static ComplexExpr* cexpr(Object* o, u32 index) {
     return &o->exprs[index];
 }
 
-static void specialize_const_li(Object *o, Section* sec, SectionElement* start, u64 imm) {
+static void specialize_blank_ssis(Object *o, SectionElement* start, u8 n, AphelGpr reg) {
+    for_n(i, 0, n) {
+        SectionElement* elem = start + i;
+	elem->inst.name = i == 0 ? INST_SSI_C : INST_SSI;
+	elem->inst.r1 = reg;
+	elem->inst.imm = i;
+    }
+}
+
+static void specialize_const_fcall_or_li(Object *o, SectionElement* start, u64 imm) {
     u8 reg = start->inst.r1;
+    bool is_li = start->kind == INST_P_LI;
 
     printf("0x%x ", imm);
-    bool sign = imm & 0x8000000000000000UL;
+    bool sign = (bool) (imm & 0x8000000000000000UL);
 
     // quarter mask: Q0 = lowest 16 bits, Q3 = highest
     u8 quarter = 0;
@@ -513,38 +520,87 @@ static void specialize_const_li(Object *o, Section* sec, SectionElement* start, 
         // emit if quarter has data or it's the last quarter and imm is zero
         if (!(quarter & (1u << i)) && !(i == 0 && quarter == 0)) continue;
 
-
-
-        elem->inst.imm = (chunk << 3) | ((higher != 0) << 2) | i;
+        elem->inst.imm = (chunk << 3) | ((higher != 0) << 2)  | (is_li ? i : 0);
         elem->inst.name = (higher != 0) ? INST_SSI : INST_SSI_C;
         elem->inst.r1 = reg;
 
         // Q4 special logic: always clear below it
         if (i == 3) {
-        elem->inst.name = INST_SSI_C;
-        elem->inst.imm |= sign << 2;
+            elem->inst.imm |= sign << 2;
+            elem->inst.name = INST_SSI_C;
+        }
+
+        if (i == 0 && !is_li) {
+            elem->inst.name = INST_JL;
+            elem->inst.imm = elem->inst.imm << 2;
         }
     }
 }
 
-static void specialize_li(Object*o, Section* section, SectionElement* start, u64 index) {
+static void specialize_calls_or_li(Object*o, u32 section_index, SectionElement* start, u64 index) {
     // Guaranteed to have 4 elems after it
-    SectionElement* li   = start;
     SectionElement* expr = start + 1;
 
     ExprValue v = evaluate_expr(o, expr->expr.index);
 
-    if (EXPR_SYM_DEP(v.symbol_index)) {
+    if ((v.value & 0b11) && start->kind != INST_P_LI) {
+        ComplexExpr* e = cexpr(o, expr->expr.index);
+        parse_warn(o, e->token_index,
+           "addend is truncated from %ld (0x%lx) to %d (0x%d).\n"
+           "Hint: addends must be aligned to 4 bytes for FCALL and CALL.",
+           v.value,
+           v.value,
+           v.value & ~0b11,
+           v.value & ~0b11
+        );
+        v.value = v.value & ~0b11;
+    }
+    //u32 sym_section_index = o->symbols[v.symbol_index].section_def;
+
+    // Since call is S+A-P, it must be internally marked as relocated because
+    // after the pessimistic trace, the P can change as sections shrink.
+    if (EXPR_SYM_DEP(v.symbol_index) || start->inst.name == INST_P_CALL) {
         Relocation r = {
-            .kind = RELOC_LI,
-            .patch_sec = section,
+            .patch_sec = o->sections[section_index],
             .patch_elem_index = index,
             .symbol_index = v.symbol_index,
             .addend = (i16) v.value,
         };
+
+        switch (start->inst.name) {
+        case INST_P_CALL: {
+            r.kind = RELOC_CALL;
+            specialize_blank_ssis(o, start, 1, start->inst.r1);
+            SectionElement* jl = start + 1;
+            jl->inst.name = INST_JL;
+            jl->inst.r1 = start->inst.r1;
+            jl->inst.r2 = start->inst.r2;
+            jl->inst.imm = 0;
+            break;
+        }
+        case INST_P_FCALL: {
+            r.kind = RELOC_FARCALL;
+
+            specialize_blank_ssis(o, start, 3, start->inst.r2);
+            SectionElement* jl = start + 3;
+            jl->inst.name = INST_JL;
+            jl->inst.r1 = start->inst.r1;
+            jl->inst.r2 = start->inst.r2;
+            jl->inst.imm = 0;
+            break;
+        }
+        case INST_P_LI: {
+            r.kind = RELOC_LI;
+            specialize_blank_ssis(o, start, 4, start->inst.r1);
+            break;
+        }
+        default:
+            UNREACHABLE;
+        }
+
         vec_append(&o->relocs, r);
     } else {
-        specialize_const_li(o, section, start, v.value);
+        specialize_const_fcall_or_li(o, start, v.value);
     }
 }
 
@@ -559,14 +615,15 @@ void object_trace(Object* o) {
     // obtained by the previous pessimistic trace
     for_n(i, 0, vec_len(o->sections)) {
         Section* section = o->sections[i];
-        for_n(i, 0, vec_len(section->elements)) {
-            SectionElement* elem = &section->elements[i];
+
+        for_n(j, 0, vec_len(section->elements)) {
+            SectionElement* elem = &section->elements[j];
 
             switch ((InstName)elem->kind) {
             case INST_P_CALL:
-                TODO("handle specialization of call");
+            case INST_P_FCALL:
             case INST_P_LI:
-                specialize_li(o, section, elem, i);
+                specialize_calls_or_li(o, i, elem, j);
                 break;
             default:
                 break;

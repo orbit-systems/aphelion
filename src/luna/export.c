@@ -1,9 +1,12 @@
+#include "export.h"
+
 #include "aphelion.h"
-#include "common/vec.h"
 #include "lex.h"
 #include "parse.h"
+
+#include "common/portability.h"
 #include "common/util.h"
-#include "export.h"
+#include "common/vec.h"
 
 static u32 encode_fmt_a(AphelOpcode op, AphelGpr r1, u32 imm19) {
     u32 bits = 0;
@@ -188,6 +191,44 @@ static u32 encode_inst_elem(const Object* o, u64 addr, SectionElement inst, Sect
     return data;
 }
 
+static u8 write_relocation_patches(u32* patches, Relocation *r, Section* sec, Symbol *sym, u64 addr) {
+	// S+A (others may -P in the switch)
+	i64 value = (i64)r->addend + sec->address + sym->section_offset;
+
+	switch (r->kind) {
+	case RELOC_CALL:
+		// S + A - P
+		// patch SSI and JL
+		value -= (i64)addr;
+		patches[0] = ((value >> 2)  & 0xFFFF) << 18;
+		patches[1] = ((value >> 16) & 0xFFFF) << 16;
+		return 2;
+	case RELOC_WORD:
+		// S + A
+		patches[0] = value & 0x0000'0000'FFFF'FFFF;
+		patches[1] = (value & 0xFFFF'FFFF'0000'0000) >> 32;
+		return 2;
+	case RELOC_LI:
+		// S + A
+		// patch 4 SSIs.
+		for_n(j, 0, 4) {
+		    patches[j] = ((value >> (j * 16)) & 0xFFFF) << 16;
+		}
+		return 4;
+	case RELOC_FARCALL:
+		// S + A
+		// patch 4 SSIs
+		for_n(j, 0, 4) {
+		    patches[j] = ((value >> (j * 16)) & 0xFFFF) << 16;
+		}
+		// make last SSI a JL
+		patches[0] <<= 2;
+		return 4;
+	default:
+		TODO("Implement relocation");
+	}
+}
+
 string export_flat_binary(const Object* o) {
     u64 out_len = 0;
     for_n(i, 0, vec_len(o->sections)) {
@@ -202,12 +243,31 @@ string export_flat_binary(const Object* o) {
 
     for_n(i, 0, vec_len(o->sections)) {
         Section* section = o->sections[i];
+        u32 section_index = i;
 
         u64 offset = 0;
+
+        Relocation* r = nullptr;
+        u32 patches[4] = {0};
+        u8 patches_remaining = 0;
+
         for_n(i, 0, vec_len(section->elements)) {
             SectionElement* elem = &section->elements[i];
             u64 addr = section->address + offset;
             u8* to_write = (u8*)&output.raw[addr];
+
+            if (r == nullptr) {
+                for_n(j, 0, vec_len(o->relocs)) {
+                    Relocation* cur = &o->relocs[j];
+                    if (cur->patch_elem_index == i) {
+                        r = cur;
+                        Symbol* sym = &o->symbols[r->symbol_index];
+                        Section* sec = o->sections[sym->section_def];
+
+                        patches_remaining = write_relocation_patches(patches, r, sec, sym, addr);
+                    }
+                }
+            }
 
             // encode elements!
             switch (elem->kind) {
@@ -226,43 +286,17 @@ string export_flat_binary(const Object* o) {
             }
             case ELEM_INST__BEGIN ... ELEM_INST__END: {
                 switch ((InstName)elem->inst.name) {
+                case INST_P_FCALL:
                 case INST_P_LI:
-                    // find relocation entry with a linear search.
-                    // could probably be optimised/inlined but i want
-                    // to prepare for object formats
-                    Relocation* r;
-                    for_n(j, 0, vec_len(o->relocs)) {
-                        r = &o->relocs[j];
-                        if (r->patch_elem_index == i)
-                            break;
-                    }
-
-                    if (r == nullptr || r->kind != RELOC_LI)
-                        UNREACHABLE;
-
-                    Symbol* sym = &o->symbols[r->symbol_index];
-                    Section* sec = o->sections[sym->section_def];
-
-                    u64 value = r->addend + sec->address + sym->section_offset;
-
-                    SectionElement ssi = { .inst = {
-                        .name = INST_SSI,
-                        .r1 = elem->inst.r1,
-                        .imm = 0,
-                    }};
-
-                    for_n(quarter, 0, 4) {
-                        u16 chunk = (value >> (quarter * 16)) & 0xFFFF;
-                        ssi.inst.imm = chunk << 3 | quarter; // no clear bit
-                        u32 data = encode_inst_elem(o, addr, ssi, section->elements[i]);
-                        *(u32*)to_write = data;
-                        offset += 4;
-                        addr += 4;
-                        to_write += 4;
-                    }
-                    printf("PATCH: S + A (LI) -> %.*s(0x%x) + %.*s(0x%x) + 0x%x = 0x%x \n", sec->name_len, sec->name, sec->address, sym->name_len, sym->name, sym->section_offset, r->addend, value);
+                case INST_P_CALL:
+                    UNREACHABLE;
                     break;
                 default: {
+
+                    u16 bits[4] = {0};
+                    if (r != nullptr) {
+                    }
+
                     u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
                     *(u32*)to_write = data;
 	
@@ -275,8 +309,32 @@ string export_flat_binary(const Object* o) {
             default:
                 TODO("unimpl %d", elem->kind);
             }
+            if (r != nullptr && patches_remaining != 0) {
+                patches_remaining--;
+                *(u32*)to_write |= patches[patches_remaining];
+
+                if (patches_remaining == 0) {
+                    Symbol* sym = &o->symbols[r->symbol_index];
+                    Section* sec = o->sections[sym->section_def];
+                    const char* reloc_name_string[] = {
+                        "S + A     (Word)          ",
+                        "S + A     (Word Unaligned)",
+                        "S + A - P (Call)          ",
+                        "S + A     (Far Call)      ",
+                        "S + A     (Load Immediate)"
+                    };
+
+                    printf("PATCH: %s -> %.*s(0x%lx) + %.*s(0x%x) + 0x%lx (%ld)%s\n",
+                           reloc_name_string[r->kind],
+                           sec->name_len, sec->name, sec->address,
+                           sym->name_len, sym->name, sym->section_offset,
+                           (i64)r->addend, (i64) r->addend,
+			   r->kind == RELOC_CALL ? " - P" : ""
+                    );
+                    r = nullptr;
+                }
+            }
         }
     }
-
     return output;
 }

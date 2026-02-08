@@ -990,7 +990,7 @@ static void parse_branch(Parser* p) {
     }
 }
 
-static void parse_li(Parser* p) {
+static void parse_calls_or_li(Parser* p) {
     Token inst = p->current;
     usize inst_start_token = p->cursor;
 
@@ -999,9 +999,14 @@ static void parse_li(Parser* p) {
     AphelGpr r1 = parse_operand_gpr(p);
     expect_advance(p, TOK_COMMA);
 
+    AphelGpr r2 = r1; // (f)call r1, imm -> (f)call r1, r1, imm
+    if (inst.subkind != INST_P_LI && p->current.kind == TOK_GPR) {
+        r2 = parse_operand_gpr(p);
+        expect_advance(p, TOK_COMMA);
+    }
+
     u32 imm_expr = parse_expr(p);
     i64 imm = 0;
-
     SectionElement imm_expr_elem = {0};
     usize expr_start_token = p->cursor;
 
@@ -1009,25 +1014,34 @@ static void parse_li(Parser* p) {
     imm_expr_elem.expr.index = imm_expr;
 
     SectionElement elem = { .inst = {
-        .name = INST_P_LI,
-        .r1 = r1
+        .name = (InstName) inst.subkind,
+        .r1 = r1,
+        .r2 = r2
     }};
 
-    // Overall, this sequence looks like: INST_P_LI, EXPR, SKIP, SKIP.
-    // Later we convert to INST_SSI, and SKIPs. See specialize_li.
+    // Overall, this sequence looks like: FCALL/LI, EXPR, SKIP, SKIP.
+    // If LI, we later specialize to
+    //     SSI (SII | SKIP)*.
+    // If FCALL, we later specialize to
+    //     SII (SSI | SKIP)* JR.
+    // If Call, we later specialize to
+    //     SSI, JR
+    // -- See: specialize_calls_and_li
     element_add(p, elem, inst_start_token);
 
     expect_advance(p, TOK_NEWLINE);
 
     element_add(p, imm_expr_elem, expr_start_token);
 
-    element_add(p, (SectionElement){
-        .kind = ELEM_SKIP,
-    }, p->cursor);
+    if (inst.subkind != INST_P_CALL) {
+        element_add(p, (SectionElement){
+            .kind = ELEM_SKIP,
+        }, p->cursor);
 
-    element_add(p, (SectionElement){
-        .kind = ELEM_SKIP,
-    }, p->cursor);
+        element_add(p, (SectionElement){
+            .kind = ELEM_SKIP,
+        }, p->cursor);
+    }
 }
 
 static void parse_instruction(Parser* p) {
@@ -1042,8 +1056,10 @@ static void parse_instruction(Parser* p) {
     case INST_BN:
         parse_branch(p);
         break;
+    case INST_P_CALL:
+    case INST_P_FCALL:
     case INST_P_LI:
-        parse_li(p);
+        parse_calls_or_li(p);
         break;
     default:
         parse_error(p, p->cursor, "expected instruction");

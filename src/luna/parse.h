@@ -47,8 +47,6 @@ typedef enum : u8 {
     RELOC_CALL,
     RELOC_FARCALL,
     RELOC_LI,
-
-    RELOC_BRANCH,
 } RelocKind;
 
 typedef union SectionElement {
