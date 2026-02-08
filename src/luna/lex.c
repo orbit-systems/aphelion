@@ -179,6 +179,12 @@ bool lexer_next_token(Lexer* l) {
     }
 
     switch (current(l)) {
+    case ';':
+    case '#':
+        while (!is_eof(l) && current(l) != '\n')
+		advance(l);
+	lexer_next_token(l);
+	break;
     // misc symbols
     case '\n':
         l->cursor--;
