@@ -155,6 +155,8 @@ typedef enum : u8 {
 
     CEXPR_AND,
     CEXPR_OR,
+
+    CEXPR__END,
 } ComplexExprKind;
 
 typedef struct ComplexExpr {
@@ -193,6 +195,15 @@ typedef struct Parser {
     // Vec(SubLabel) sub_labels;
 } Parser;
 
+typedef struct {
+    RelocKind kind;
+    Section* patch_sec;
+    u32 patch_elem_index;
+
+    u32 symbol_index;
+    i16 addend;
+} Relocation;
+
 typedef struct Object {
     LunaInstance* luna;
     Vec(Token) tokens;
@@ -200,17 +211,18 @@ typedef struct Object {
     Vec(ComplexExpr) exprs;
     StrMap symbol_indexes;
     Vec(Symbol) symbols;
+    Vec(Relocation) relocs;
 } Object;
 
-#define ORIGIN_CONSTANT 0xFFFF'FFFF'FFFF'FFFF
-
 typedef struct ExprValue {
-    u64 value;
-    u64 origin;
+    i64 value;        // stores addend when symbol_index == 0
+    u32 symbol_index; // 0 when constant
 } ExprValue;
 
-#define EXPR_CONST(v) (ExprValue){v, ORIGIN_CONSTANT}
-#define EXPR_W_ORIGIN(v, o) (ExprValue){v, o}
+#define EXPR_CONST(c) (ExprValue){(c), 0}
+#define EXPR_SYM(s) (ExprValue){0, (s)}
+#define EXPR_SYM_ADD(c, s) (ExprValue){(c), (s)}
+#define EXPR_SYM_DEP(i) ((i) != 0)
 
 ExprValue evaluate_expr(const Object* restrict o, u32 expr_index);
 
@@ -219,6 +231,9 @@ Object parse_tokenbuf(Parser* p);
 
 void object_dbgprint(const Object* o);
 void object_trace(Object* o);
+
+i64 int_in_bits(i64 n, usize bits);
+u64 uint_in_bits(u64 n, usize bits);
 
 typedef struct TokenSpan {
     usize start;

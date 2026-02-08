@@ -296,11 +296,11 @@ static ComplexExpr* cexpr(Parser* p, u32 index) {
     return &p->exprs[index];
 }
 
-static i64 int_in_bits(i64 n, usize bits) {
+i64 int_in_bits(i64 n, usize bits) {
     return ((n << (64 - bits)) >> (64 - bits));
 }
 
-static u64 uint_in_bits(u64 n, usize bits) {
+u64 uint_in_bits(u64 n, usize bits) {
     return ((n << (64 - bits)) >> (64 - bits));
 }
 
@@ -634,7 +634,7 @@ static u32 parse_unary(Parser* p) {
             cexpr(p, outer)->un = index;
             index = outer;
         }
-        cexpr(p, index)->kind = token_index;
+        cexpr(p, index)->token_index = token_index;
         return index;
     }
     case TOK_TILDE: {
@@ -652,7 +652,7 @@ static u32 parse_unary(Parser* p) {
             cexpr(p, outer)->un = index;
             index = outer;
         }
-        cexpr(p, index)->kind = token_index;
+        cexpr(p, index)->token_index = token_index;
         return index;
     }
     default:
@@ -990,6 +990,46 @@ static void parse_branch(Parser* p) {
     }
 }
 
+static void parse_li(Parser* p) {
+    Token inst = p->current;
+    usize inst_start_token = p->cursor;
+
+    expect_advance(p, TOK_INST);
+
+    AphelGpr r1 = parse_operand_gpr(p);
+    expect_advance(p, TOK_COMMA);
+
+    u32 imm_expr = parse_expr(p);
+    i64 imm = 0;
+
+    SectionElement imm_expr_elem = {0};
+    usize expr_start_token = p->cursor;
+
+    imm_expr_elem.kind = ELEM_EXPR;
+    imm_expr_elem.expr.index = imm_expr;
+
+    SectionElement elem = { .inst = {
+        .name = INST_P_LI,
+        .r1 = r1
+    }};
+
+    // Overall, this sequence looks like: INST_P_LI, EXPR, SKIP, SKIP.
+    // Later we convert to INST_SSI, and SKIPs. See specialize_li.
+    element_add(p, elem, inst_start_token);
+
+    expect_advance(p, TOK_NEWLINE);
+
+    element_add(p, imm_expr_elem, expr_start_token);
+
+    element_add(p, (SectionElement){
+        .kind = ELEM_SKIP,
+    }, p->cursor);
+
+    element_add(p, (SectionElement){
+        .kind = ELEM_SKIP,
+    }, p->cursor);
+}
+
 static void parse_instruction(Parser* p) {
     Token inst = p->current;
 
@@ -1001,6 +1041,9 @@ static void parse_instruction(Parser* p) {
     case INST_BZ:
     case INST_BN:
         parse_branch(p);
+        break;
+    case INST_P_LI:
+        parse_li(p);
         break;
     default:
         parse_error(p, p->cursor, "expected instruction");
@@ -1153,6 +1196,7 @@ Object parse_tokenbuf(Parser* p) {
                 .exprs = p->exprs,
                 .symbol_indexes = p->symbol_indexes,
                 .symbols = p->symbols,
+                .relocs = vec_new(Relocation, 64),
                 .luna = p->luna,
             };
             return obj;

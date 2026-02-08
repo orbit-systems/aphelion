@@ -131,7 +131,6 @@ static AphelOpcode instname_opcode[INST__COUNT] = {
 };
 
 static i64 handle_expr(const Object* o, InstName instname, u64 addr, u32 expr_index) {
-
     i64 value = evaluate_expr(o, expr_index).value;
 
     switch (instname) {
@@ -189,36 +188,6 @@ static u32 encode_inst_elem(const Object* o, u64 addr, SectionElement inst, Sect
     return data;
 }
 
-typedef struct SymbolOffset {
-    u32 symbol;
-    i16 addend;
-} SymbolOffset;
-
-static SymbolOffset cexpr_to_symbol_offset(ComplexExpr* expr) {
-    // if (expr->kind != CEXPR_SYMBOL_REF) {
-    //     return 0;
-    // }
-    // return expr->symbol_ref;
-
-    switch (expr->kind) {
-    case CEXPR_VALUE:
-        if (expr->value != (i16)expr->value) {
-            TODO("error about addend being too big");
-        }
-        return (SymbolOffset){
-            .symbol = 0,
-            .addend = expr->value,
-        };
-    case CEXPR_SYMBOL_REF:
-        return (SymbolOffset){
-            .symbol = expr->symbol_ref,
-            .addend = 0,
-        };
-    default:
-        TODO("unimpl");
-    }
-}
-
 string export_flat_binary(const Object* o) {
     u64 out_len = 0;
     for_n(i, 0, vec_len(o->sections)) {
@@ -255,11 +224,52 @@ string export_flat_binary(const Object* o) {
                 i += 1;
                 break;
             }
-            case ELEM_INST__BEGIN ... ELEM_INST__END:{
-                u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
-                *(u32*)to_write = data;
+            case ELEM_INST__BEGIN ... ELEM_INST__END: {
+                switch ((InstName)elem->inst.name) {
+                case INST_P_LI:
+                    // find relocation entry with a linear search.
+                    // could probably be optimised/inlined but i want
+                    // to prepare for object formats
+                    Relocation* r;
+                    for_n(j, 0, vec_len(o->relocs)) {
+                        r = &o->relocs[j];
+                        if (r->patch_elem_index == i)
+                            break;
+                    }
 
-                offset += 4;
+                    if (r == nullptr || r->kind != RELOC_LI)
+                        UNREACHABLE;
+
+                    Symbol* sym = &o->symbols[r->symbol_index];
+                    Section* sec = o->sections[sym->section_def];
+
+                    u64 value = r->addend + sec->address + sym->section_offset;
+
+                    SectionElement ssi = { .inst = {
+                        .name = INST_SSI,
+                        .r1 = elem->inst.r1,
+                        .imm = 0,
+                    }};
+
+                    for_n(quarter, 0, 4) {
+                        u16 chunk = (value >> (quarter * 16)) & 0xFFFF;
+                        ssi.inst.imm = chunk << 3 | quarter; // no clear bit
+                        u32 data = encode_inst_elem(o, addr, ssi, section->elements[i]);
+                        *(u32*)to_write = data;
+                        offset += 4;
+                        addr += 4;
+                        to_write += 4;
+                    }
+                    printf("PATCH: S + A (LI) -> %.*s(0x%x) + %.*s(0x%x) + 0x%x = 0x%x \n", sec->name_len, sec->name, sec->address, sym->name_len, sym->name, sym->section_offset, r->addend, value);
+                    break;
+                default: {
+                    u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
+                    *(u32*)to_write = data;
+	
+                    offset += 4;
+                    break;
+                }
+                }
                 break;
             }
             default:
