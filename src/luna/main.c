@@ -24,6 +24,7 @@
 int main() {
     LunaInstance* luna = luna_new();
 
+
     SourceFileId mainfile = luna_load_file(luna, strlit(
         "tests/basic.s"
     ));
