@@ -1,14 +1,14 @@
-// loads
-    lw l0, [l1 + l2 + 4088]
-    lw l0, [l1 + 4088]
+executable section "text"
+    lw l0, [l1 + l2 + 511]
+    lw l0, [l1 + 511]
     lw l0, [l1 + l2]
     lw l0, [l1]
-    lh l0, [l1 + l2 + 2044]
-    lh l0, [l1 + 2044]
+    lh l0, [l1 + l2 + 511]
+    lh l0, [l1 + 511]
     lh l0, [l1 + l2]
     lh l0, [l1]
-    lq l0, [l1 + l2 + 1022]
-    lq l0, [l1 + 1022]
+    lq l0, [l1 + l2 + 511]
+    lq l0, [l1 + 511]
     lq l0, [l1 + l2]
     lq l0, [l1]
     lb l0, [l1 + l2 + 511]
@@ -16,16 +16,16 @@
     lb l0, [l1 + l2]
     lb l0, [l1]
 
-    llw l0, [l1 + l2 + 4088]
-    llw l0, [l1 + 4088]
+    llw l0, [l1 + l2 + 511]
+    llw l0, [l1 + 511]
     llw l0, [l1 + l2]
     llw l0, [l1]
-    llh l0, [l1 + l2 + 2044]
-    llh l0, [l1 + 2044]
+    llh l0, [l1 + l2 + 511]
+    llh l0, [l1 + 511]
     llh l0, [l1 + l2]
     llh l0, [l1]
-    llq l0, [l1 + l2 + 1022]
-    llq l0, [l1 + 1022]
+    llq l0, [l1 + l2 + 511]
+    llq l0, [l1 + 511]
     llq l0, [l1 + l2]
     llq l0, [l1]
     llb l0, [l1 + l2 + 511]
@@ -33,17 +33,16 @@
     llb l0, [l1 + l2]
     llb l0, [l1]
 
-// stores
-    sw [l1 + l2 + 4088], l0
-    sw [l1 + 4088], l0
+    sw [l1 + l2 + 511], l0
+    sw [l1 + 511], l0
     sw [l1 + l2], l0
     sw [l1], l0
-    sh [l1 + l2 + 2044], l0
-    sh [l1 + 2044], l0
+    sh [l1 + l2 + 511], l0
+    sh [l1 + 511], l0
     sh [l1 + l2], l0
     sh [l1], l0
-    sq [l1 + l2 + 1022], l0
-    sq [l1 + 1022], l0
+    sq [l1 + l2 + 511], l0
+    sq [l1 + 511], l0
     sq [l1 + l2], l0
     sq [l1], l0
     sb [l1 + l2 + 511], l0
@@ -51,32 +50,28 @@
     sb [l1 + l2], l0
     sb [l1], l0
 
-    scw l2, [l1 + 4088], l0
+    scw l2, [l1 + 511], l0
     scw l2, [l1], l0
-    sch l2, [l1 + 2044], l0
+    sch l2, [l1 + 511], l0
     sch l2, [l1], l0
-    scq l2, [l1 + 1022], l0
+    scq l2, [l1 + 511], l0
     scq l2, [l1], l0
     scb l2, [l1 + 511], l0
     scb l2, [l1], l0
 
-// misc memory
-    fence
     fence.s
     fence.l
+    fence.sl
 
     cinval.block   l0
     cinval.page    l0
     cinval.all     l0
-    cinval.all
     cinval.i.block l0
     cinval.i.page  l0
     cinval.i.all   l0
-    cinval.i.all
     cinval.d.block l0
     cinval.d.page  l0
     cinval.d.all   l0
-    cinval.d.all
 
     cfetch.s   l0
     cfetch.l   l0
@@ -86,7 +81,6 @@
     cfetch.si  l0
     cfetch.sli l0
 
-// arithmetic and logic
     ssi   l0, 0xffff, 0
     ssi   l0, 0xffff, 16
     ssi   l0, 0xffff, 32
@@ -115,6 +109,14 @@
     irem  l0, l1, l2
     irem  l0, l1, l2, 511
 
+    addi  l0, l1, 16383
+    subi  l0, l1, 16383
+    muli  l0, l1, 16383
+    udivi l0, l1, 16383
+    idivi l0, l1, 16383
+    uremi l0, l1, 16383
+    iremi l0, l1, 16383
+
     and l0, l1, l2
     and l0, l1, l2, 511
     or  l0, l1, l2
@@ -123,14 +125,6 @@
     nor l0, l1, l2, 511
     xor l0, l1, l2
     xor l0, l1, l2, 511
-
-    addi  l0, l1, 16383
-    subi  l0, l1, 16383
-    muli  l0, l1, 16383
-    udivi l0, l1, 16383
-    idivi l0, l1, 16383
-    uremi l0, l1, 16383
-    iremi l0, l1, 16383
 
     andi l0, l1, 16383
     ori  l0, l1, 16383
@@ -169,15 +163,13 @@
     ext l0, l1, l2
     dep l0, l1, l2
 
-// comparison
     seq  l0, l1, l2
     sult l0, l1, l2
     silt l0, l1, l2
     sule l0, l1, l2
     sile l0, l1, l2
 
-    seqi  l0, l1, 8191
-    seqi  l0, l1, -8192
+    seqi  l0, l1, 16383
     sulti l0, l1, 16383
     silti l0, l1, 8191
     silti l0, l1, -8192
@@ -185,17 +177,17 @@
     silei l0, l1, 8191
     silei l0, l1, -8192
 
-// branches
 label:
-    bz r0, label
-    bn r0, label
+    bz l0, label
+    bn l0, label
 
-    jl lr, l0
-    jl lr, l0, 16383
-    jlr lr, l0
-    jlr lr, l0, 16383
+    jl l1, l0
+    jl l1, l0, 8191
+    jl l1, l0, -8192
+    jlr l1, l0
+    jlr l1, l0, 8191
+    jlr l1, l0, -8192
 
-// system control
     syscall
     breakpt
     wait
@@ -204,48 +196,15 @@ label:
     lctrl l0, intstat
     sctrl intstat, l0
 
-// pseudo-instructions
+    call l1, l2, label
+    call l1, label
+    call label
 
-    call - chooses between scall and rcall based on context
-
-    // short call, for intra-section calling
-    scall r1, symbol
-        // if the symbol is defined in the same text section (and is less than +-32764 bytes away):
-        jlr r1, zr, offsetof symbol >> 2
-        // `rcall` does not produce relocations.
-
-    // relative call, good enough for 99% of calls
-    rcall r1, r2, symbol
-        // can reach anything -2 to 2GB relative
-        ssi.c r2, offsetof symbol >> 16 & 0xFFFF, 16
-        jlr r1, r2, (offsetof symbol & 0xFFFF) >> 2
-
-    // alternative call syntax, uses the symbol register as the link register
-    rcall r1, symbol
-        call r1, r1, symbol
-
-    // far call, loads the entire symbol in as an absolute value
-    fcall r1, r2, symbol
-        ssi.c r2, symbol >> 48 & 0xFFFF, 48
-        ssi r2, symbol >> 32 & 0xFFFF, 32
-        ssi r2, symbol >> 16 & 0xFFFF, 16
-        jl r1, r2, (symbol & 0xFFFF) >> 2
-
-    // alternative call syntax, uses the symbol register as the link register
-    fcall r1, symbol
-        fcall r1, r1, symbol
+    fcall l1, l2, label
+    fcall l1, label
+    fcall label
 
     ret
-        jl zr, lr, 0
-
     nop
-        or zr, zr, zr
-
-    mov r1, r2
-        or r1, r2, zr
-
-    li r1, 0xBAAD_F00D_DEAD_BEEF
-        ssi.c r1, 0xBAAD, 48
-        ssi   r1, 0xF00D, 32
-        ssi   r1, 0xDEAD, 16
-        ssi   r1, 0xBEEF, 0
+    mov l1, l2
+    li l1, 0xBAAD_F00D_DEAD_BEEF
