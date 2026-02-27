@@ -35136,8 +35136,8 @@ endobj
   /Title (Aphelion Instruction Set Architecture Specification)
   /Author <FEFF005300650074006800200050006F0075006C00730065006E002C0020004B00610079006C0061002000530069006C006B002D0043006F0072006B0065002C0020004B0072007A00790073007A0074006F006600200057006F006C00690063006B0069002C0020004E00690063006B00200042006F00720219>
   /Creator (Typst 0.14.2)
-  /ModDate (D:20260219122810-05'00)
-  /CreationDate (D:20260219122810-05'00)
+  /ModDate (D:20260227181518-05'00)
+  /CreationDate (D:20260227181518-05'00)
 >>
 endobj
 
@@ -35148,7 +35148,7 @@ endobj
   /Subtype /XML
 >>
 stream
-<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?><x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="xmp-writer"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/"  xmlns:xmp="http://ns.adobe.com/xap/1.0/"  xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/"  xmlns:xmpTPg="http://ns.adobe.com/xap/1.0/t/pg/"  xmlns:pdf="http://ns.adobe.com/pdf/1.3/" ><dc:title><rdf:Alt><rdf:li xml:lang="x-default">Aphelion Instruction Set Architecture Specification</rdf:li></rdf:Alt></dc:title><dc:creator><rdf:Seq><rdf:li>Seth Poulsen, Kayla Silk-Corke, Krzysztof Wolicki, Nick Borș</rdf:li></rdf:Seq></dc:creator><xmp:CreatorTool>Typst 0.14.2</xmp:CreatorTool><dc:language><rdf:Bag><rdf:li>en</rdf:li></rdf:Bag></dc:language><xmp:ModifyDate>2026-02-19T12:28:10-05:00</xmp:ModifyDate><xmp:CreateDate>2026-02-19T12:28:10-05:00</xmp:CreateDate><xmpTPg:NPages>48</xmpTPg:NPages><dc:format>application/pdf</dc:format><xmpMM:InstanceID>JFcwPH/lroYAxVrGQmnYTA==</xmpMM:InstanceID><xmpMM:DocumentID>3DmZKx+YFhG7eLgQ8fcZPw==</xmpMM:DocumentID><xmpMM:RenditionClass>proof</xmpMM:RenditionClass><pdf:PDFVersion>1.7</pdf:PDFVersion></rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="r"?>
+<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?><x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="xmp-writer"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/"  xmlns:xmp="http://ns.adobe.com/xap/1.0/"  xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/"  xmlns:xmpTPg="http://ns.adobe.com/xap/1.0/t/pg/"  xmlns:pdf="http://ns.adobe.com/pdf/1.3/" ><dc:title><rdf:Alt><rdf:li xml:lang="x-default">Aphelion Instruction Set Architecture Specification</rdf:li></rdf:Alt></dc:title><dc:creator><rdf:Seq><rdf:li>Seth Poulsen, Kayla Silk-Corke, Krzysztof Wolicki, Nick Borș</rdf:li></rdf:Seq></dc:creator><xmp:CreatorTool>Typst 0.14.2</xmp:CreatorTool><dc:language><rdf:Bag><rdf:li>en</rdf:li></rdf:Bag></dc:language><xmp:ModifyDate>2026-02-27T18:15:18-05:00</xmp:ModifyDate><xmp:CreateDate>2026-02-27T18:15:18-05:00</xmp:CreateDate><xmpTPg:NPages>48</xmpTPg:NPages><dc:format>application/pdf</dc:format><xmpMM:InstanceID>UjgXeCfrQQKiTFDRh46mzg==</xmpMM:InstanceID><xmpMM:DocumentID>3DmZKx+YFhG7eLgQ8fcZPw==</xmpMM:DocumentID><xmpMM:RenditionClass>proof</xmpMM:RenditionClass><pdf:PDFVersion>1.7</pdf:PDFVersion></rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="r"?>
 endstream
 endobj
 
@@ -38117,7 +38117,7 @@ trailer
   /Size 2934
   /Root 2933 0 R
   /Info 2931 0 R
-  /ID [(3DmZKx+YFhG7eLgQ8fcZPw==) (JFcwPH/lroYAxVrGQmnYTA==)]
+  /ID [(3DmZKx+YFhG7eLgQ8fcZPw==) (UjgXeCfrQQKiTFDRh46mzg==)]
 >>
 startxref
 765334
