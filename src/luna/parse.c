@@ -887,17 +887,29 @@ static AphelGpr parse_operand_gpr(Parser* p) {
     return reg;
 }
 
-static void parse_arith_rr(Parser* p) {
+static void parse_arith(Parser* p) {
     Token inst = p->current;
     usize inst_start_token = p->cursor;
 
+    AphelOpcode opcode = inst_name_to_opcode[inst.subkind];
+    AphelFmt fmt = fmt_from_op(opcode);
+
     expect_advance(p, TOK_INST);
 
+    u8 imm_size = 14;
     AphelGpr r1 = parse_operand_gpr(p);
     expect_advance(p, TOK_COMMA);
+
     AphelGpr r2 = parse_operand_gpr(p);
-    expect_advance(p, TOK_COMMA);
-    AphelGpr r3 = parse_operand_gpr(p);
+
+    AphelGpr r3 = GPR_ZR;
+
+    if (fmt == FMT_C) {
+        imm_size = 9;
+
+        expect_advance(p, TOK_COMMA);
+        r3 = parse_operand_gpr(p);
+    }
 
     i64 imm = 0;
     SectionElement imm_expr_elem = {0};
@@ -910,17 +922,19 @@ static void parse_arith_rr(Parser* p) {
             // extract the constant value and encode it directly
             imm = cexpr(p, imm_expr)->value;
             if (inst_name_imm_signed[inst.subkind]) {
-                if (imm != int_in_bits(imm, 9)) {
+                if (imm != int_in_bits(imm, imm_size)) {
                     parse_warn(p, expr_start_token,
-                        "constant expression is truncated to %d",
-                        int_in_bits(imm, 9)
+                        "constant expression is truncated to %d (%x)",
+                        int_in_bits(imm, imm_size),
+                        int_in_bits(imm, imm_size)
                     );
                 }
             } else {
-                if (imm != uint_in_bits(imm, 9)) {
+                if (imm != uint_in_bits(imm, imm_size)) {
                     parse_warn(p, expr_start_token,
-                        "constant expression is truncated to %u",
-                        uint_in_bits(imm, 9)
+                        "constant expression is truncated to %u (%x)",
+                        uint_in_bits(imm, imm_size),
+                        uint_in_bits(imm, imm_size)
                     );
                 }
             }
@@ -990,7 +1004,20 @@ static void parse_branch(Parser* p) {
     }
 }
 
-static void parse_calls_or_li(Parser* p) {
+u64 max_inst_size(InstName instname) {
+    switch (instname) {
+    case INST_P_CALL:
+        return 8;
+    case INST_P_FCALL:
+        return 16;
+    case INST_P_LI:
+        return 16;
+    default:
+        return 4;
+    }
+}
+
+static void parse_pseudo_inst(Parser* p) {
     Token inst = p->current;
     usize inst_start_token = p->cursor;
 
@@ -1013,44 +1040,27 @@ static void parse_calls_or_li(Parser* p) {
     imm_expr_elem.kind = ELEM_EXPR;
     imm_expr_elem.expr.index = imm_expr;
 
-    SectionElement elem = { .inst = {
+    SectionElement elem = { .pseudo_inst = {
         .name = (InstName) inst.subkind,
         .r1 = r1,
-        .r2 = r2
+        .r2 = r2,
+        //.r3 = r3,
+	.size = max_inst_size((InstName) inst.subkind)
     }};
 
-    // Overall, this sequence looks like: FCALL/LI, EXPR, SKIP, SKIP.
-    // If LI, we later specialize to
-    //     SSI (SII | SKIP)*.
-    // If FCALL, we later specialize to
-    //     SII (SSI | SKIP)* JR.
-    // If Call, we later specialize to
-    //     SSI, JR
-    // -- See: specialize_calls_and_li
     element_add(p, elem, inst_start_token);
 
     expect_advance(p, TOK_NEWLINE);
 
     element_add(p, imm_expr_elem, expr_start_token);
-
-    if (inst.subkind != INST_P_CALL) {
-        element_add(p, (SectionElement){
-            .kind = ELEM_SKIP,
-        }, p->cursor);
-
-        element_add(p, (SectionElement){
-            .kind = ELEM_SKIP,
-        }, p->cursor);
-    }
 }
 
 static void parse_instruction(Parser* p) {
     Token inst = p->current;
 
     switch (inst.subkind) {
-    case INST_ADD ... INST_XOR:
-        // inst gpr, gpr, gpr [, imm]
-        parse_arith_rr(p);
+    case INST_ADD ... INST_XORI:
+        parse_arith(p);
         break;
     case INST_BZ:
     case INST_BN:
@@ -1059,7 +1069,7 @@ static void parse_instruction(Parser* p) {
     case INST_P_CALL:
     case INST_P_FCALL:
     case INST_P_LI:
-        parse_calls_or_li(p);
+        parse_pseudo_inst(p);
         break;
     default:
         parse_error(p, p->cursor, "expected instruction");
@@ -1102,6 +1112,7 @@ static void parse_section(Parser* p, ApoSectionFlags flags) {
         .name_len = section_name.len,
         .alignment_p2 = __builtin_ctzll(alignment),
         .flags = flags,
+        .relocs = vec_new(Relocation, 64),
         .elements = vec_new(SectionElement, 64),
         .elem_tokens = vec_new(u32, 64),
     };
@@ -1212,7 +1223,6 @@ Object parse_tokenbuf(Parser* p) {
                 .exprs = p->exprs,
                 .symbol_indexes = p->symbol_indexes,
                 .symbols = p->symbols,
-                .relocs = vec_new(Relocation, 64),
                 .luna = p->luna,
             };
             return obj;

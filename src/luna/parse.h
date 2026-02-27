@@ -49,6 +49,13 @@ typedef enum : u8 {
     RELOC_LI,
 } RelocKind;
 
+typedef struct {
+    RelocKind kind;
+    u32 elem_index;
+    u32 symbol_index;
+    i16 addend;
+} Relocation;
+
 typedef union SectionElement {
     SectionElemKind kind;
     struct {
@@ -58,6 +65,15 @@ typedef union SectionElement {
         AphelGpr r3;
         i32 imm;
     } inst;
+
+    struct {
+        InstName name;
+        AphelGpr r1;
+        AphelGpr r2;
+        AphelGpr r3;
+	u8 size;
+    } pseudo_inst;
+
 
     struct {
         SectionElemKind _kind;
@@ -119,6 +135,7 @@ typedef struct Section {
     u64 address;
     u32 bytesize;
 
+    Vec(Relocation) relocs;
     Vec(SectionElement) elements;
     Vec(u32) elem_tokens; // this information is stored separately since it is only used in error reporting.
 } Section;
@@ -193,15 +210,6 @@ typedef struct Parser {
     // Vec(SubLabel) sub_labels;
 } Parser;
 
-typedef struct {
-    RelocKind kind;
-    Section* patch_sec;
-    u32 patch_elem_index;
-
-    u32 symbol_index;
-    i16 addend;
-} Relocation;
-
 typedef struct Object {
     LunaInstance* luna;
     Vec(Token) tokens;
@@ -209,12 +217,12 @@ typedef struct Object {
     Vec(ComplexExpr) exprs;
     StrMap symbol_indexes;
     Vec(Symbol) symbols;
-    Vec(Relocation) relocs;
 } Object;
 
 typedef struct ExprValue {
-    i64 value;        // stores addend when symbol_index == 0
-    u32 symbol_index; // 0 when constant
+    i64 value; // stores addend when symbol_index == 0
+    u32 symbol_index : 31;
+    bool final : 1;
 } ExprValue;
 
 #define EXPR_CONST(c) (ExprValue){(c), 0}
@@ -232,6 +240,8 @@ void object_trace(Object* o);
 
 i64 int_in_bits(i64 n, usize bits);
 u64 uint_in_bits(u64 n, usize bits);
+
+u64 max_inst_size(InstName instname);
 
 typedef struct TokenSpan {
     usize start;

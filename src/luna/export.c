@@ -191,7 +191,7 @@ static u32 encode_inst_elem(const Object* o, u64 addr, SectionElement inst, Sect
     return data;
 }
 
-static u8 write_relocation_patches(u32* patches, Relocation *r, Section* sec, Symbol *sym, u64 addr) {
+static u8 write_relocation_patches(u32* patches, Relocation* r, Section* sec, Symbol *sym, u64 addr) {
 	// S+A (others may -P in the switch)
 	i64 value = (i64)r->addend + sec->address + sym->section_offset;
 
@@ -249,7 +249,8 @@ string export_flat_binary(const Object* o) {
 
         Relocation* r = nullptr;
         u32 patches[4] = {0};
-        u8 patches_remaining = 0;
+        u8 patch_count = 0;
+        u8 patch_index = 0;
 
         for_n(i, 0, vec_len(section->elements)) {
             SectionElement* elem = &section->elements[i];
@@ -257,14 +258,15 @@ string export_flat_binary(const Object* o) {
             u8* to_write = (u8*)&output.raw[addr];
 
             if (r == nullptr) {
-                for_n(j, 0, vec_len(o->relocs)) {
-                    Relocation* cur = &o->relocs[j];
-                    if (cur->patch_elem_index == i) {
+                for_n(j, 0, vec_len(section->relocs)) {
+                    Relocation* cur = &section->relocs[j];
+                    if (cur->elem_index == i) {
                         r = cur;
                         Symbol* sym = &o->symbols[r->symbol_index];
                         Section* sec = o->sections[sym->section_def];
 
-                        patches_remaining = write_relocation_patches(patches, r, sec, sym, addr);
+                        patch_count = write_relocation_patches(patches, r, sec, sym, addr);
+			patch_index = 0;
                     }
                 }
             }
@@ -289,31 +291,61 @@ string export_flat_binary(const Object* o) {
                 case INST_P_FCALL:
                 case INST_P_LI:
                 case INST_P_CALL:
-                    UNREACHABLE;
-                    break;
-                default: {
+                    SectionElement* expr = &section->elements[i + 1];
+                    ExprValue v = evaluate_expr(o, expr->expr.index);
 
-                    u16 bits[4] = {0};
-                    if (r != nullptr) {
-                    }
+                    u8 size = elem->pseudo_inst.size / 4;
 
-                    u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
-                    *(u32*)to_write = data;
-	
-                    offset += 4;
-                    break;
-                }
-                }
-                break;
-            }
-            default:
-                TODO("unimpl %d", elem->kind);
-            }
-            if (r != nullptr && patches_remaining != 0) {
-                patches_remaining--;
-                *(u32*)to_write |= patches[patches_remaining];
+                    bool is_li = (elem->pseudo_inst.name == INST_P_LI);
+                    u8 reg = is_li ? elem->pseudo_inst.r1 : elem->pseudo_inst.r2;
 
-                if (patches_remaining == 0) {
+                    bool sign = (bool) (v.value & 0x8000000000000000UL);
+                    u8 quarter = 0;
+
+                    SectionElement ssi = { .inst = {
+                        .name = INST_SSI,
+                        .r1 = reg,
+                        .imm = 0,
+                    }};
+
+                    for_n_reverse(q, size, 0) {
+                        u16 chunk = (v.value >> (q * 16)) & 0xFFFF;
+
+                        // evil bit magic: dont clear if theres data above
+                        // (since may we have already sign extended+cleared).
+                        u8 higher = quarter & ~((1u << (q + 1)) - 1);
+
+                        // emit if quarter has data or it's the last quarter and imm is zero
+                        if (r == nullptr && !(quarter & (1u << i)) && !(q == 0 && quarter == 0)) {
+                            continue;
+                        }
+
+                        ssi.inst.imm = (chunk << 3) | ((higher != 0) << 2)  | (is_li ? q : 0);
+                        ssi.inst.name = (higher != 0) ? INST_SSI : INST_SSI_C;
+                        ssi.inst.r1 = reg;
+
+                        // Q4 special logic: always clear below it
+                        if (q == 3) {
+                            ssi.inst.imm |= sign << 2;
+                            ssi.inst.name = INST_SSI_C;
+                        }
+
+                        if (q == 0 && !is_li) {
+                            ssi.inst.name = INST_JL;
+                            ssi.inst.imm = elem->inst.imm << 2;
+                        }
+
+                        u32 data = encode_inst_elem(o, addr, ssi, (SectionElement){.kind = ELEM_SKIP});
+
+                        if (r != nullptr)
+                            data |= patches[q];
+
+                        *(u32*)to_write = data;
+                        to_write += 4;
+                        addr += 4;
+                        offset += 4;
+                }
+                if (r != nullptr) {
                     Symbol* sym = &o->symbols[r->symbol_index];
                     Section* sec = o->sections[sym->section_def];
                     const char* reloc_name_string[] = {
@@ -324,15 +356,27 @@ string export_flat_binary(const Object* o) {
                         "S + A     (Load Immediate)"
                     };
 
-                    printf("PATCH: %s -> %.*s(0x%lx) + %.*s(0x%x) + 0x%lx (%ld)%s\n",
-                           reloc_name_string[r->kind],
-                           sec->name_len, sec->name, sec->address,
-                           sym->name_len, sym->name, sym->section_offset,
-                           (i64)r->addend, (i64) r->addend,
-			   r->kind == RELOC_CALL ? " - P" : ""
+                    printf("PATCH: %s -> %.*s(0x%lx) + %.*s(0x%x) + 0x%ld (%lx) %s\n",
+                       reloc_name_string[r->kind],
+                       sec->name_len, sec->name, sec->address,
+                       sym->name_len, sym->name, sym->section_offset,
+                       (i64)r->addend, (i64) r->addend,
+                       r->kind == RELOC_CALL ? " - P" : ""
                     );
                     r = nullptr;
                 }
+                    break;
+                default: {
+                    u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
+                    *(u32*)to_write = data;
+                    offset += 4;
+                    break;
+                }
+                }
+                break;
+            }
+            default:
+                TODO("unimpl %d", elem->kind);
             }
         }
     }

@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "aphelion.h"
 #include "lex.h"
 #include "parse.h"
@@ -5,8 +7,6 @@
 
 #include "common/util.h"
 #include "common/portability.h"
-
-#include <stdio.h>
 
 static SourceFileId find_source_from_ptr(Vec(SourceFile) files, const char* s) {
     for_n(i, 0, vec_len(files)) {
@@ -154,19 +154,26 @@ ExprValue evaluate_expr(const Object* restrict o, u32 expr_index) {
 
         // two symbols cancelled to abs, but we cant relocate if they belong
         // to different sections
-        if (dep == 0 && lhs_sec != rhs_sec) {
-            dep = -1;
-            msg = "symbol origins differ";
+        if (dep == 0 && EXPR_SYM_DEP(lhs.symbol_index) && EXPR_SYM_DEP(rhs.symbol_index)) {
+            if (lhs_sec == rhs_sec) {
+                dep = 1;
+                // we use the actual offsets instead since were in the same section.
+                lhs.value = o->symbols[lhs.symbol_index].section_offset;
+                rhs.value = o->symbols[rhs.symbol_index].section_offset;
+            } else {
+                dep = -1;
+                msg = "symbol origins differ";
+            }
         }
 
         if (dep < 0) {
-                parse_warn(o, expr->token_index, "Cannot relocate '%s' (%s %s %s): %s",
-            cexpr_opstr(expr->kind),
-                    EXPR_SYM_DEP(lhs.symbol_index) ? "symbolic" : "constant",
-            cexpr_opstr(expr->kind),
-                    EXPR_SYM_DEP(rhs.symbol_index) ? "symbolic" : "constant",
-               msg
-                );
+            parse_warn(o, expr->token_index, "Cannot relocate '%s' (%s %s %s): %s",
+                cexpr_opstr(expr->kind),
+                EXPR_SYM_DEP(lhs.symbol_index) ? "symbolic" : "constant",
+                cexpr_opstr(expr->kind),
+                EXPR_SYM_DEP(rhs.symbol_index) ? "symbolic" : "constant",
+                msg
+            );
             dep = 0; // treat as abs, no longer relocatable
         }
 
@@ -304,44 +311,6 @@ void object_dbgprint(const Object* o) {
             printf("  %-7d  %x\n", sym->section_def, sym->section_offset);
         }
     }
-    printf("\nRELOCATIONS\n");
-    {
-        u32 patch_len = strlen("PATCH");
-        u32 sym_len = strlen("SYMBOL");
-        for_n(i, 0, vec_len(o->relocs)) {
-            patch_len = max(patch_len, o->relocs[i].patch_sec->name_len);
-            sym_len = max(sym_len, o->symbols[o->relocs[i].symbol_index].name_len);
-        }
-
-        printf("INDEX  %-*s  ELEM   KIND         %-*s  ADDEND\n", patch_len, "PATCH", sym_len, "SYMBOL");
-
-        for_n(i, 0, vec_len(o->relocs)) {
-            const Relocation* r = &o->relocs[i];
-            const Symbol* sym = &o->symbols[r->symbol_index];
-
-            printf("%-5lu  %-*.*s  %-5d  ", i + 1, patch_len, r->patch_sec->name_len, r->patch_sec->name, r->patch_elem_index);
-            switch(r->kind) {
-                case RELOC_WORD:
-                    printf("Word         ");
-                    break;
-                case RELOC_WORD_UNALIGNED:
-                    printf("Word U.Align.");
-                    break;
-                case RELOC_CALL:
-                    printf("Call         ");
-                    break;
-                case RELOC_FARCALL:
-                    printf("Far call     ");
-                    break;
-                case RELOC_LI:
-                    printf("Load Imm.    ");
-                    break;
-                default:
-                    UNREACHABLE;
-            }
-            printf("%-*.*s  %-4x\n", sym_len, sym->name_len, sym->name, r->addend);
-        }
-    }
 
     printf("\nSECTIONS\n");
     {
@@ -387,6 +356,25 @@ void object_dbgprint(const Object* o) {
                         gpr_name[elem->inst.r3],
                         elem->inst.imm
                     );
+                        for_n(j, 0, vec_len(sec->relocs)) {
+                            Relocation* r = &sec->relocs[j];
+                            if (r->elem_index == i) {
+                                const char* reloc_name_string[] = {
+                                    "Word",
+                                    "Word Unaligned",
+                                    "Call",
+                                    "Far Call",
+                                    "Load Immediate"
+                                };
+                                Symbol* sym = &o->symbols[r->symbol_index];
+                                Section* sym_sec = o->sections[sym->section_def];
+                                printf("\n  \\ reloc %s -> %.*s@%.*s ", reloc_name_string[r->kind], sym->name_len, sym->name, sym_sec->name_len, sym_sec->name);
+                                if (r->kind == RELOC_CALL) {
+                                    printf("- P ");
+                                }
+                                printf("+ %d (%x) \n  ", r->addend, r->addend);
+                            }
+                        }
                     break;
                 case ELEM_LABEL: {
                     const Symbol* sym = &o->symbols[elem->label.symbol_index];
@@ -421,17 +409,14 @@ static uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {
     return (ptr + align - 1) & ~(align - 1);
 }
 
-static u64 inst_size(InstName instname) {
-    switch (instname) {
-    case INST_P_CALL:
-        return 8;
-    case INST_P_FCALL:
-        return 16;
-    case INST_P_LI:
-        return 16;
-    default:
-        return 4;
-    }
+static inline bool is_inter_section_sym(Object* o, u32 symbol_index, u32 section_index) {
+    return EXPR_SYM_DEP(symbol_index)
+           && o->symbols[symbol_index].section_def != section_index;
+}
+
+static inline bool is_intra_section_sym(Object* o, u32 symbol_index, u32 section_index) {
+    return EXPR_SYM_DEP(symbol_index)
+           && o->symbols[symbol_index].section_def == section_index;
 }
 
 /// Returns new address to start placing the next section at.
@@ -456,7 +441,16 @@ static u64 section_trace(Object* o, Section* section, u64 section_index, u64 sta
                 parse_error(o, token_index, "instruction is not effectively aligned");
                 // CRASH("instruction is not effectively aligned");
             }
-            address += inst_size(elem.inst.name);
+
+            switch (elem.inst.name) {
+            case INST_P_CALL:
+            case INST_P_FCALL:
+            case INST_P_LI:
+                address += elem.pseudo_inst.size;
+                break;
+            default:
+                address += max_inst_size(elem.inst.name);
+            }
             break;
         case ELEM_LABEL: {
             Symbol* sym = &o->symbols[elem.label.symbol_index];
@@ -484,124 +478,46 @@ static ComplexExpr* cexpr(Object* o, u32 index) {
     return &o->exprs[index];
 }
 
-static void specialize_blank_ssis(Object *o, SectionElement* start, u8 n, AphelGpr reg) {
-    for_n(i, 0, n) {
-        SectionElement* elem = start + i;
-	elem->inst.name = i == 0 ? INST_SSI_C : INST_SSI;
-	elem->inst.r1 = reg;
-	elem->inst.imm = i;
-    }
-}
+static bool fold_intra_and_constants(Object *o) {
+    bool changed = false;
 
-static void specialize_const_fcall_or_li(Object *o, SectionElement* start, u64 imm) {
-    u8 reg = start->inst.r1;
-    bool is_li = start->kind == INST_P_LI;
+    for_n(sec_i, 0, vec_len(o->sections)) {
+        Section* sec = o->sections[sec_i];
+        for_n(elem_i, 0, vec_len(sec->elements)) {
+            SectionElement* elem = &sec->elements[elem_i];
 
-    printf("0x%x ", imm);
-    bool sign = (bool) (imm & 0x8000000000000000UL);
+            if (elem->kind != ELEM_EXPR)
+                continue;
 
-    // quarter mask: Q0 = lowest 16 bits, Q3 = highest
-    u8 quarter = 0;
-    for_n(i, 0, 4) {
-        SectionElement* elem = start + i;
-        elem->kind = ELEM_SKIP; // We saved what we needed.
-        if ((imm >> (i * 16)) & 0xFFFF)
-            quarter |= 1u << i;
-    }
+            ExprValue v = evaluate_expr(o, elem->expr.index);
 
-    for_n_reverse(i, 3, 0) {
-        SectionElement* elem = start + i;
-        u16 chunk = (imm >> (i * 16)) & 0xFFFF;
+            SectionElement* inst = &sec->elements[elem_i - 1];
+            u8 size = inst->pseudo_inst.size;
+            if (is_inter_section_sym(o, v.symbol_index, sec_i)) {
+                printf("reloc %d, offset: %d, inst->pseudo_inst.size: %d\n", elem_i, v.value, size);
+                continue; // requires reloc
+            }
 
-        // evil bit magic: dont clear if theres data above
-        // (since may we have already sign extended+cleared).
-        u8 higher = quarter & ~((1u << (i + 1)) - 1);
+            if (inst->pseudo_inst.name != INST_P_CALL) {
+                if (uint_in_bits(v.value, 48) == v.value)
+                    size -= 4;
 
-        // emit if quarter has data or it's the last quarter and imm is zero
-        if (!(quarter & (1u << i)) && !(i == 0 && quarter == 0)) continue;
+                if (uint_in_bits(v.value, 32) == v.value)
+                    size -= 4;
+            }
 
-        elem->inst.imm = (chunk << 3) | ((higher != 0) << 2)  | (is_li ? i : 0);
-        elem->inst.name = (higher != 0) ? INST_SSI : INST_SSI_C;
-        elem->inst.r1 = reg;
+            if (uint_in_bits(v.value, 16) == v.value)
+                size -= 4;
 
-        // Q4 special logic: always clear below it
-        if (i == 3) {
-            elem->inst.imm |= sign << 2;
-            elem->inst.name = INST_SSI_C;
-        }
-
-        if (i == 0 && !is_li) {
-            elem->inst.name = INST_JL;
-            elem->inst.imm = elem->inst.imm << 2;
+            if (size < inst->pseudo_inst.size) {
+                changed = true;
+                printf("FOLD (intra) %d < %d\n", size, inst->pseudo_inst.size);
+                inst->pseudo_inst.size = size;
+            }
         }
     }
-}
 
-static void specialize_calls_or_li(Object*o, u32 section_index, SectionElement* start, u64 index) {
-    // Guaranteed to have 4 elems after it
-    SectionElement* expr = start + 1;
-
-    ExprValue v = evaluate_expr(o, expr->expr.index);
-
-    if ((v.value & 0b11) && start->kind != INST_P_LI) {
-        ComplexExpr* e = cexpr(o, expr->expr.index);
-        parse_warn(o, e->token_index,
-           "addend is truncated from %ld (0x%lx) to %d (0x%d).\n"
-           "Hint: addends must be aligned to 4 bytes for FCALL and CALL.",
-           v.value,
-           v.value,
-           v.value & ~0b11,
-           v.value & ~0b11
-        );
-        v.value = v.value & ~0b11;
-    }
-    //u32 sym_section_index = o->symbols[v.symbol_index].section_def;
-
-    // Since call is S+A-P, it must be internally marked as relocated because
-    // after the pessimistic trace, the P can change as sections shrink.
-    if (EXPR_SYM_DEP(v.symbol_index) || start->inst.name == INST_P_CALL) {
-        Relocation r = {
-            .patch_sec = o->sections[section_index],
-            .patch_elem_index = index,
-            .symbol_index = v.symbol_index,
-            .addend = (i16) v.value,
-        };
-
-        switch (start->inst.name) {
-        case INST_P_CALL: {
-            r.kind = RELOC_CALL;
-            specialize_blank_ssis(o, start, 1, start->inst.r1);
-            SectionElement* jl = start + 1;
-            jl->inst.name = INST_JL;
-            jl->inst.r1 = start->inst.r1;
-            jl->inst.r2 = start->inst.r2;
-            jl->inst.imm = 0;
-            break;
-        }
-        case INST_P_FCALL: {
-            r.kind = RELOC_FARCALL;
-
-            specialize_blank_ssis(o, start, 3, start->inst.r2);
-            SectionElement* jl = start + 3;
-            jl->inst.name = INST_JL;
-            jl->inst.r1 = start->inst.r1;
-            jl->inst.r2 = start->inst.r2;
-            jl->inst.imm = 0;
-            break;
-        }
-        case INST_P_LI: {
-            r.kind = RELOC_LI;
-            specialize_blank_ssis(o, start, 4, start->inst.r1);
-            break;
-        }
-        default:
-            UNREACHABLE;
-        }
-
-        vec_append(&o->relocs, r);
-    } else {
-        specialize_const_fcall_or_li(o, start, v.value);
-    }
+    return changed;
 }
 
 void object_trace(Object* o) {
@@ -611,29 +527,81 @@ void object_trace(Object* o) {
         address = section_trace(o, section, i, address);
     }
 
-    // specialize instructions based on the information
-    // obtained by the previous pessimistic trace
-    for_n(i, 0, vec_len(o->sections)) {
-        Section* section = o->sections[i];
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        u64 address = 0;
 
-        for_n(j, 0, vec_len(section->elements)) {
-            SectionElement* elem = &section->elements[j];
-
-            switch ((InstName)elem->kind) {
-            case INST_P_CALL:
-            case INST_P_FCALL:
-            case INST_P_LI:
-                specialize_calls_or_li(o, i, elem, j);
-                break;
-            default:
-                break;
-            }
+        for_n(sec_i, 0, vec_len(o->sections)) {
+            Section* sec = o->sections[sec_i];
+            u64 old_address = sec->address;
+            address = section_trace(o, sec, sec_i, address);
+            if (sec->address != old_address)
+                changed = true;
         }
+
+        // Fold constants and intra-section expressions
+        if (fold_intra_and_constants(o))
+            continue;
     }
 
     address = 0;
     for_n(i, 0, vec_len(o->sections)) {
         Section* section = o->sections[i];
         address = section_trace(o, section, i, address);
+
+        for_n(j, 0, vec_len(section->elements)) {
+            SectionElement* elem = &section->elements[j];
+            switch ((InstName)elem->inst.name) {
+            case INST_P_CALL:
+            case INST_P_FCALL:
+            case INST_P_LI: {
+                SectionElement* expr = elem + 1;
+                ExprValue v = evaluate_expr(o, expr->expr.index);
+
+                if (!is_inter_section_sym(o, v.symbol_index, i))
+                    continue;
+
+                // quick sanity check
+                assert(max_inst_size(elem->pseudo_inst.name) == elem->pseudo_inst.size);
+
+                if ((v.value & 0b11) && elem->inst.name != INST_P_LI) {
+                    ComplexExpr* e = cexpr(o, expr->expr.index);
+                    parse_warn(o, e->token_index,
+                        "Addend is truncated from %ld (0x%lx) to %d (0x%d).\n"
+                        "Hint: addends must be aligned to 4 bytes for FCALL and CALL.",
+                        v.value,
+                        v.value,
+                        v.value & ~0b11,
+                        v.value & ~0b11
+                    );
+                    v.value = v.value & ~0b11;
+                }
+
+                Relocation r = {
+                    .elem_index = j,
+                    .symbol_index = v.symbol_index,
+                    .addend = (i16) v.value,
+                };
+                switch ((InstName)elem->inst.name) {
+                case INST_P_CALL:
+                    r.kind = RELOC_CALL;
+                    break;
+                case INST_P_FCALL:
+                    r.kind = RELOC_FARCALL;
+                    break;
+                case INST_P_LI:
+                    r.kind = RELOC_LI;
+                    break;
+                default:
+                    UNREACHABLE;
+                }
+
+            vec_append(&section->relocs, r);
+            } break;
+            default:
+                continue;
+            }
+        }
     }
 }
