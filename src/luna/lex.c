@@ -1,4 +1,5 @@
 #include "common/util.h"
+#include "common/portability.h"
 
 #include "aphelion.h"
 #include "lex.h"
@@ -191,6 +192,27 @@ bool lexer_next_token(Lexer* l) {
         add_token(l, '\n');
         advance_n(l, 2);
         break;
+    case '/':
+        advance(l);
+	if (current(l) == '/') {
+		while (!is_eof(l) && current(l) != '\n')
+			advance(l);
+		break;
+	}
+	if (current(l) == '*') {
+		while (true) {
+			if (current(l) == '*') {
+				advance(l);
+				if (current(l) == '/')
+					break;
+			}
+			advance(l);
+		}
+		advance(l);
+		break;
+	}
+	l->cursor--;
+	FALLTHROUGH;
     case '(':
     case ')':
     case '[':
@@ -203,7 +225,6 @@ bool lexer_next_token(Lexer* l) {
     case '+':
     case '-':
     case '*':
-    case '/':
     case '%':
     case '&':
     case '|':
