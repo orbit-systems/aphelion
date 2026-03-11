@@ -1,0 +1,39 @@
+%YAML 1.2
+---
+name: Aphelion
+file_extensions: [aphel, asm]
+scope: source.asm
+
+variables:
+  ident: '[A-Za-z_][A-Za-z_0-9\.]*'
+contexts:
+  main:
+    - match: ^(\s)*({{ident}})\b
+      scope: keyword.control
+    - match: '"'
+      push: string
+    - match: \b(\d)(\d|\w)*\b
+      scope: constant.numeric
+    - match: \b(r\d+|zr|a\d+|l\d+|t\d+|tp|fp|sp|lp|ip)\b
+      scope: entity.name.type
+    - match: \b(int\d+|intip|intval|intpte|intcause|kptp|uptp|stat|intstat)\b
+      scope: entity.name.type
+    - match: \b({{ident}})\b
+      scope: entity.name.label
+    - match: ';'
+      push: comment
+    - match: (\+|\-|\*|\/|>|<|&)
+      scope: keyword.operator
+    - match: \,
+      scope: punctuation.separator
+  string:
+    - meta_scope: string.quoted.double
+    - match: \\.
+      scope: constant.character.escape
+    - match: '"'
+      pop: true
+
+  comment:
+    - meta_scope: comment
+    - match: $
+      pop: true
