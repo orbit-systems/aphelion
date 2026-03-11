@@ -56,11 +56,13 @@ spec:
 	typst compile ./spec/src/isa/main.typ \
 		"./spec/Aphelion ISA.pdf" \
 		--root ./spec \
-		--font-path ./spec/assets
+		--font-path ./spec/assets \
+		--creation-timestamp 0
 	typst compile ./spec/src/abi/main.typ \
 		"./spec/Aphelion ABI.pdf" \
 		--root ./spec \
-		--font-path ./spec/assets
+		--font-path ./spec/assets \
+		--creation-timestamp 0
 
 .PHONY: clean
 clean:
