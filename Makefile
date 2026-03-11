@@ -51,6 +51,19 @@ luna: bin/luna
 bin/luna:  $(LUNA_OBJECTS) bin/libcommon.a
 	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm -lc -Lbin -lcommon
 
+.PHONY: spec
+spec:
+	typst compile ./spec/src/isa/main.typ \
+		"./spec/Aphelion ISA.pdf" \
+		--root ./spec \
+		--font-path ./spec/assets \
+		--creation-timestamp 0
+	typst compile ./spec/src/abi/main.typ \
+		"./spec/Aphelion ABI.pdf" \
+		--root ./spec \
+		--font-path ./spec/assets \
+		--creation-timestamp 0
+
 .PHONY: clean
 clean:
 	@rm -rf $(BUILD_DIR)/
