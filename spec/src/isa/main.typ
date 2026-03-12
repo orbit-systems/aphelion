@@ -287,6 +287,12 @@ The control register `stat` is a set of bit fields that indicate and control the
 Undefined bits are currently reserved for future use.
 
 #pagebreak()
+= System Interaction
+
+== Reset State
+Upon processor reset or initial power-on/boot, each LP shall have all of its registers and control registers set to 0, except for `ip`, which is set to an implementation-defined reset vector. This reset vector is usually inside the Firmware-Reserved Region (see Aphelion Firmware Specification).
+
+#pagebreak()
 = Interrupts <interrupts>
 
 Interrupts are signals that can disrupt the normal flow of computation.
