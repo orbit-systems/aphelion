@@ -52,7 +52,7 @@ bin/luna:  $(LUNA_OBJECTS) bin/libcommon.a
 	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm -lc -Lbin -lcommon
 
 .PHONY: spec
-spec:
+spec: 
 	typst compile ./spec/src/isa/main.typ \
 		"./spec/Aphelion ISA.pdf" \
 		--root ./spec \
@@ -60,6 +60,11 @@ spec:
 		--creation-timestamp 0
 	typst compile ./spec/src/abi/main.typ \
 		"./spec/Aphelion ABI.pdf" \
+		--root ./spec \
+		--font-path ./spec/assets \
+		--creation-timestamp 0
+	typst compile ./spec/src/system/main.typ \
+		"./spec/Aphelion System Environment.pdf" \
 		--root ./spec \
 		--font-path ./spec/assets \
 		--creation-timestamp 0

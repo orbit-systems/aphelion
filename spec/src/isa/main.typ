@@ -256,6 +256,8 @@ Instruction pointer `ip` can only be modified through explicit control-flow inst
 #box[
 = Control Registers
 
+Control registers, each 64 bits wide, are used to configure various LP-specific operations and modes. They are only accessible in kernel mode through the `sctrl` and `lctrl` instructions.
+
 #table(
     columns: (auto, auto, 1fr),
     fill: (x, y) => if y == 0 {orbit_grey},
@@ -271,26 +273,28 @@ Instruction pointer `ip` can only be modified through explicit control-flow inst
     "23", `intstat`, [Interrupt status register. When an interrupt is triggered, `stat` is copied into `intstat`. The `iret` instruction copies `intstat` back into `stat`.],
 )]
 
+All control register codes from 0 through 511 are reserved for use by the standard. Control register codes beyond this reserved region may be used for implementation-specific LP configuration.
+
 === STAT - Status Register
 
-The control register `stat` is a set of bit fields that indicate and control the processor's state:
+The control register `stat` is a set of bit fields that indicate and control the LP's state:
 
 #table(
     columns: (auto, auto, 1fr),
     fill: (x, y) => if y == 0 {orbit_grey},
-    [Bits], [Name], [Description],
+    [Bit(s)], [Name], [Description],
     [0], [E], [External Interrupts are enabled.],
     [1], [U], [User mode is enabled.],
     [2], [V], [Virtual address translation is enabled.],
 )
 
-Undefined bits are currently reserved for future use.
+Undefined bits are currently reserved for use by the standard.
 
 #pagebreak()
 = System Interaction
 
 == Reset State
-Upon processor reset or initial power-on/boot, each LP shall have all of its registers and control registers set to 0, except for `ip`, which is set to an implementation-defined reset vector. This reset vector is usually inside the System-Reserved Region (see Aphelion System Environment Specification).
+Upon reset or initial power-on/boot, an LP shall set all of its general-purpose registers and standard control registers to 0, except for `ip`, which is set to an implementation-defined reset vector. This reset vector is usually inside the System-Reserved Region (see Aphelion System Environment Specification).
 
 #pagebreak()
 = Interrupts <interrupts>
