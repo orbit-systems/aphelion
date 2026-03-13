@@ -290,7 +290,7 @@ Undefined bits are currently reserved for future use.
 = System Interaction
 
 == Reset State
-Upon processor reset or initial power-on/boot, each LP shall have all of its registers and control registers set to 0, except for `ip`, which is set to an implementation-defined reset vector. This reset vector is usually inside the Firmware-Reserved Region (see Aphelion Firmware Specification).
+Upon processor reset or initial power-on/boot, each LP shall have all of its registers and control registers set to 0, except for `ip`, which is set to an implementation-defined reset vector. This reset vector is usually inside the System-Reserved Region (see Aphelion System Environment Specification).
 
 #pagebreak()
 = Interrupts <interrupts>
