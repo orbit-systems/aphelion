@@ -7,6 +7,7 @@
 )
 
 #set raw(syntaxes: "../../assets/aphel.sublime-syntax");
+#set raw(syntaxes: "../../assets/mars.sublime-syntax");
 #let orbit_grey = rgb("f2f2f2")
 #let orbit_red  = rgb("f80530")
 #let grey_cell = table.cell(fill: orbit_grey)[]
@@ -212,41 +213,125 @@ Typeface #ulink("https://github.com/IBM/plex")[IBM Plex Mono] used in monospace/
 #pagebreak()
 = Introduction
 
-This document specifies the environment, interface, and firmware services on standard Aphelion systems.
+This document specifies the system environment, memory layout, and firmware services on standard Aphelion systems.
 
-= Physical Address Space Layout
+== Formatting
 
-// #align(center, table(
-//   align: center + horizon,
-//   rows: (1cm, 2cm, 1cm),
-//   [RAM Slot 0],
-//   [ . . . ],
-//   [RAM Slot 511],
-// ))
+All code snippets in this document are in the Mars programming language. It should be relatively easy to use and read for those familiar with systems languages such as C. Along with their high-level Mars representations, all function signatures will be described directly in Aphelion assembly for ease of reference.
+
+= Physical Address Space
+
+Access failures on the physical address space shall generate a `BUS*` interrupt corresponding to the mode of access. Access failures will also occur due to any access deemed invalid by the bus recipient that handles it. This may be due to completely unmapped portions of memory, unsupported access types/modes for certain MMIO devices, etc.
+
+When a memory access is made, the recipient of the access can see:
+- The access address itself;
+- The access mode (read, write, or execute);
+- The ID of the LP that issued it;
+- The LP's mode (kernel or user);
+
+The recipient may accept or reject accesses based on any of these factors.
 
 == RAM
 
-There are 512 mappable ram slots, each with a maximum size of 256 GiB. The first slot is mapped to `0x00000000_00000000` and further slots are mapped to consecutive multiples of 256 GiB. Thus, the maximum possible RAM-mapped address is `0x000007FFF_FFFFFFFF`.
+There is a maximum of 512 RAM slots, each with a maximum size of 256 GiB. The first slot is mapped to `0x00000000_00000000` and further slots are mapped to consecutive multiples of 256 GiB. Thus, the maximum possible RAM-mapped address is `0x00007FFF_FFFFFFFF`.
 
-Each active slot provides a contiguous region of 4KiB pages, accessible by all access widths, all access types, and to all cores.
+Each active slot must provides a contiguous region of memory starting at its slot address, accessible by all access widths, all access types, and to all LPs. Memory provided in each slot must be in units of whole pages (4KiB). The amount of memory provided by each slot is given by the System Description Table.
 
-The amount of memory provided by each slot is given by the System Description Table.
+This is the only region of memory that may be cached.
 
 == Memory-Mapped Devices
+
+Direct device interfaces may be mapped by implementation hardware and firmware in the range of `0x00008000_00000000` to `0xFFFFFFFE_FFFFFFFF`.
+
+This region of memory may not be cached.
 
 == System-Reserved Region
 
 The *System-Reserved Region* (SRR) is a region of the address space from `0xFFFFFFFF_00000000` to `0xFFFFFFFF_FFFFFFFF` (4GiB), where the firmware and relevant implementation-specific details, control registers, and firmware reside. 
 
-Accesses to addresses inside this region may be statically or dynamically restricted through implementation-specific means. Restricted accesses will trigger the relevant bus fault interrupt.
+Accesses to addresses inside this region may be statically or dynamically restricted through implementation-specific means.
 
+This region of memory may not be cached.
+
+#pagebreak()
+= Firmware Services
+
+#code[```mars
+struct ServiceTable {
+    sdt_get: ^fun(): ^const SystemDescriptionTable,
+    current_lp_get: ^fun(): ^const LpInfo,
+    
+    serial_put: ^fun(c: u32),
+    serial_get: ^fun(): ?u32,
+
+    power_state_set: ^fun(state: PowerState),
+
+    env_set:    ^fun(name, value: []const u8, perms: u8),
+    env_get:    ^fun(name: []const u8): ?[]const u8,
+    env_delete: ^fun(name: []const u8),
+
+    update: ^fun(bin: []const u8): ?[]const u8,
+}
+```]
+
+#code[```mars
+struct EnvPerms {
+    // visible to other hosts?
+    def GLOBAL_R: u8 = 1 << 0;
+    // writeable by other hosts?
+    def GLOBAL_W: u8 = 1 << 1;
+}
+```]
+
+#code[```mars
+struct SystemDescriptionTable {
+    lps: ^[512]LpInfo,
+}
+```]
+
+#code[```mars
+struct LpInfo {
+    clock_speed: u64,
+
+    // on NUMA systems, this is a list of indices to 
+    // active RAM slots, sorted by fastest-to-slowest 
+    // access time on this LP. otherwise, null.
+    preferred_memory: ?[]u8
+}
+```]
+
+#code[```mars
+enum PowerState {
+    Shutdown = 0,
+    Restart  = 1,
+}
+```]
+
+// == `sdt_get` - Locate System Description Table
 
 #pagebreak()
 = System Description Table
 
+= Devices
+#code[```mars
+struct DeviceInfo {
+    address: [^]u8,
+
+    vendor:  [^:'0']u8,
+    product: [^:0]u8,
+}
+```]
+
+#pagebreak()
+= Booting Host Software
+
+#pagebreak()
+= Interrupt Architecture
+
 #pagebreak()
 = Glossary
 
+- *host* / *host software*: The program loaded in and booted from disk by the firmware.
 - *word*: The size of a register. 8 bytes, 64 bits.
 - *half-word*: 4 bytes, 32 bits.
 - *quarter-word*: 2 bytes, 16 bits.

@@ -1,0 +1,47 @@
+%YAML 1.2
+---
+name: Mars
+file_extensions: [mars]
+scope: source.mars
+
+variables:
+  ident: '[A-Za-z_][A-Za-z_0-9\.]*'
+contexts:
+  main:
+    - match: '\b(sizeof|bitsizeof|alignof|offsetof|pub|def|let|var|fun|impl|if|then|else|switch|case|for|while|defer|try|unreachable|return|break|undefined|null|true|false|self|builtin|inline|noinline|common|const|static|noalias|allowzero|alignas|offsetas|packed|bitpacked|void|type|noreturn|isize|usize|bool|Self|library|module|struct|union|enum|interface|vector)\b'
+      scope: keyword.control
+    - match: '"'
+      push: string
+    - match: "'"
+      push: character
+    - match: \b(\d)(\d|\w)*\b
+      scope: constant.numeric
+    - match: '//'
+      push: comment
+    - match: '\b[A-Z_]+\b'
+      scope: constant
+    - match: '\b[A-Z][A-Za-z_]*\b'
+      scope: entity.name.type
+    - match: '\b(u|i|f)(\d)+\b'
+      scope: storage.type
+    - match: (\+|\-|\*|\/|>|<|&|\^)
+      scope: keyword.operator
+    - match: \,
+      scope: punctuation.separator
+  string:
+    - meta_scope: string.quoted.single
+    - match: \\.
+      scope: constant.character.escape
+    - match: '"'
+      pop: true
+  character:
+    - meta_scope: string.quoted.single
+    - match: \\.
+      scope: constant.character.escape
+    - match: "'"
+      pop: true
+
+  comment:
+    - meta_scope: comment
+    - match: $
+      pop: true

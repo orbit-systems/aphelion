@@ -256,7 +256,7 @@ Instruction pointer `ip` can only be modified through explicit control-flow inst
 #box[
 = Control Registers
 
-Control registers, each 64 bits wide, are used to configure various LP-specific operations and modes. They are only accessible in kernel mode through the `sctrl` and `lctrl` instructions.
+Control registers, each 64 bits wide, are used to configure various LP-specific operations and modes. They are only accessible in kernel mode through the `sctrl` and `lctrl` instructions. Storing to read-only control registers with `sctrl` has no effect.
 
 #table(
     columns: (auto, auto, 1fr),
@@ -266,11 +266,12 @@ Control registers, each 64 bits wide, are used to configure various LP-specific 
     "16", `intip`, [Interrupt instruction pointer. When an interrupt is triggered, this is set to the value of `ip` at the time of the trigger. Used by the `iret` instruction to return from an interrupt handler or to jump into user mode. Bits 0..1 of addresses stored here are hardwired to 0.],
     "17", `intval`, [Any value or address relevant to an interrupt. When an `BUS*`, `ACCESS*`, `UALIGN*`, or `VATFAIL` interrupt trigger, the target address of the memory access that caused it will be stored here.],
     "18", `intpte`, [On an `ACCESS*` interrupt when using virtual addressing, this contains the most recent page table entry read by the processor.],
-    "19", `intcause`, [The cause of the most recent interrupt.],
+    "19", `intcause`, [The cause of the most recent interrupt. Read-only.],
     "20", `kptp`, [Page table pointer for virtual addressing in kernel mode. Bits 0..11 of addresses stored here are hardwired to 0.],
     "21", `uptp`, [Page table pointer for virtual addressing in user mode. Bits 0..11 of addresses stored here are hardwired to 0.],
     "22", `stat`, [Status register. Described in full below.],
     "23", `intstat`, [Interrupt status register. When an interrupt is triggered, `stat` is copied into `intstat`. The `iret` instruction copies `intstat` back into `stat`.],
+    "24", `id`, [A unique ID for this LP in a multiprocessor system. Must be 0 in a single-processor system. Read-only.]
 )]
 
 All control register codes from 0 through 511 are reserved for use by the standard. Control register codes beyond this reserved region may be used for implementation-specific LP configuration.
@@ -294,13 +295,16 @@ Undefined bits are currently reserved for use by the standard.
 = System Interaction
 
 == Reset State
-Upon reset or initial power-on/boot, an LP shall set all of its general-purpose registers and standard control registers to 0, except for `ip`, which is set to an implementation-defined reset vector. This reset vector is usually inside the System-Reserved Region (see Aphelion System Environment Specification).
+Upon reset or initial power-on/boot, each LP shall: 
+- Set all general-purpose registers (except `ip`) and all standard control registers to 0; 
+- Set `ip` to an implementation-defined reset vector. This reset vector is usually inside the System-Reserved Region (see Aphelion System Environment Specification);
+- Set the lock state to unlocked (see @memory-model-llsc);
 
 #pagebreak()
 = Interrupts <interrupts>
 
 Interrupts are signals that can disrupt the normal flow of computation.
-Interrupts can be internal (caused by the processor) or external (caused by the system/environment).
+Interrupts can be internal (caused by the LP) or external (caused by the system environment).
 
 Internal interrupts act only on the LP that triggered them. They may be triggered through the execution of special instructions, such as `syscall` and `breakpt`, but are most often generated through invalid execution of some kind, such as an unaligned memory access, virtual address translation failure, access violation, or execution of an invalid operation.
 
@@ -315,8 +319,8 @@ When an interrupt triggers, all previously executed instructions must complete i
 To handle an interrupt: 
 + Register `ip` is saved to control register `intip` and control register `stat` is saved to `intstat`.
 + Register `ip` is set to the value of a handler control register (`int0..int15`) based on the interrupt cause.
-+ The processor is put into kernel mode with external interrupts disabled;
-+ The processor's lock state is unlocked (see @memory-model-llsc).
++ This LP is put into kernel mode with external interrupts disabled;
++ This LP's lock state is unlocked;
 
 #box[
 == Interrupt Causes
@@ -328,7 +332,7 @@ To handle an interrupt:
   "0", `EXTERNL`, "External (IO) interrupt.",
   "1", `BREAKPT`, "Debugger breakpoint.",
   "2", `SYSCALL`, "System call.",
-  "3", `INVALID`, "Invalid operation has been loaded and executed. This is either an operation that does not exist, exists but with invalid arguments, or exists but is not permitted in the current processor mode.",
+  "3", `INVALID`, "Invalid operation has been loaded and executed. This is either an operation that does not exist, exists but with invalid arguments, or exists but is not permitted in the current mode.",
   "4", `BUSR`,    "Bus fault while reading from memory.",
   "5", `BUSW`,    "Bus fault while writing to memory.",
   "6", `BUSX`,    "Bus fault while fetching code from memory.",
@@ -452,7 +456,7 @@ Where each bit field is defined as follows:
   [*next*], [These are the upper bits of the physical address of the next page table level or target page.]
 )]
 
-Any unused bits are ignored by the processor and may be used for software-specific information.
+Any unused bits are ignored and may be used for software-specific information.
 
 Virtual address translation will trigger an `ACCESS*` interrupt when:
 - Bits 63..48 of the virtual address do not match bit 47;
@@ -460,7 +464,7 @@ Virtual address translation will trigger an `ACCESS*` interrupt when:
 - The *w* or *x* bits are not set in the final page table entry when writing data or fetching instructions respectively;
 
 
-Virtual address translation will trigger a `VATFAIL` interrupt when the processor fails to load a page table entry.
+Virtual address translation will trigger a `VATFAIL` interrupt when the LP fails to load a page table entry.
 
 #box[
 = Instructions
@@ -2060,7 +2064,7 @@ pause_execution();
 #box[
 === SPIN - Hint Spin-wait Loop <SPIN>
 #fmt_a("unused", "unused", ("010111"))
-Hint a spin-wait loop to the processor. On complex implementations, this instruction may lower power consumption in spin-wait loops, mitigate performance issues due to execution pipelining, signal that this LP is currently not busy for hyper-threading mechanisms, etc.
+Hint a spin-wait loop to this LP. On complex implementations, this instruction may lower power consumption in spin-wait loops, mitigate performance issues due to execution pipelining, signal that this LP is currently not busy for hyper-threading mechanisms, etc.
 
 #code[```asm
 spin
