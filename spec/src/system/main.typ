@@ -237,7 +237,7 @@ There is a maximum of 512 RAM slots, each with a maximum size of 256 GiB. The fi
 
 Each active slot must provides a contiguous region of memory starting at its slot address, accessible by all access widths, all access types, and to all LPs. Memory provided in each slot must be in units of whole pages (4KiB). The amount of memory provided by each slot is given by the System Description Table.
 
-This is the only region of memory that may be cached.
+This region of memory may always be cached.
 
 == Memory-Mapped Devices
 
@@ -251,7 +251,7 @@ The *System-Reserved Region* (SRR) is a region of the address space from `0xFFFF
 
 Accesses to addresses inside this region may be statically or dynamically restricted through implementation-specific means.
 
-This region of memory may not be cached.
+Portions of this region may or may not be cached, depending on the implementation.
 
 #pagebreak()
 = Firmware Services
