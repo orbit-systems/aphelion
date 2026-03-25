@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+printf "pre-commit: compile check... "
+
+output=$(make -j 2>&1)
+if [ $? -ne 0 ]; then
+  printf "build failed\n"
+  echo "$output"
+  exit 1
+fi
+printf "build success\n"
+
+
+printf "pre-commit: Running tests... "
+
+output=$(./test.sh 2>&1)
+
+if [ $? -ne 0 ]; then
+    printf "test(s) failed:\n"
+    echo "$output"
+    exit 1
+fi
+printf "tests passed\n"

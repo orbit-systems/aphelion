@@ -11,7 +11,7 @@ executable section "text"
         li t0, mydata
         lw t1, [t0]
         addi t1, t1, 1
-        sw [t0], ti
+        sw [t0], t1
         ret
 
 writable section "data"

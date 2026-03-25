@@ -72,6 +72,10 @@ clean:
 	@mkdir bin/
 	@mkdir -p $(dir $(LUNA_OBJECTS))
 
+.PHONY: test
+test-luna: luna
+	./test.sh
+
 # generate compile commands with bear if u got it!!!
 # very good highly recommended ʕ·ᴥ·ʔ
 .PHONY: bear-gen-cc

@@ -1,7 +1,4 @@
 executable writable section "text"
-/*
-    bz zr, label1 */
-    // asff/
-
-    bz zr, /* asf */ label1 
-    label1:
+add t1, zr, 5     ; t1 = 5
+add t2, t1, t1, 5 ; t2 = t1 + t1 + 5 = 15
+uremi t3, t2, 5   ; t3 = 3
