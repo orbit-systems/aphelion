@@ -28,8 +28,8 @@ for src in tests/*.s; do
     name=${src##*/}
     name=${name%.s}
 
-    expected="tests/${name}.out"
-    out="$TMPDIR/${name}.out"
+    expected="tests/${name}.bin"
+    out="$TMPDIR/${name}.bin"
 
     if [[ ! -f "$expected" ]]; then
         ((skips++))
@@ -37,7 +37,7 @@ for src in tests/*.s; do
         continue
     fi
 
-    if ! "$LUNA" "$src" -o "$out" 2>/dev/null; then
+    if ! "$LUNA" "$src" -o "$out" &>/dev/null; then
         ((fails++))
 	printf "Fail: %-*s (runtime error)\n" "$maxname" "$name"
         continue

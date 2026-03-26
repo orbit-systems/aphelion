@@ -6,4 +6,4 @@ label1:
     add a2, a0, a1
     add a0, a1, zr
     add a1, a2, zr
-    bz zr, -4
+    bz zr, label1

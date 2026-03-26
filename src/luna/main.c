@@ -1,10 +1,14 @@
 #include "common/vec.h"
 #include "common/fs.h"
+#include "common/str.h"
+#include "common/util.h"
 
 #include "luna.h"
 #include "lex.h"
 #include "parse.h"
 #include "export.h"
+
+#define REQUIRED_POSITIONAL_ARGS 1
 
 // static void print_bin_fmt_a(u32 bits) {
 //     u32 imm9 = bits >> 23;
@@ -21,13 +25,56 @@
 // }
 //
 
-int main() {
+int main(int argc, char** argv) {
     LunaInstance* luna = luna_new();
 
+    SourceFileId mainfile;
+    FsFile* outfile = nullptr;
 
-    SourceFileId mainfile = luna_load_file(luna, strlit(
-        "tests/basic.s"
-    ));
+    // tracks positional arguments
+    usize position = 0;
+
+    for_n (i, 1, argc) {
+        string arg = string_wrap(argv[i]);
+
+        // flags
+        if (string_eq(arg, strlit("-h"))) {
+            fprintf(stderr, "%s <input.s> [-o <out.bin>]\n", argv[0]);
+            return 0;
+        } else if (string_eq(arg, strlit("-o"))) {
+            if (++i >= argc) {
+                fprintf(stderr, "-o requires a filename\n");
+                return 1;
+            }
+            outfile = fs_open(argv[i], true, true);
+            continue;
+        }
+
+        // positional
+        switch (position) {
+        case 0:
+            mainfile = luna_load_file(luna, arg);
+            position++;
+            break;
+        default:
+            fprintf(stderr, "Unexpected argument: "str_fmt"\n", str_arg(arg));
+            return 1;
+        }
+    }
+
+    if (position < REQUIRED_POSITIONAL_ARGS) {
+        switch (position) {
+        case 0: 
+            fprintf(stderr, "Input filename required\n");
+            break;
+        default:
+            UNREACHABLE;
+        }
+        return 1;
+    }
+
+    if (outfile == nullptr)
+        outfile = fs_open("out.bin", true, true);
 
     Lexer lex = lexer_new(luna, mainfile);
     while (lexer_next_token(&lex)) {}
@@ -41,7 +88,6 @@ int main() {
 
     string data = export_flat_binary(&o);
 
-    FsFile* outfile = fs_open("out.bin", true, true);
     fs_write(outfile, data.raw, data.len);
     fs_destroy(outfile);
 
