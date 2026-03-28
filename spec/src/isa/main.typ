@@ -700,7 +700,7 @@ gpr[r1] = mem_load8(addr);
 Store a 64-bit value from *r1* to the address given by the sum of *r2*, *r3*, and zero-extended *offset* shifted left by 3.
 
 #code[```asm
-sw [r2 + r2 + 4088], r1 ; offset argument is divided by 8
+sw [r2 + r3 + 4088], r1 ; offset argument is divided by 8
 sw [r2 + 4088], r1      ; r3 = zr
 sw [r2 + r3], r1        ; offset = 0
 sw [r2], r1             ; r3 = zr; offset = 0
@@ -718,8 +718,8 @@ mem_store64(gpr[r1], addr);
 Store the lower 32 bits of *r1* to the address given by the sum of *r2*, *r3*, and zero-extended *offset* shifted left by 2.
 
 #code[```asm
-sh [r2 + r2 + 4088], r1 ; offset argument is divided by 4
-sh [r2 + 4088], r1      ; r3 = zr
+sh [r2 + r3 + 2044], r1 ; offset argument is divided by 4
+sh [r2 + 2044], r1      ; r3 = zr
 sh [r2 + r3], r1        ; offset = 0
 sh [r2], r1             ; r3 = zr; offset = 0
 ```]
@@ -736,7 +736,7 @@ mem_store32(gpr[r1] as u32, addr);
 Store the lower 16 bits of *r1* to the address given by the sum of *r2*, *r3*, and zero-extended *offset* shifted left by 1.
 
 #code[```asm
-sq [r2 + r2 + 1022], r1 ; offset argument is divided by 2
+sq [r2 + r3 + 1022], r1 ; offset argument is divided by 2
 sq [r2 + 1022], r1      ; r3 = zr
 sq [r2 + r3], r1        ; offset = 0
 sq [r2], r1             ; r3 = zr; offset = 0
@@ -754,7 +754,7 @@ mem_store16(gpr[r1] as u16, addr);
 Store the lower 8 bits of *r1* to the address given by the sum of *r2*, *r3*, and zero-extended *offset*.
 
 #code[```asm
-sb [r2 + r2 + 511], r1
+sb [r2 + r3 + 511], r1
 sb [r2 + 511], r1      ; r3 = zr
 sb [r2 + r3], r1       ; offset = 0
 sb [r2], r1            ; r3 = zr; offset = 0
@@ -1154,7 +1154,7 @@ gpr[r1] = if rhs != 0 {
 === UREM - Unsigned Integer Remainder <UREM>
 #fmt_c("imm9", "r3", "r2", "r1", ("110000"))
 
-Divide *r2* by *r3* as unsigned integers and store the remainder in *r1*. If the divisor is 0, all bits of *r1* are set to 1.
+Divide *r2* by the sum of *r3* and zero-extended *imm9* as unsigned integers and store the remainder in *r1*. If the divisor is 0, all bits of *r1* are set to 1.
 
 #code[```asm
 urem r1, r2, r3      ; imm9 = 0
@@ -1175,7 +1175,7 @@ gpr[r1] = if rhs != 0 {
 === IREM - Signed Integer Remainder <IREM>
 #fmt_c("imm9", "r3", "r2", "r1", ("111000"))
 
-Divide *r2* by *r3* as signed integers and store the remainder in *r1*. If the divisor is 0, all bits of *r1* are set to 1.
+Divide *r2* by the sum of *r3* and sign-extended *imm9* as signed integers and store the remainder in *r1*. If the divisor is 0, all bits of *r1* are set to 1.
 
 #code[```asm
 irem r1, r2, r3      ; imm9 = 0
@@ -1773,8 +1773,9 @@ gpr[r1] = result;
 if *r2* is equal to the sum of sign-extended *imm9* and *r3*, set *r1* to 1, otherwise set *r1* to 0.
 
 #code[```asm
-seq r1, r2, r3      ; imm9 = 0
-seq r1, r2, r3, 511
+seq r1, r2, r3       ; imm9 = 0
+seq r1, r2, r3, 255
+seq r1, r2, r3, -256
 ```]
 #code[```rust
 gpr[r1] = (gpr[r2] == gpr[r3] + sign_extend(imm9)) as u64;
@@ -1806,8 +1807,8 @@ if *r2* is less than the sum of sign-extended *imm9* and *r3* as signed integers
 
 #code[```asm
 silt r1, r2, r3       ; imm9 = 0
-sile r1, r2, r3, 255
-sile r1, r2, r3, -256
+silt r1, r2, r3, 255
+silt r1, r2, r3, -256
 ```]
 #code[```rust
 gpr[r1] = (gpr[r2] as i64 < (gpr[r3] + zero_extend(imm9)) as i64) as u64;
@@ -1932,7 +1933,7 @@ gpr[r1] = (gpr[r2] as i64 <= sign_extend(imm14)) as u64;
 === BZ - Branch If Zero <BZ>
 #fmt_a("imm19", "r1", ("110100"))
 
-if *r1* is equal to 0, set `ip` to the sum of sign-extended *imm19* shifted left by 2 and `ip`.
+if *r1* is equal to 0, set `ip` to the sum of `ip` and sign-extended *imm19* shifted left by 2.
 
 #code[```asm
 bz r1, symbol ; imm19 = (symbol - addr - 4) >> 2
@@ -1949,7 +1950,7 @@ if gpr[r1] == 0 {
 === BN - Branch If Not Zero <BN>
 #fmt_a("imm19", "r1", ("111100"))
 
-if *r1* is not equal to 0, set `ip` to the sum of sign-extended *imm19* shifted left by 2 and `ip`.
+if *r1* is not equal to 0, set `ip` to the sum of `ip` and sign-extended *imm19* shifted left by 2.
 
 #code[```asm
 bn r1, symbol ; imm19 = (symbol - addr - 4) >> 2
@@ -1966,7 +1967,7 @@ if gpr[r1] != 0 {
 === JL - Jump and Link <JL>
 #fmt_b("imm14", "r2", "r1", ("101100"))
 
-Set *r1* to `ip` and set `ip` to the sum of zero-extended *imm14* shifted left by 2 and *r2*.
+Set *r1* to `ip` and set `ip` to the sum of *r2* and zero-extended *imm14* shifted left by 2.
 
 #code[```asm
 jl r1, r2, 8191
@@ -1985,7 +1986,7 @@ gpr[r1] = ip;
 === JLR - Jump and Link Relative <JLR>
 #fmt_b("imm14", "r2", "r1", ("100100"))
 
-Set *r1* to `ip` and set `ip` to the sum of `ip`, zero-extended *imm14* shifted left by 2, and *r2*.
+Set *r1* to `ip` and set `ip` to the sum of `ip`, *r2*, and zero-extended *imm14* shifted left by 2.
 
 #code[```asm
 jlr r1, r2, 8191
