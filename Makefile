@@ -9,6 +9,13 @@ LUNA_SRC_PATHS = \
 LUNA_SRC = $(wildcard $(LUNA_SRC_PATHS))
 LUNA_OBJECTS = $(LUNA_SRC:src/%.c=build/%.o)
 
+KEPLER_SRC_PATHS = \
+	src/kepler/*.c \
+
+KEPLER_SRC = $(wildcard $(KEPLER_SRC_PATHS))
+KEPLER_OBJECTS = $(KEPLER_SRC:src/%.c=build/%.o)
+
+
 CC ?= gcc
 LD = $(CC)
 
@@ -36,7 +43,7 @@ endif
 -include config.mk
 
 .PHONY: all
-all: luna
+all: luna kepler
 
 bin/libcommon.a:
 	$(MAKE) -C common
@@ -50,6 +57,12 @@ build/%.o: src/%.c
 luna: bin/luna
 bin/luna:  $(LUNA_OBJECTS) bin/libcommon.a
 	@$(LD) $(LDFLAGS) $(LUNA_OBJECTS) -o bin/luna -lm -lc -Lbin -lcommon
+
+.PHONY: kepler
+kepler: bin/kepler
+bin/kepler:  $(KEPLER_OBJECTS) bin/libcommon.a
+	@$(LD) $(LDFLAGS) $(KEPLER_OBJECTS) -o bin/kepler -lm -lc -Lbin -lcommon
+
 
 .PHONY: spec
 spec:
@@ -71,6 +84,7 @@ clean:
 	@mkdir $(BUILD_DIR)/
 	@mkdir bin/
 	@mkdir -p $(dir $(LUNA_OBJECTS))
+	@mkdir -p $(dir $(KEPLER_OBJECTS))
 
 # generate compile commands with bear if u got it!!!
 # very good highly recommended ʕ·ᴥ·ʔ

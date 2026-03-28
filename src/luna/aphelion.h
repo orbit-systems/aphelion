@@ -176,4 +176,8 @@ extern const char* const op_name[256];
 /// Name for a GPR.
 extern const char* const gpr_name[32];
 
+/// Name for a control register.
+extern const char* const ctrl_name[32];
+
+
 #endif // APHELION_H

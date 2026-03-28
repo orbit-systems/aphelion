@@ -99,3 +99,11 @@ const char* const gpr_name[32] = {
         APHEL_GPRS
     #undef GPR
 };
+
+
+const char* const ctrl_name[] = {
+    #define CTRL(variant, name) [CTRL_##variant] = name,
+        APHEL_CTRLS
+    #undef CTRL
+};
+
