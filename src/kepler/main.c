@@ -135,7 +135,7 @@ const char* select_inst_name(EncodedInst einst) {
         }
         break;
     case OP_OR:
-        if (einst.C.r3 != GPR_ZR && einst.C.imm == 0)
+        if (einst.C.r3 != GPR_ZR && einst.C.imm != 0)
             break;
         if (einst.C.r1 == GPR_ZR && einst.C.r2 == GPR_ZR) {
             return "nop";
@@ -444,6 +444,8 @@ int main(int argc, char** argv) {
             i += 4;
         } else {
             // invalid! print as bytes
+            printf(Dim"    Invalid."Reset);
+            i += 4;
         }
 
         printf("\n");
