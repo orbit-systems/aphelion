@@ -308,7 +308,7 @@ void object_dbgprint(const Object* o) {
                 break;
             }
 
-            printf("  %-7d  %x\n", sym->section_def, sym->section_offset);
+            printf("  %-7d  0x%x\n", sym->section_def, sym->section_offset);
         }
     }
 
