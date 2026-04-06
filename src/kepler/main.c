@@ -134,6 +134,19 @@ const char* select_inst_name(EncodedInst einst) {
         case 0b111: return "cfetch.lsi";
         }
         break;
+    case OP_OR:
+        if (einst.C.r3 != GPR_ZR && einst.C.imm == 0)
+            break;
+        if (einst.C.r1 == GPR_ZR && einst.C.r2 == GPR_ZR) {
+            return "nop";
+        } else {
+            return "mov";
+        }
+    case OP_JL:
+        if (einst.B.r1 == GPR_ZR && einst.B.imm == 0) {
+            return "ret";
+        }
+        break;
     }
     return inst_name;
 }
@@ -234,13 +247,22 @@ void print_arguments(EncodedInst einst, usize location) {
             ((einst.A.imm >> 1) & 0b11) * 16
         );
         break;
+    case OP_OR:
+        if (einst.C.r3 == GPR_ZR && einst.C.imm == 0) {
+            if (einst.C.r1 == GPR_ZR && einst.C.r2 == GPR_ZR) {
+                break; // nop
+            } else {
+                printf("%s, %s", gpr_name[einst.C.r1], gpr_name[einst.C.r2]);
+                break; // mov
+            }
+        }
+        FALLTHROUGH;
     case OP_ADD:
     case OP_SUB:
     case OP_UMULH:
     case OP_UDIV:
     case OP_UREM:
     case OP_AND:
-    case OP_OR:
     case OP_NOR:
     case OP_XOR:
     case OP_SULT:
@@ -361,6 +383,13 @@ void print_arguments(EncodedInst einst, usize location) {
     case OP_IRET:
         break;
     case OP_JL:
+        if (einst.B.r1 == GPR_ZR && einst.B.imm == 0) {
+            if (einst.B.r2 == GPR_LP)
+                break; // ret
+            printf("%s", gpr_name[einst.B.r2]);
+            break;
+        }
+        FALLTHROUGH;
     case OP_JLR:
         printf("%s, %s",
             gpr_name[einst.B.r1],
