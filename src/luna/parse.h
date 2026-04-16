@@ -10,6 +10,8 @@
 #include "apollo/apollo.h"
 #include <strings.h>
 
+#define MAX_OPERANDS 4
+
 typedef enum : u8 {
     ELEM_INST_INVALID = 0,
     ELEM_INST__BEGIN = 1,
@@ -71,7 +73,7 @@ typedef union SectionElement {
         AphelGpr r1;
         AphelGpr r2;
         AphelGpr r3;
-	u8 size;
+        u8 size;
     } pseudo_inst;
 
 
@@ -220,9 +222,8 @@ typedef struct Object {
 } Object;
 
 typedef struct ExprValue {
-    i64 value; // stores addend when symbol_index == 0
-    u32 symbol_index : 31;
-    bool final : 1;
+    i64 value; // stores addend when symbol_index != 0
+    u32 symbol_index;
 } ExprValue;
 
 #define EXPR_CONST(c) (ExprValue){(c), 0}

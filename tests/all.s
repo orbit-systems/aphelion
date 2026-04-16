@@ -59,27 +59,27 @@ executable section "text"
     scb l2, [l1 + 511], l0
     scb l2, [l1], l0
 
+    fence
     fence.s
     fence.l
-    fence.sl
 
     cinval.block   l0
     cinval.page    l0
-    cinval.all     l0
+    cinval.all
     cinval.i.block l0
     cinval.i.page  l0
-    cinval.i.all   l0
+    cinval.i.all
     cinval.d.block l0
     cinval.d.page  l0
-    cinval.d.all   l0
+    cinval.d.all
 
     cfetch.s   l0
     cfetch.l   l0
     cfetch.i   l0
-    cfetch.sl  l0
+    cfetch.ls  l0
     cfetch.li  l0
     cfetch.si  l0
-    cfetch.sli l0
+    cfetch.lsi l0
 
     ssi   l0, 0xffff, 0
     ssi   l0, 0xffff, 16
