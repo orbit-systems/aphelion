@@ -1970,8 +1970,8 @@ if gpr[r1] != 0 {
 Set *r1* to `ip` and set `ip` to the sum of *r2* and zero-extended *imm14* shifted left by 2.
 
 #code[```asm
-jl r1, r2, 8191
-jl r1, r2, -8192
+jl r1, r2, 0
+jl r1, r2, 16383
 jl r1, r2        ; imm14 = 0
 ```]
 #code[```rust
@@ -1989,8 +1989,8 @@ gpr[r1] = ip;
 Set *r1* to `ip` and set `ip` to the sum of `ip`, *r2*, and zero-extended *imm14* shifted left by 2.
 
 #code[```asm
-jlr r1, r2, 8191
-jlr r1, r2, -8192
+jlr r1, r2, 0
+jlr r1, r2, 16383
 jlr r1, r2        ; imm14 = 0
 ```]
 #code[```rust
