@@ -136,18 +136,32 @@ static AphelOpcode instname_opcode[INST__COUNT] = {
 static i64 handle_expr(const Object* o, InstName instname, u64 addr, u32 expr_index) {
     ExprValue v = evaluate_expr(o, expr_index);
 
+    i64 target = v.value;
+
+    if (EXPR_SYM_DEP(v.symbol_index)) {
+        // value is an addend, so add its base first
+        Symbol *sym = &o->symbols[v.symbol_index];
+        Section *sec = o->sections[sym->section_def];
+        target += sym->section_offset + sec->address;
+    }
+
     switch (instname) {
+    case INST_P_FCALL:
+    case INST_P_LI:
+        return target; // absolute
     case INST_BZ:
     case INST_BN:
-        i64 target = v.value;
-
         if (EXPR_SYM_DEP(v.symbol_index)) {
-            // value is an addend, so add its base first
-            Symbol *sym = &o->symbols[v.symbol_index];
-            Section *sec = o->sections[sym->section_def];
-            target += sym->section_offset + sec->address - 4;
+            target = target - addr - 4; // relative
+            return target / 4; // encoding
         }
-        return (target - addr) >> 2;
+        goto constant;
+    case INST_P_CALL:
+        if (EXPR_SYM_DEP(v.symbol_index)) {
+            return target - addr - 4; // relative
+        }
+        goto constant;
+constant:
     default:
         return v.value;
     }
@@ -246,8 +260,9 @@ string export_flat_binary(const Object* o) {
 
     string output;
     output.len = out_len;
-    output.raw = malloc(out_len);
-    memset(output.raw, 0, output.len);
+    output.raw = malloc(output.len);
+    // initialise all memory to a constant (for easy debugging).
+    memset(output.raw, SECTION_PADDING_U8, output.len);
 
     for_n(i, 0, vec_len(o->sections)) {
         Section* section = o->sections[i];
@@ -297,10 +312,90 @@ string export_flat_binary(const Object* o) {
             case ELEM_INST__BEGIN ... ELEM_INST__END: {
                 switch ((InstName)elem->inst.name) {
                 case INST_P_FCALL:
-                case INST_P_LI:
-                case INST_P_CALL:
+                case INST_P_LI: {
+                    SectionElement* expr = &section->elements[i + 1];
+                    i64 val = handle_expr(o, elem->inst.name, addr, expr->expr.index);
+
+                    for_n(j, 0, vec_len(section->relocs)) {
+                        Relocation* cur = &section->relocs[j];
+                        if (cur->elem_index == i) {
+                            Symbol* sym = &o->symbols[cur->symbol_index];
+                            Section* sec = o->sections[sym->section_def];
+                            val = (i64)cur->addend + sec->address + sym->section_offset;
+                            break;
+                        }
+                    }
+
+                    // optimisation is possible here i use a naiive approach
+                    // 0xffff_0000 can be encoded in just one isntruction for example
+                    // TODO: sparse quarter ssi loads
+                    for_n_reverse(sh, elem->pseudo_inst.size / 4, 0) {
+                        SectionElement ssi = {0};
+                        ssi.inst.name = INST_SSI_C;
+                        ssi.inst.r1 = elem->pseudo_inst.r1;
+                        ssi.inst.imm = (sh) << 1 | (sh == elem->pseudo_inst.size / 4 - 1);
+
+                        ssi.inst.imm |= ((val >> ((sh) * 16)) & 0xffff) << 3;
+
+                        // Fix last elem to be JL for FCALL.
+                        if (elem->pseudo_inst.name == INST_P_FCALL && sh == 0) {
+                            ssi.inst.name = INST_JL;
+                            // move by 3 to clear the sh and clear bit,
+                            // then clear bottom two bits
+                            ssi.inst.imm = (ssi.inst.imm >> 3) & ~0b11;
+                        }
+                        // last elem is junk
+                        u32 ssi_data = encode_inst_elem(o, addr, ssi, ssi);
+                        *(u32*)to_write = ssi_data;
+                        to_write += 4;
+                    }
+
                     offset += elem->pseudo_inst.size;
-                    break;
+                } break;
+                case INST_P_CALL: {
+                    SectionElement ssi = {0};
+                    ssi.inst.name = INST_SSI_C;
+                    ssi.inst.r1 = elem->pseudo_inst.r2;
+                    ssi.inst.imm = 0b011; // sh = 16, c = 1
+
+                    SectionElement jlr = {0};
+                    jlr.inst.name = INST_JLR;
+                    jlr.inst.r1 = elem->pseudo_inst.r1;
+                    jlr.inst.r2 = elem->pseudo_inst.r2;
+
+                    if (elem->pseudo_inst.size / 4 == 1) {
+                        jlr.inst.r2 = GPR_ZR;
+                    }
+
+                    SectionElement* expr = &section->elements[i + 1];
+                    i64 target = handle_expr(o, INST_P_CALL, addr, expr->expr.index);
+
+                    for_n(j, 0, vec_len(section->relocs)) {
+                        Relocation* cur = &section->relocs[j];
+                        if (cur->elem_index == i) {
+                            Symbol* sym = &o->symbols[cur->symbol_index];
+                            Section* sec = o->sections[sym->section_def];
+                            target = (i64)cur->addend + sec->address + sym->section_offset - addr;
+                            break;
+                        }
+                    }
+
+                    // ssi.c r2, ((symbol - addr) >> 16) & 0xFFFF, 16
+                    // jlr r1, r2, ((symbol - addr) & 0xFFFF) >> 2
+                    ssi.inst.imm |= ((target / 4) >> 16 & 0xffff) << 3;
+                    jlr.inst.imm |= ((target / 4) & 0xffff) << 2;
+
+                    u32 ssi_data = encode_inst_elem(o, addr, ssi, ssi); // last elem is junk
+                    u32 jlr_data = encode_inst_elem(o, addr, jlr, jlr);
+
+                    if (elem->pseudo_inst.size / 4 == 2) {
+                        *(u32*)to_write = ssi_data;
+                        to_write += 4;
+                    }
+
+                    *(u32*)to_write = jlr_data;
+                    offset += elem->pseudo_inst.size;
+                } break;
                 case INST_P_NOP:
                     elem->inst.name = INST_OR;
                     elem->inst.r1 = GPR_ZR;
@@ -324,7 +419,8 @@ string export_flat_binary(const Object* o) {
                     u32 data = encode_inst_elem(o, addr, *elem, section->elements[i + 1]);
                     *(u32*)to_write = data;
                     offset += 4;
-                } break;
+                    break;
+                }
                 }
                 break;
             }

@@ -222,7 +222,7 @@ typedef struct Object {
 } Object;
 
 typedef struct ExprValue {
-    i64 value; // stores addend when symbol_index == 0
+    i64 value; // stores addend when symbol_index != 0
     u32 symbol_index;
 } ExprValue;
 

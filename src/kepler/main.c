@@ -3,6 +3,7 @@
 #include "common/util.h"
 #include "common/ansi.h"
 #include "../luna/aphelion.h"
+#include "../luna/export.h"
 #include <stdio.h>
 
 #include "../luna/aphelion.c"
@@ -396,8 +397,10 @@ void print_arguments(EncodedInst einst, usize location) {
             gpr_name[einst.B.r2]
         );
         if (einst.B.imm != 0) {
-            printf(", %d",
-                ((i32)einst.B.imm << (32-14)) >> (32-14)
+            printf(", %d <%05zx>",
+		((u32)einst.B.imm << (32-14)) >> (32-14),
+                ((u32)einst.B.imm << (32 - 14) >> (32-14))
+                   + (einst.opcode == OP_JLR ? location + 4 : 0)
             );
         }
         break;
@@ -427,9 +430,18 @@ void print_encoded_inst(EncodedInst einst, usize location) {
     print_arguments(einst, location);
 }
 
-
 int main(int argc, char** argv) {
+    if (argc != 2) {
+        fprintf(stderr,
+            "usage: %s [options...] <filename> \n\n",
+        //  " -e\tForces expansion of recognised pseudo instructions\n",
+            argv[0]
+        );
+        return 1;
+    }
+
     FsFile* input = fs_open(argv[1], false, false);
+
     string binary = fs_read_entire(input, false);
 
     for (usize i = 0; i < binary.len;) {
@@ -443,8 +455,14 @@ int main(int argc, char** argv) {
             print_encoded_inst(einst, i);
             i += 4;
         } else {
-            // invalid! print as bytes
-            printf(Dim"    Invalid."Reset);
+            if (*(u32*)&binary.raw[i] == SECTION_PADDING_U32)
+                // section padding
+                printf(Dim"    Padding."Reset);
+            else {
+                // invalid! print as bytes
+                printf(Dim"    Invalid."Reset);
+            }
+
             i += 4;
         }
 

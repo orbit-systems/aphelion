@@ -108,7 +108,7 @@ ExprValue evaluate_expr(const Object* restrict o, u32 expr_index) {
         if (dep < 0) {
         // TODO: specialize error. This is only meaningful for neg and not
             parse_warn(o, expr->token_index, "Cannot relocate '%s': does not support symbolic operand", cexpr_opstr(expr->kind));
-        dep = 0; // treat as abs, no longer relocatable
+            dep = 0; // treat as abs, no longer relocatable
         }
 
 
@@ -156,7 +156,7 @@ ExprValue evaluate_expr(const Object* restrict o, u32 expr_index) {
         // to different sections
         if (dep == 0 && EXPR_SYM_DEP(lhs.symbol_index) && EXPR_SYM_DEP(rhs.symbol_index)) {
             if (lhs_sec == rhs_sec) {
-                dep = 1;
+                dep = 0;
                 // we use the actual offsets instead since were in the same section.
                 lhs.value = o->symbols[lhs.symbol_index].section_offset;
                 rhs.value = o->symbols[rhs.symbol_index].section_offset;
@@ -227,7 +227,6 @@ ExprValue evaluate_expr(const Object* restrict o, u32 expr_index) {
                     addend
                 );
             }
-
             return EXPR_SYM_ADD(value, symbol_index);
         }
 
@@ -494,7 +493,6 @@ static bool fold_intra_and_constants(Object *o) {
             SectionElement* inst = &sec->elements[elem_i - 1];
             u8 size = inst->pseudo_inst.size;
             if (is_inter_section_sym(o, v.symbol_index, sec_i)) {
-                printf("reloc %d, offset: %d, inst->pseudo_inst.size: %d\n", elem_i, v.value, size);
                 continue; // requires reloc
             }
 
@@ -511,7 +509,6 @@ static bool fold_intra_and_constants(Object *o) {
 
             if (size < inst->pseudo_inst.size) {
                 changed = true;
-                printf("FOLD (intra) %d < %d\n", size, inst->pseudo_inst.size);
                 inst->pseudo_inst.size = size;
             }
         }

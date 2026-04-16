@@ -959,7 +959,7 @@ static u8 parse_n_ops(Parser* p, u8 n, u32 op_kind, ...) {
             AphelGpr* r1 = va_arg(outs, AphelGpr*);
             AphelGpr* r2 = va_arg(outs, AphelGpr*);
             u64* addend  = va_arg(outs, u64*);
-            
+
             MemOperand m = parse_mem_operand(p, false);
             *r1 = m.r1;
             *r2 = m.r2;
@@ -968,7 +968,7 @@ static u8 parse_n_ops(Parser* p, u8 n, u32 op_kind, ...) {
         case OPERAND_MEM_NO_R2: {
             AphelGpr* r1 = va_arg(outs, AphelGpr*);
             u64* addend  = va_arg(outs, u64*);
-            
+
             MemOperand m = parse_mem_operand(p, true);
             *r1 = m.r1;
             *addend = m.addend;
@@ -982,10 +982,11 @@ static u8 parse_n_ops(Parser* p, u8 n, u32 op_kind, ...) {
         } break;
         case OPERAND_EXPR: {
             usize* tok = va_arg(outs, usize*);
-            u32* expr_index = va_arg(outs, u32*);
+            SectionElement* elem = va_arg(outs, SectionElement*);
 
             *tok = p->cursor;
-            *expr_index = parse_expr(p);
+            elem->kind = ELEM_EXPR;
+            elem->expr.index = parse_expr(p);
         } break;
         case OPERAND_CTRL: {
             AphelCtrl* ctrl = va_arg(outs, AphelCtrl*);
@@ -1001,7 +1002,7 @@ static u8 parse_n_ops(Parser* p, u8 n, u32 op_kind, ...) {
         case OPERAND_QUARTER: {
             u8* quarter = va_arg(outs, u8*);
             u64 v = parse_const_expr(p);
-            
+
             if (v % 16 != 0 || v > 48) {
                 parse_error(p, p->cursor, "SSI quarter must be 0, 16, 32, or 48. Got: %d", v);
             }
@@ -1026,17 +1027,20 @@ static void check_imm(Parser* p, u8 subkind, u32 imm_expr, u8 imm_size, usize ex
     u64 imm = cexpr(p, imm_expr)->value;
     if (inst_name_imm_signed[subkind]) {
         if (imm != int_in_bits(imm, imm_size)) {
+            // always round hex digits up (4 bits in 1 hex)
             parse_warn(p, expr_start_token,
-                "constant expression is truncated to %d (%x)",
+                "constant expression is truncated to %d (0x%0*x)",
                 int_in_bits(imm, imm_size),
+                (imm_size + 3) / 4,
                 int_in_bits(imm, imm_size)
             );
         }
     } else {
         if (imm != uint_in_bits(imm, imm_size)) {
             parse_warn(p, expr_start_token,
-                "constant expression is truncated to %u (%x)",
+                "constant expression is truncated to %u (0x%0*x)",
                 uint_in_bits(imm, imm_size),
+                (imm_size + 3) / 4,
                 uint_in_bits(imm, imm_size)
             );
         }
@@ -1054,12 +1058,13 @@ static void parse_instruction(Parser* p) {
 
     usize imm_start_token;
     SectionElement imm_expr_elem = {0};
-    imm_expr_elem.kind = ELEM_EXPR;
+    imm_expr_elem.kind = ELEM_SKIP;
 
-    u32 imm = 0;
+    u32 imm;
 
     // in the case of inlining, how much to shift the immediate by
-    u8 imm_shift = 0; 
+    u8 imm_shift = 0;
+
     // acts as a pseudo-value for the immediate
     u64 val = 0;
 
@@ -1071,7 +1076,7 @@ static void parse_instruction(Parser* p) {
         parse_n_ops(p, 1, OPERAND_GPR, &r1); // src
         parse_n_ops(p, 1, OPERAND_MEM, &r2, &r3, &val); // dest
         goto alignment_check;
-    case INST_SCW ... INST_SCB: 
+    case INST_SCW ... INST_SCB:
         addr_type = "destination";
         parse_n_ops(p, 1, OPERAND_GPR, &r2); // cond
         parse_n_ops(p, 1, OPERAND_MEM_NO_R2, &r3, &val); // dest
@@ -1144,8 +1149,10 @@ static void parse_instruction(Parser* p) {
         if (parse_n_ops(p, 1, OPERAND_GPR, &r1) != 1) // dest
             parse_error(p, p->cursor, "expected destination register.");
 
-        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index) != 1) // expr
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem) != 1) // expr
             parse_error(p, p->cursor, "expected expression (source).");
+
+        imm = imm_expr_elem.expr.index;
         check_imm(p, inst.subkind, imm, 16, imm_start_token);
 
         if (parse_n_ops(p, 1, OPERAND_QUARTER, &sh) != 1) // dest
@@ -1164,8 +1171,10 @@ static void parse_instruction(Parser* p) {
             break;
         }
 
-        parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index);
-        check_imm(p, inst.subkind, imm, 9, imm_start_token);
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem)) {
+            imm = imm_expr_elem.expr.index;
+            check_imm(p, inst.subkind, imm, 9, imm_start_token);
+        }
     } break;
     case INST_ADDI ... INST_XORI: {
         switch (parse_n_ops(p, 2, OPERAND_GPR, &r1, &r2)) {
@@ -1179,8 +1188,10 @@ static void parse_instruction(Parser* p) {
             break;
         }
 
-        parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index);
-        check_imm(p, inst.subkind, imm, 9, imm_start_token);
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem)) {
+            imm = imm_expr_elem.expr.index;
+            check_imm(p, inst.subkind, imm, 14, imm_start_token);
+        }
     } break;
     case INST_SL ... INST_ISR:
     case INST_ROR ... INST_ROL: {
@@ -1195,10 +1206,14 @@ static void parse_instruction(Parser* p) {
             break;
         }
 
-        parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index);
-        check_imm(p, inst.subkind, imm, 9, imm_start_token);
-        if (imm > 63)
-            parse_warn(p, imm_start_token, "expression wrapped to %d (%x) as shifts are mod 64", imm, imm);
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem)) {
+            imm = imm_expr_elem.expr.index;
+
+            ComplexExpr* v = cexpr(p, imm);
+            check_imm(p, inst.subkind, imm, 9, imm_start_token);
+            if (v->kind == CEXPR_VALUE && v->value > 63)
+                parse_warn(p, imm_start_token, "expression wrapped to %d (%x) as shifts are mod 64", v->value, v->value);
+        }
     } break;
     case INST_SI_U ... INST_CB: {
         val |= (inst.subkind == INST_SI_I) << 12;
@@ -1215,8 +1230,6 @@ static void parse_instruction(Parser* p) {
         }
 
         TODO("Implement rsh and lsh"); // The imm_shift would be interesting here
-        parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index);
-        check_imm(p, inst.subkind, imm, 6, imm_start_token);
         break;
     }
     case INST_REV ... INST_REV_BIT: {
@@ -1232,13 +1245,16 @@ static void parse_instruction(Parser* p) {
         }
 
         if (inst.subkind == INST_REV) {
-            if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index) != 1)
+            if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem) != 1)
                 parse_error(p, imm_start_token, "expected an 6-bit bitflag expression of chunks to reverse.");
 
-            check_imm(p, inst.subkind, imm, 9, imm_start_token);
-            if (imm > 63) {
+            imm = imm_expr_elem.expr.index;
+            check_imm(p, inst.subkind, imm, 6, imm_start_token);
+
+            ComplexExpr* v = cexpr(p, imm);
+            if (v->kind == CEXPR_VALUE && v->value > 63) {
                 // TODO: word this error better
-                parse_warn(p, imm_start_token, "cannot reverse chunks larger than 32 bits, yet higher flags were set: %d (%x)", imm, imm);
+                parse_warn(p, imm_start_token, "cannot reverse chunks larger than 32 bits, yet higher flags were set: %d (%x)", v->value, v->value);
             }
             break;
         } else {
@@ -1287,8 +1303,10 @@ static void parse_instruction(Parser* p) {
                 break;
         }
 
-        parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index);
-        check_imm(p, inst.subkind, imm, 9, imm_start_token);
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem)) {
+            imm = imm_expr_elem.expr.index;
+            check_imm(p, inst.subkind, imm, 9, imm_start_token);
+        }
     } break;
     case INST_SEQI ... INST_SILEI: {
         switch (parse_n_ops(p, 3, OPERAND_GPR, &r1, &r2, &r3)) {
@@ -1300,20 +1318,25 @@ static void parse_instruction(Parser* p) {
                 break;
         }
 
-        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index) != 1)
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem) != 1)
             parse_error(p, imm_start_token, "expected expression operand (rhs).");
+
+        imm = imm_expr_elem.expr.index;
         check_imm(p, inst.subkind, imm, 9, imm_start_token);
     } break;
     case INST_BZ ... INST_BN: {
         if (parse_n_ops(p, 1, OPERAND_GPR, &r1) != 1)
                 parse_error(p, p->cursor, "expected register operand for comparison.");
 
-        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index) != 1)
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem) != 1)
             parse_error(p, p->cursor, "expected expression operand (address).");
-        check_imm(p, inst.subkind, imm, 19, imm_start_token);
 
-        if (imm % 4 != 0)
-            parse_warn(p, imm_start_token, "relative address must be 4-byte aligned, trunctated to %d (%x).", imm, imm);
+        imm = imm_expr_elem.expr.index;
+        check_imm(p, inst.subkind, imm, 19, imm_start_token);
+        if (cexpr(p, imm)->kind == CEXPR_VALUE && cexpr(p, imm)->value % 4 != 0) {
+            imm = imm & ~0b11; // clear bottom bits
+            parse_warn(p, p->cursor, "address must be 4-byte aligned, truncated to %d (0x%0*x).", imm, (14 + 3) / 4, imm);
+        }
     } break;
     case INST_JL ... INST_JLR: {
         switch (parse_n_ops(p, 2, OPERAND_GPR, &r1, &r2)) {
@@ -1326,10 +1349,14 @@ static void parse_instruction(Parser* p) {
             default:
                 break;
         }
-        parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index);
-        check_imm(p, inst.subkind, imm, 14, imm_start_token); 
-        if (imm % 4 != 0)
-            parse_warn(p, imm_start_token, "relative address must be 4-byte aligned, trunctated to %d (%x).", imm, imm);
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem)) {
+            imm = imm_expr_elem.expr.index;
+            check_imm(p, inst.subkind, imm, 14, imm_start_token);
+            if (cexpr(p, imm)->kind == CEXPR_VALUE && cexpr(p, imm)->value % 4 != 0) {
+                imm = imm & ~0b11; // clear bottom bits
+                parse_warn(p, p->cursor, "address must be 4-byte aligned, truncated to %d (0x%0*x).", imm, (14 + 3) / 4, imm);
+            }
+        }
     } break;
     case INST_BREAKPT ... INST_IRET:
         break;
@@ -1356,20 +1383,31 @@ static void parse_instruction(Parser* p) {
     case INST_P_FCALL: {
         pseudo_inst_size = max_inst_size(inst.subkind);
         r1 = GPR_LP; // default semantics differ
-        r2 = GPR_LP;
+        r2 = GPR_LP; // default for calls (w/ clearing ssi)
 
         if (parse_n_ops(p, 2, OPERAND_GPR, &r1, &r2) == 1)
             r2 = r1;
 
-        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index) != 1)
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem) != 1)
             parse_error(p, imm_start_token, "expected expression operand (address).");
+
+        imm = imm_expr_elem.expr.index;
+        check_imm(p, inst.subkind, imm, inst.subkind == INST_P_CALL ? 32 : 64, imm_start_token);
+
+        if (cexpr(p, imm)->kind == CEXPR_VALUE && cexpr(p, imm)->value % 4 != 0) {
+            imm = imm & ~0b11; // clear bottom bits
+            parse_warn(p, p->cursor, "address must be 4-byte aligned, truncated to %d (0x%0*x).", imm, (14 + 3) / 4, imm);
+        }
     } break;
     case INST_P_LI: {
         pseudo_inst_size = max_inst_size(inst.subkind);
         if (parse_n_ops(p, 1, OPERAND_GPR, &r1) != 1)
                 parse_error(p, p->cursor, "expected destination register.");
-        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem.expr.index) != 1)
+        if (parse_n_ops(p, 1, OPERAND_EXPR, &imm_start_token, &imm_expr_elem) != 1)
             parse_error(p, imm_start_token, "expected expression operand (source).");
+
+        imm = imm_expr_elem.expr.index;
+        check_imm(p, inst.subkind, imm, 64, imm_start_token);
     } break;
     case INST_P_MOV: {
         pseudo_inst_size = max_inst_size(inst.subkind);
@@ -1388,9 +1426,12 @@ static void parse_instruction(Parser* p) {
         break;
     }
     expect_advance(p, TOK_NEWLINE);
-    
+
     // eagerly evaluate if possible
-    if (cexpr(p, imm_expr_elem.expr.index)->kind == CEXPR_VALUE) {
+    if (imm_expr_elem.kind == ELEM_EXPR
+        && cexpr(p, imm_expr_elem.expr.index)->kind == CEXPR_VALUE
+        && imm_shift >= 0
+    ) {
         val |= cexpr(p, imm_expr_elem.expr.index)->value << imm_shift;
     }
 
@@ -1408,8 +1449,11 @@ static void parse_instruction(Parser* p) {
 
     element_add(p, elem, inst_start_token);
 
-    if (cexpr(p, imm_expr_elem.expr.index)->kind != CEXPR_VALUE) {
-        printf("expr made \n");
+    // always make expr for pseudo (defer folding) and for non-trivial values
+    if ((imm_expr_elem.kind == ELEM_EXPR
+        && cexpr(p, imm_expr_elem.expr.index)->kind != CEXPR_VALUE)
+        || pseudo_inst_size != 0)
+    {
         element_add(p, imm_expr_elem, imm_start_token);
     }
 }
